@@ -100,10 +100,19 @@ def inject_today_pharmacy():
         from datetime import timezone, timedelta
         damascus_tz = timezone(timedelta(hours=3))  # دمشق UTC+3
         damascus_time = datetime.now(damascus_tz)
-        today = damascus_time.date().strftime('%Y-%m-%d')
+        
+        # تحديد التاريخ بناءً على الساعة 1:30 صباحاً
+        if damascus_time.hour < 1 or (damascus_time.hour == 1 and damascus_time.minute < 30):
+            # إذا كان الوقت قبل 1:30 صباحاً، استخدم تاريخ اليوم السابق
+            display_date = (damascus_time - timedelta(days=1)).date()
+        else:
+            # إذا كان الوقت بعد 1:30 صباحاً، استخدم تاريخ اليوم الحالي
+            display_date = damascus_time.date()
+        
+        today = display_date.strftime('%Y-%m-%d')
         
         print(f"التوقيت الحالي بدمشق: {damascus_time}")
-        print(f"تاريخ اليوم: {today}")
+        print(f"تاريخ اليوم (مع تطبيق قاعدة 1:30 ص): {today}")
         
         # جلب جميع الصيدليات المناوبة لهذا اليوم
         cursor.execute('SELECT * FROM duty_pharmacies WHERE duty_date = ? ORDER BY id', (today,))
@@ -855,10 +864,19 @@ def duty_pharmacies():
     from datetime import timezone, timedelta
     damascus_tz = timezone(timedelta(hours=3))  # دمشق UTC+3
     damascus_time = datetime.now(damascus_tz)
-    today = damascus_time.date().strftime('%Y-%m-%d')
+    
+    # تحديد التاريخ بناءً على الساعة 1:30 صباحاً
+    if damascus_time.hour < 1 or (damascus_time.hour == 1 and damascus_time.minute < 30):
+        # إذا كان الوقت قبل 1:30 صباحاً، استخدم تاريخ اليوم السابق
+        display_date = (damascus_time - timedelta(days=1)).date()
+    else:
+        # إذا كان الوقت بعد 1:30 صباحاً، استخدم تاريخ اليوم الحالي
+        display_date = damascus_time.date()
+    
+    today = display_date.strftime('%Y-%m-%d')
 
     print(f"التوقيت الحالي في صفحة الصيدليات: {damascus_time}")
-    print(f"تاريخ اليوم في صفحة الصيدليات: {today}")
+    print(f"تاريخ اليوم في صفحة الصيدليات (مع تطبيق قاعدة 1:30 ص): {today}")
 
     # الحصول على جميع صيدليات اليوم
     cursor.execute('SELECT * FROM duty_pharmacies WHERE duty_date = ? ORDER BY id', (today,))
@@ -1069,7 +1087,16 @@ def get_today_pharmacies():
         from datetime import timezone, timedelta
         damascus_tz = timezone(timedelta(hours=3))  # دمشق UTC+3
         damascus_time = datetime.now(damascus_tz)
-        today = damascus_time.date().strftime('%Y-%m-%d')
+        
+        # تحديد التاريخ بناءً على الساعة 1:30 صباحاً
+        if damascus_time.hour < 1 or (damascus_time.hour == 1 and damascus_time.minute < 30):
+            # إذا كان الوقت قبل 1:30 صباحاً، استخدم تاريخ اليوم السابق
+            display_date = (damascus_time - timedelta(days=1)).date()
+        else:
+            # إذا كان الوقت بعد 1:30 صباحاً، استخدم تاريخ اليوم الحالي
+            display_date = damascus_time.date()
+        
+        today = display_date.strftime('%Y-%m-%d')
         
         cursor.execute('SELECT * FROM duty_pharmacies WHERE duty_date = ? ORDER BY id', (today,))
         pharmacies = cursor.fetchall()
