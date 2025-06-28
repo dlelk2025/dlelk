@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات النظام المتقدمة - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --info-gradient: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 40px;
+            margin: 30px auto;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .settings-nav {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .settings-nav .nav-pills .nav-link {
+            border-radius: 25px;
+            margin: 0 5px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .settings-nav .nav-pills .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .settings-nav .nav-pills .nav-link:not(.active) {
+            color: #6c757d;
+            background: #f8f9fa;
+        }
+
+        .settings-nav .nav-pills .nav-link:not(.active):hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .settings-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .settings-section.general { border-left-color: #667eea; }
+        .settings-section.homepage { border-left-color: #11998e; }
+        .settings-section.counts { border-left-color: #ff9a9e; }
+        .settings-section.contact { border-left-color: #ffc107; }
+        .settings-section.advanced { border-left-color: #6f42c1; }
+
+        .settings-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-left: 15px;
+        }
+
+        .section-icon.general { background: var(--primary-gradient); }
+        .section-icon.homepage { background: var(--success-gradient); }
+        .section-icon.counts { background: var(--warning-gradient); }
+        .section-icon.contact { background: var(--info-gradient); }
+        .section-icon.advanced { background: var(--danger-gradient); }
+
+        .form-control, .form-select {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 12px 18px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            border-radius: 1em;
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .btn-save {
+            background: var(--success-gradient);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+            color: white;
+        }
+
+        .btn-reset {
+            background: var(--warning-gradient);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+            color: white;
+        }
+
+        .system-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .preview-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-item {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .settings-nav .nav-pills .nav-link {
+                margin: 5px 0;
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-container">
+            <!-- الهيدر -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-gear-wide-connected"></i> إعدادات النظام المتقدمة</h2>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right"></i> العودة للوحة الإدارة
+                </a>
+            </div>
+
+            <!-- معلومات النظام -->
+            <div class="system-info">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="info-card text-center">
+                            <h5><i class="bi bi-speedometer2"></i></h5>
+                            <h6>حالة النظام</h6>
+                            <span class="badge bg-success">يعمل بشكل طبيعي</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-card text-center">
+                            <h5><i class="bi bi-database"></i></h5>
+                            <h6>قاعدة البيانات</h6>
+                            <span>SQLite</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-card text-center">
+                            <h5><i class="bi bi-people"></i></h5>
+                            <h6>المستخدمين النشطين</h6>
+                            <span id="activeUsers">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-card text-center">
+                            <h5><i class="bi bi-shop"></i></h5>
+                            <h6>المحلات المعتمدة</h6>
+                            <span id="approvedStores">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الرسائل -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        <i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- قائمة التنقل -->
+            <div class="settings-nav">
+                <ul class="nav nav-pills justify-content-center" id="settingsTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="pill" href="#general">
+                            <i class="bi bi-gear"></i> عام
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#homepage">
+                            <i class="bi bi-house"></i> الصفحة الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#counts">
+                            <i class="bi bi-123"></i> أعداد العرض
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#contact">
+                            <i class="bi bi-telephone"></i> التواصل
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#advanced">
+                            <i class="bi bi-cpu"></i> متقدم
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <form method="POST" action="{{ url_for('save_settings') }}" id="settingsForm">
+                <div class="tab-content">
+                    <!-- الإعدادات العامة -->
+                    <div class="tab-pane fade show active" id="general">
+                        <div class="settings-section general">
+                            <div class="section-header">
+                                <div class="section-icon general">
+                                    <i class="bi bi-gear"></i>
+                                </div>
+                                <div>
+                                    <h4>الإعدادات العامة</h4>
+                                    <p class="text-muted mb-0">إعدادات أساسية للموقع والعرض العام</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- إعدادات عامة -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عنوان الموقع</label>
+                                    <input type="text" class="form-control" name="site_title" 
+                                           value="{{ site_settings.site_title or 'دليل محلات الحسينية' }}" placeholder="عنوان الموقع">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">وضع الصيانة</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="maintenance_mode" value="1"
+                                               {{ 'checked' if site_settings.maintenance_mode == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل وضع الصيانة</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">وصف الموقع</label>
+                                    <textarea class="form-control" name="site_description" rows="3">{{ site_settings.site_description or 'دليل شامل لجميع المحلات والخدمات في منطقة الحسينية' }}</textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">كلمات مفتاحية</label>
+                                    <input type="text" class="form-control" name="site_keywords" 
+                                           value="{{ site_settings.site_keywords or 'محلات، الحسينية، دليل، خدمات، صيدليات' }}" placeholder="كلمات مفتاحية للموقع">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">رابط شعار الموقع</label>
+                                    <input type="url" class="form-control" name="site_logo" 
+                                           value="{{ site_settings.site_logo or '' }}" placeholder="رابط شعار الموقع">
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">كود Google Analytics</label>
+                                    <textarea class="form-control" name="analytics_code" rows="2" placeholder="كود Google Analytics">{{ site_settings.analytics_code or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- إعدادات الصفحة الرئيسية -->
+                    <div class="tab-pane fade" id="homepage">
+                        <div class="settings-section homepage">
+                            <div class="section-header">
+                                <div class="section-icon homepage">
+                                    <i class="bi bi-house"></i>
+                                </div>
+                                <div>
+                                    <h4>إعدادات الصفحة الرئيسية</h4>
+                                    <p class="text-muted mb-0">تحكم في عرض الأقسام المختلفة في الصفحة الرئيسية</p>
+                                </div>
+                            </div>
+                            
+                            <div class="toggle-group">
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_latest_stores" value="1"
+                                               {{ 'checked' if site_settings.show_latest_stores == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض أحدث المحلات</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_most_searched_stores" value="1"
+                                               {{ 'checked' if site_settings.show_most_searched_stores == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض الأكثر بحثاً</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_top_rated_stores" value="1"
+                                               {{ 'checked' if site_settings.show_top_rated_stores == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض الأعلى تقييماً</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_featured_stores" value="1"
+                                               {{ 'checked' if site_settings.show_featured_stores == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض المحلات المميزة</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_categories_grid" value="1"
+                                               {{ 'checked' if site_settings.show_categories_grid == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض شبكة التصنيفات</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_statistics" value="1"
+                                               {{ 'checked' if site_settings.show_statistics == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض الإحصائيات</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_pharmacy_ticker" value="1"
+                                               {{ 'checked' if site_settings.show_pharmacy_ticker == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض شريط الصيدلية المناوبة</label>
+                                    </div>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="show_important_services" value="1"
+                                               {{ 'checked' if site_settings.show_important_services == '1' else '' }}>
+                                        <label class="form-check-label fw-bold">عرض الخدمات الهامة</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="preview-section">
+                                <h6><i class="bi bi-eye"></i> معاينة الصفحة الرئيسية</h6>
+                                <div class="row text-center">
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-2 bg-white rounded">
+                                            <i class="bi bi-plus-circle text-success"></i>
+                                            <small class="d-block">أحدث المحلات</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-2 bg-white rounded">
+                                            <i class="bi bi-search text-primary"></i>
+                                            <small class="d-block">الأكثر بحثاً</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-2 bg-white rounded">
+                                            <i class="bi bi-star text-warning"></i>
+                                            <small class="d-block">الأعلى تقييماً</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <div class="p-2 bg-white rounded">
+                                            <i class="bi bi-award text-info"></i>
+                                            <small class="d-block">المميزة</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- أعداد العرض -->
+                    <div class="tab-pane fade" id="counts">
+                        <div class="settings-section counts">
+                            <div class="section-header">
+                                <div class="section-icon counts">
+                                    <i class="bi bi-123"></i>
+                                </div>
+                                <div>
+                                    <h4>أعداد العرض</h4>
+                                    <p class="text-muted mb-0">تحديد عدد العناصر المعروضة في كل قسم</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عدد أحدث المحلات</label>
+                                    <input type="number" class="form-control" name="latest_stores_count" 
+                                           value="{{ site_settings.latest_stores_count or '6' }}" min="1" max="20">
+                                    <small class="text-muted">القيمة الموصى بها: 6-12</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عدد الأكثر بحثاً</label>
+                                    <input type="number" class="form-control" name="most_searched_stores_count" 
+                                           value="{{ site_settings.most_searched_stores_count or '6' }}" min="1" max="20">
+                                    <small class="text-muted">القيمة الموصى بها: 6-12</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عدد الأعلى تقييماً</label>
+                                    <input type="number" class="form-control" name="top_rated_stores_count" 
+                                           value="{{ site_settings.top_rated_stores_count or '6' }}" min="1" max="20">
+                                    <small class="text-muted">القيمة الموصى بها: 6-12</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عدد المحلات المميزة</label>
+                                    <input type="number" class="form-control" name="featured_stores_count" 
+                                           value="{{ site_settings.featured_stores_count or '4' }}" min="1" max="20">
+                                    <small class="text-muted">القيمة الموصى بها: 4-8</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">عدد التصنيفات المعروضة</label>
+                                    <input type="number" class="form-control" name="categories_grid_count" 
+                                           value="{{ site_settings.categories_grid_count or '8' }}" min="1" max="20">
+                                    <small class="text-muted">القيمة الموصى بها: 6-12</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- إعدادات التواصل -->
+                    <div class="tab-pane fade" id="contact">
+                        <div class="settings-section contact">
+                            <div class="section-header">
+                                <div class="section-icon contact">
+                                    <i class="bi bi-telephone"></i>
+                                </div>
+                                <div>
+                                    <h4>معلومات التواصل</h4>
+                                    <p class="text-muted mb-0">تحديث معلومات التواصل ووسائل التواصل الاجتماعي</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-telephone"></i>
+                                        رقم التواصل
+                                    </label>
+                                    <input type="tel" class="form-control" name="contact_phone" 
+                                           value="{{ site_settings.contact_phone or '0938074766' }}" placeholder="رقم التواصل">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-envelope"></i>
+                                        البريد الإلكتروني
+                                    </label>
+                                    <input type="email" class="form-control" name="contact_email" 
+                                           value="{{ site_settings.contact_email or 'info@hussainiya.com' }}" placeholder="البريد الإلكتروني">
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-geo-alt"></i>
+                                        العنوان
+                                    </label>
+                                    <input type="text" class="form-control" name="contact_address" 
+                                           value="{{ site_settings.contact_address or 'منطقة الحسينية، سوريا' }}" placeholder="العنوان">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-facebook"></i>
+                                        رابط فيسبوك
+                                    </label>
+                                    <input type="url" class="form-control" name="facebook_link" 
+                                           value="{{ site_settings.facebook_link or '' }}" placeholder="رابط فيسبوك">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-instagram"></i>
+                                        رابط انستقرام
+                                    </label>
+                                    <input type="url" class="form-control" name="instagram_link" 
+                                           value="{{ site_settings.instagram_link or '' }}" placeholder="رابط انستقرام">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-whatsapp"></i>
+                                        رقم الواتساب
+                                    </label>
+                                    <input type="tel" class="form-control" name="whatsapp_number" 
+                                           value="{{ site_settings.whatsapp_number or '' }}" placeholder="رقم الواتساب">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الإعدادات المتقدمة -->
+                    <div class="tab-pane fade" id="advanced">
+                        <div class="settings-section advanced">
+                            <div class="section-header">
+                                <div class="section-icon advanced">
+                                    <i class="bi bi-cpu"></i>
+                                </div>
+                                <div>
+                                    <h4>الإعدادات المتقدمة</h4>
+                                    <p class="text-muted mb-0">إعدادات تقنية متقدمة للنظام</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">الموافقة التلقائية على المحلات</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="auto_approve_stores" value="1"
+                                               {{ 'checked' if site_settings.auto_approve_stores == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">السماح بتسجيل المستخدمين</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="allow_user_registration" value="1"
+                                               {{ 'checked' if site_settings.allow_user_registration == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">تطلب تأكيد الهاتف</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="require_phone_verification" value="1"
+                                               {{ 'checked' if site_settings.require_phone_verification == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">تفعيل المراجعات</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="enable_reviews" value="1"
+                                               {{ 'checked' if site_settings.enable_reviews == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">تفعيل المفضلة</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="enable_favorites" value="1"
+                                               {{ 'checked' if site_settings.enable_favorites == '1' else '' }}>
+                                        <label class="form-check-label">تفعيل</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">حد أقصى للمحلات لكل مستخدم</label>
+                                    <input type="number" class="form-control" name="max_stores_per_user" 
+                                           value="{{ site_settings.max_stores_per_user or '5' }}" min="1" max="50">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">مدة التخزين المؤقت (ثانية)</label>
+                                    <input type="number" class="form-control" name="cache_duration" 
+                                           value="{{ site_settings.cache_duration or '3600' }}" min="0">
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>تنبيه:</strong> الإعدادات المتقدمة قد تؤثر على أداء النظام. يُنصح بعمل نسخة احتياطية قبل التعديل.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- أزرار الحفظ -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-save me-3">
+                        <i class="bi bi-check-lg"></i> حفظ جميع الإعدادات
+                    </button>
+                    <button type="button" class="btn btn-reset" onclick="resetToDefaults()">
+                        <i class="bi bi-arrow-clockwise"></i> استعادة الافتراضي
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // تحديث الإحصائيات
+        document.addEventListener('DOMContentLoaded', function() {
+            // يمكن إضافة API calls لجلب الإحصائيات الحقيقية
+            document.getElementById('activeUsers').textContent = '{{ stats.total_users if stats else "-" }}';
+            document.getElementById('approvedStores').textContent = '{{ stats.total_stores if stats else "-" }}';
+        });
+
+        function resetToDefaults() {
+            if (confirm('هل أنت متأكد من استعادة الإعدادات الافتراضية؟ سيتم فقدان جميع التخصيصات الحالية.')) {
+                // إعادة تعيين القيم الافتراضية
+                location.reload();
+            }
+        }
+
+        // تأثيرات تفاعلية
+        document.querySelectorAll('.form-check-input').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                const item = this.closest('.toggle-item');
+                if (item) {
+                    if (this.checked) {
+                        item.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+                        item.style.borderLeft = '4px solid #667eea';
+                    } else {
+                        item.style.backgroundColor = '#f8f9fa';
+                        item.style.borderLeft = 'none';
+                    }
+                }
+            });
+        });
+
+        // تحديث المعاينة
+        document.querySelectorAll('input[name^="show_"]').forEach(function(checkbox) {
+            checkbox.addEventListener('change', updatePreview);
+        });
+
+        function updatePreview() {
+            // تحديث معاينة الصفحة الرئيسية حسب الإعدادات
+            const previewItems = document.querySelectorAll('.preview-section .col-6');
+            previewItems.forEach(function(item, index) {
+                const checkboxes = ['show_latest_stores', 'show_most_searched_stores', 'show_top_rated_stores', 'show_featured_stores'];
+                const checkbox = document.querySelector(`input[name="${checkboxes[index]}"]`);
+                if (checkbox) {
+                    item.style.opacity = checkbox.checked ? '1' : '0.3';
+                }
+            });
+        }
+
+        // تهيئة المعاينة
+        updatePreview();
+
+        // التأكيد عند حفظ الإعدادات
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            // عرض رسالة تأكيد
+            const submitButton = document.querySelector('.btn-save');
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> جارٍ الحفظ...';
+            submitButton.disabled = true;
+            
+            // السماح بالإرسال
+            setTimeout(() => {
+                if (submitButton.disabled) {
+                    submitButton.innerHTML = '<i class="bi bi-check-lg"></i> حفظ جميع الإعدادات';
+                    submitButton.disabled = false;
+                }
+            }, 5000);
+        });
+
+        // تأكيد عمل وضع الصيانة
+        document.querySelector('input[name="maintenance_mode"]').addEventListener('change', function() {
+            if (this.checked) {
+                if (!confirm('تأكيد تفعيل وضع الصيانة؟ سيتم منع جميع المستخدمين من الوصول للموقع عدا الإداريين.')) {
+                    this.checked = false;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

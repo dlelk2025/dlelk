@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة - دليل محلات الحسينية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .sidebar-menu {
+            padding: 0;
+        }
+
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.9);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            margin: 2px 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu .nav-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            transform: translateX(5px);
+            border-left: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-menu .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-left: 3px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-menu .nav-link i {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="row g-0">
+        <!-- الشريط الجانبي -->
+        <div class="col-md-2">
+            <div class="admin-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="bi bi-shield-check"></i></h4>
+                    <h5>لوحة الإدارة</h5>
+                    <small>{{ session.user_name }}</small>
+                </div>
+
+                <nav class="sidebar-menu">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link active">
+                        <i class="bi bi-speedometer2"></i>
+                        الرئيسية
+                    </a>
+                    <a href="{{ url_for('admin_duty_pharmacies') }}" class="nav-link">
+                        <i class="bi bi-clipboard2-pulse"></i>
+                        الصيدليات المناوبة
+                    </a>
+                    <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                        <i class="bi bi-shop"></i>
+                        إدارة المحلات
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        إدارة المستخدمين
+                    </a>
+                    <a href="{{ url_for('admin_categories') }}" class="nav-link">
+                        <i class="bi bi-tags"></i>
+                        إدارة التصنيفات
+                    </a>
+                    <a href="{{ url_for('admin_services') }}" class="nav-link">
+                        <i class="bi bi-telephone"></i>
+                        الخدمات الهامة
+                    </a>
+                    <a href="{{ url_for('admin_notifications') }}" class="nav-link">
+                        <i class="bi bi-bell"></i>
+                        الإشعارات
+                    </a>
+                    <a href="{{ url_for('admin_ticker') }}" class="nav-link">
+                        <i class="bi bi-text-paragraph"></i>
+                        الشريط المتحرك
+                    </a>
+                    <a href="{{ url_for('admin_backup') }}" class="nav-link">
+                        <i class="bi bi-cloud-download"></i>
+                        النسخ الاحتياطي
+                    </a>
+                    <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        الإعدادات
+                    </a>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{{ url_for('index') }}" class="nav-link">
+                        <i class="bi bi-house"></i>
+                        العودة للموقع
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        تسجيل خروج
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="col-md-10">
+            <div class="admin-content p-4">
+                <!-- الرأس -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>لوحة التحكم الرئيسية</h2>
+                    <div class="text-muted">
+                        <i class="bi bi-clock"></i>
+                        <span id="currentDateTime"></span>
+                    </div>
+                </div>
+
+                <!-- الإحصائيات -->
+                {% block stats %}
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_stores or 0 }}</div>
+                            <div>إجمالي المحلات</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_users or 0 }}</div>
+                            <div>إجمالي المستخدمين</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.pending_stores or 0 }}</div>
+                            <div>محلات في الانتظار</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_categories or 0 }}</div>
+                            <div>التصنيفات</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ stats.total_services or 0 }}</div>
+                            <div>الخدمات الهامة</div>
+                        </div>
+                    </div>
+                </div>
+                {% endblock %}
+
+                <!-- المحتوى الديناميكي -->
+                {% block content %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-graph-up"></i> الإحصائيات السريعة</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>مرحباً بك في لوحة الإدارة الخاصة بدليل محلات الحسينية</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>المهام السريعة:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-check-circle text-success"></i> النظام يعمل بشكل طبيعي</li>
+                                            <li><i class="bi bi-info-circle text-info"></i> قاعدة البيانات متصلة</li>
+                                            <li><i class="bi bi-calendar-check text-primary"></i> الصيدليات المناوبة محدثة</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>روابط سريعة:</h6>
+                                        <div class="d-grid gap-2">
+                                            <a href="{{ url_for('admin_duty_pharmacies') }}" class="btn btn-admin btn-sm">
+                                                <i class="bi bi-clipboard2-pulse"></i> إدارة الصيدليات
+                                            </a>
+                                            <button class="btn btn-admin btn-sm" onclick="refreshStats()">
+                                                <i class="bi bi-arrow-clockwise"></i> تحديث الإحصائيات
+                                            </button>
+                                            <a href="{{ url_for('index') }}" class="btn btn-admin btn-sm">
+                                                <i class="bi bi-eye"></i> معاينة الموقع
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="bi bi-bell"></i> التنبيهات</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if stats.pending_stores > 0 %}
+                                <div class="alert alert-warning">
+                                    <small><i class="bi bi-exclamation-triangle"></i> يوجد {{ stats.pending_stores }} محل{{ 'ات' if stats.pending_stores > 1 else '' }} في انتظار الموافقة</small>
+                                </div>
+                                {% endif %}
+                                <div class="alert alert-info">
+                                    <small><i class="bi bi-info-circle"></i> يتطلب تحديث جدول الصيدليات للشهر القادم</small>
+                                </div>
+                                {% if stats.pending_stores == 0 %}
+                                <div class="alert alert-success">
+                                    <small><i class="bi bi-check-circle"></i> جميع المحلات معتمدة، لا توجد محلات معلقة</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // عرض التاريخ والوقت الحاليين
+        function updateDateTime() {
+            const now = new Date();
+            const dateTime = now.toLocaleString('ar-EG', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentDateTime').textContent = dateTime;
+        }
+
+        // تحديث التاريخ والوقت كل ثانية
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // تحديث الإحصائيات
+        function refreshStats() {
+            window.location.reload();
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

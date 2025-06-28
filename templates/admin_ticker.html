@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الشريط المتحرك - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 15px 20px;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-menu .nav-link:hover,
+        .sidebar-menu .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu .nav-link i {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .table th {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+        }
+
+        .btn-admin {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .ticker-preview {
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .ticker-text {
+            animation: scroll-ticker 10s linear infinite;
+        }
+
+        @keyframes scroll-ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pages-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .page-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .page-checkbox:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .page-checkbox.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .priority-1 { background: #dc3545; color: white; }
+        .priority-2 { background: #fd7e14; color: white; }
+        .priority-3 { background: #ffc107; color: black; }
+        .priority-4 { background: #20c997; color: white; }
+        .priority-5 { background: #6f42c1; color: white; }
+    </style>
+</head>
+<body>
+    <div class="row g-0">
+        <!-- الشريط الجانبي -->
+        <div class="col-md-2">
+            <div class="admin-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="bi bi-shield-check"></i></h4>
+                    <h5>لوحة الإدارة</h5>
+                    <small>{{ session.user_name }}</small>
+                </div>
+
+                <nav class="sidebar-menu">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i>
+                        الرئيسية
+                    </a>
+                    <a href="{{ url_for('admin_duty_pharmacies') }}" class="nav-link">
+                        <i class="bi bi-clipboard2-pulse"></i>
+                        الصيدليات المناوبة
+                    </a>
+                    <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                        <i class="bi bi-shop"></i>
+                        إدارة المحلات
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        إدارة المستخدمين
+                    </a>
+                    <a href="{{ url_for('admin_categories') }}" class="nav-link">
+                        <i class="bi bi-tags"></i>
+                        إدارة التصنيفات
+                    </a>
+                    <a href="{{ url_for('admin_services') }}" class="nav-link">
+                        <i class="bi bi-telephone"></i>
+                        الخدمات الهامة
+                    </a>
+                    <a href="{{ url_for('admin_notifications') }}" class="nav-link">
+                        <i class="bi bi-bell"></i>
+                        الإشعارات
+                    </a>
+                    <a href="{{ url_for('admin_ticker') }}" class="nav-link active">
+                        <i class="bi bi-text-paragraph"></i>
+                        الشريط المتحرك
+                    </a>
+                    <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        الإعدادات
+                    </a>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{{ url_for('index') }}" class="nav-link">
+                        <i class="bi bi-house"></i>
+                        العودة للموقع
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        تسجيل خروج
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="col-md-10">
+            <div class="admin-content p-4">
+                <!-- الرأس -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-text-paragraph"></i> إدارة الشريط المتحرك</h2>
+                    <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addTickerModal">
+                        <i class="bi bi-plus"></i> إضافة رسالة جديدة
+                    </button>
+                </div>
+
+                <!-- الرسائل -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- جدول الرسائل -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-list-ul"></i> جميع رسائل الشريط المتحرك</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if ticker_messages %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>الرسالة</th>
+                                        <th>النوع</th>
+                                        <th>الأولوية</th>
+                                        <th>الصفحات</th>
+                                        <th>معاينة</th>
+                                        <th>الحالة</th>
+                                        <th>الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ticker in ticker_messages %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ ticker[1][:50] }}{{ '...' if ticker[1]|length > 50 else '' }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ ticker[2] }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="priority-badge priority-{{ ticker[3] }}">{{ ticker[3] }}</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ ticker[11] if ticker|length > 11 else 'جميع الصفحات' }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="ticker-preview" style="background-color: {{ ticker[7] }}; color: {{ ticker[8] }}; font-size: {{ ticker[9] }}px;">
+                                                <div class="ticker-text">{{ ticker[1] }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if ticker[4] else 'secondary' }}">
+                                                {{ 'نشط' if ticker[4] else 'معطل' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin_ticker_details', ticker_id=ticker[0]) }}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
+                                                        data-bs-target="#editTickerModal{{ ticker[0] }}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_ticker', ticker_id=ticker[0]) }}" 
+                                                   class="btn btn-danger btn-sm" 
+                                                   onclick="return confirm('هل تريد حذف هذه الرسالة؟')">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal للتعديل -->
+                                    <div class="modal fade" id="editTickerModal{{ ticker[0] }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">تعديل الرسالة</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST" action="{{ url_for('update_ticker', ticker_id=ticker[0]) }}">
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-md-12 mb-3">
+                                                                <label class="form-label">نص الرسالة</label>
+                                                                <textarea class="form-control" name="message" rows="3" required>{{ ticker[1] }}</textarea>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">نوع الرسالة</label>
+                                                                <select class="form-select" name="type" required>
+                                                                    <option value="custom" {{ 'selected' if ticker[2] == 'custom' else '' }}>رسالة مخصصة</option>
+                                                                    <option value="announcement" {{ 'selected' if ticker[2] == 'announcement' else '' }}>إعلان</option>
+                                                                    <option value="emergency" {{ 'selected' if ticker[2] == 'emergency' else '' }}>طوارئ</option>
+                                                                    <option value="welcome" {{ 'selected' if ticker[2] == 'welcome' else '' }}>ترحيب</option>
+                                                                    <option value="promotion" {{ 'selected' if ticker[2] == 'promotion' else '' }}>عرض خاص</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">الأولوية</label>
+                                                                <select class="form-select" name="priority">
+                                                                    <option value="1" {{ 'selected' if ticker[3] == 1 else '' }}>عالية جداً</option>
+                                                                    <option value="2" {{ 'selected' if ticker[3] == 2 else '' }}>عالية</option>
+                                                                    <option value="3" {{ 'selected' if ticker[3] == 3 else '' }}>متوسطة</option>
+                                                                    <option value="4" {{ 'selected' if ticker[3] == 4 else '' }}>منخفضة</option>
+                                                                    <option value="5" {{ 'selected' if ticker[3] == 5 else '' }}>منخفضة جداً</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">اتجاه الحركة</label>
+                                                                <select class="form-select" name="direction">
+                                                                    <option value="right" {{ 'selected' if ticker[5] == 'right' else '' }}>يمين إلى يسار</option>
+                                                                    <option value="left" {{ 'selected' if ticker[5] == 'left' else '' }}>يسار إلى يمين</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label">السرعة (ثانية)</label>
+                                                                <input type="number" class="form-control" name="speed" value="{{ ticker[6] }}" min="10" max="100">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row">
+                                                            <div class="col-md-4 mb-3">
+                                                                <label class="form-label">لون الخلفية</label>
+                                                                <input type="color" class="form-control color-picker" name="background_color" value="{{ ticker[7] }}">
+                                                            </div>
+                                                            <div class="col-md-4 mb-3">
+                                                                <label class="form-label">لون النص</label>
+                                                                <input type="color" class="form-control color-picker" name="text_color" value="{{ ticker[8] }}">
+                                                            </div>
+                                                            <div class="col-md-4 mb-3">
+                                                                <label class="form-label">حجم الخط</label>
+                                                                <input type="number" class="form-control" name="font_size" value="{{ ticker[9] }}" min="12" max="24">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">الصفحات التي ستظهر بها</label>
+                                                            <div class="pages-selection">
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="all" id="all_{{ ticker[0] }}" 
+                                                                           {{ 'checked' if not ticker[11] or 'all' in (ticker[11] or '') else '' }}>
+                                                                    <label for="all_{{ ticker[0] }}" class="ms-2">جميع الصفحات</label>
+                                                                </div>
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="index" id="index_{{ ticker[0] }}"
+                                                                           {{ 'checked' if ticker[11] and 'index' in ticker[11] else '' }}>
+                                                                    <label for="index_{{ ticker[0] }}" class="ms-2">الصفحة الرئيسية</label>
+                                                                </div>
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="search" id="search_{{ ticker[0] }}"
+                                                                           {{ 'checked' if ticker[11] and 'search' in ticker[11] else '' }}>
+                                                                    <label for="search_{{ ticker[0] }}" class="ms-2">صفحة البحث</label>
+                                                                </div>
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="services" id="services_{{ ticker[0] }}"
+                                                                           {{ 'checked' if ticker[11] and 'services' in ticker[11] else '' }}>
+                                                                    <label for="services_{{ ticker[0] }}" class="ms-2">الخدمات الهامة</label>
+                                                                </div>
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="pharmacies" id="pharmacies_{{ ticker[0] }}"
+                                                                           {{ 'checked' if ticker[11] and 'pharmacies' in ticker[11] else '' }}>
+                                                                    <label for="pharmacies_{{ ticker[0] }}" class="ms-2">الصيدليات المناوبة</label>
+                                                                </div>
+                                                                <div class="page-checkbox">
+                                                                    <input type="checkbox" name="pages" value="dashboard" id="dashboard_{{ ticker[0] }}"
+                                                                           {{ 'checked' if ticker[11] and 'dashboard' in ticker[11] else '' }}>
+                                                                    <label for="dashboard_{{ ticker[0] }}" class="ms-2">لوحة المستخدم</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" name="is_active" value="1" 
+                                                                   {{ 'checked' if ticker[4] else '' }} id="active_{{ ticker[0] }}">
+                                                            <label class="form-check-label" for="active_{{ ticker[0] }}">
+                                                                تفعيل الرسالة
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                        <button type="submit" class="btn btn-admin">حفظ التغييرات</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-text-paragraph" style="font-size: 3rem; color: #ccc;"></i>
+                            <h5 class="mt-3 text-muted">لا توجد رسائل في الشريط المتحرك</h5>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal إضافة رسالة جديدة -->
+    <div class="modal fade" id="addTickerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة رسالة جديدة للشريط المتحرك</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_ticker') }}">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">نص الرسالة</label>
+                                <textarea class="form-control" name="message" rows="3" placeholder="اكتب نص الرسالة هنا..." required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">نوع الرسالة</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="custom">رسالة مخصصة</option>
+                                    <option value="announcement">إعلان</option>
+                                    <option value="emergency">طوارئ</option>
+                                    <option value="welcome">ترحيب</option>
+                                    <option value="promotion">عرض خاص</option>
+                                    <option value="latest_stores">أحدث المحلات (تلقائي)</option>
+                                    <option value="popular_stores">الأكثر بحثاً (تلقائي)</option>
+                                    <option value="top_rated">الأعلى تقييماً (تلقائي)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">الأولوية</label>
+                                <select class="form-select" name="priority">
+                                    <option value="1">عالية جداً</option>
+                                    <option value="2">عالية</option>
+                                    <option value="3" selected>متوسطة</option>
+                                    <option value="4">منخفضة</option>
+                                    <option value="5">منخفضة جداً</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">اتجاه الحركة</label>
+                                <select class="form-select" name="direction">
+                                    <option value="right">يمين إلى يسار</option>
+                                    <option value="left">يسار إلى يمين</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">السرعة (ثانية)</label>
+                                <input type="number" class="form-control" name="speed" value="50" min="10" max="100">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">لون الخلفية</label>
+                                <input type="color" class="form-control color-picker" name="background_color" value="#11998e">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">لون النص</label>
+                                <input type="color" class="form-control color-picker" name="text_color" value="#ffffff">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">حجم الخط</label>
+                                <input type="number" class="form-control" name="font_size" value="16" min="12" max="24">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">الصفحات التي ستظهر بها</label>
+                            <div class="pages-selection">
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="all" id="all_new" checked>
+                                    <label for="all_new" class="ms-2">جميع الصفحات</label>
+                                </div>
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="index" id="index_new">
+                                    <label for="index_new" class="ms-2">الصفحة الرئيسية</label>
+                                </div>
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="search" id="search_new">
+                                    <label for="search_new" class="ms-2">صفحة البحث</label>
+                                </div>
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="services" id="services_new">
+                                    <label for="services_new" class="ms-2">الخدمات الهامة</label>
+                                </div>
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="pharmacies" id="pharmacies_new">
+                                    <label for="pharmacies_new" class="ms-2">الصيدليات المناوبة</label>
+                                </div>
+                                <div class="page-checkbox">
+                                    <input type="checkbox" name="pages" value="dashboard" id="dashboard_new">
+                                    <label for="dashboard_new" class="ms-2">لوحة المستخدم</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- معاينة الرسالة -->
+                        <div class="mb-3">
+                            <label class="form-label">معاينة الرسالة</label>
+                            <div id="tickerPreview" class="ticker-preview" style="background-color: #11998e; color: #ffffff; font-size: 16px;">
+                                <div class="ticker-text">مرحباً بكم في دليل محلات الحسينية</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-admin">إضافة الرسالة</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // معاينة الرسالة أثناء الكتابة
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.querySelector('textarea[name="message"]');
+            const backgroundColorInput = document.querySelector('input[name="background_color"]');
+            const textColorInput = document.querySelector('input[name="text_color"]');
+            const fontSizeInput = document.querySelector('input[name="font_size"]');
+            const preview = document.getElementById('tickerPreview');
+            const previewText = preview.querySelector('.ticker-text');
+
+            function updatePreview() {
+                const message = messageInput.value || 'مرحباً بكم في دليل محلات الحسينية';
+                const backgroundColor = backgroundColorInput.value;
+                const textColor = textColorInput.value;
+                const fontSize = fontSizeInput.value + 'px';
+
+                previewText.textContent = message;
+                preview.style.backgroundColor = backgroundColor;
+                preview.style.color = textColor;
+                preview.style.fontSize = fontSize;
+            }
+
+            messageInput.addEventListener('input', updatePreview);
+            backgroundColorInput.addEventListener('change', updatePreview);
+            textColorInput.addEventListener('change', updatePreview);
+            fontSizeInput.addEventListener('input', updatePreview);
+
+            // منطق اختيار الصفحات
+            const allCheckbox = document.getElementById('all_new');
+            const pageCheckboxes = document.querySelectorAll('input[name="pages"]:not([value="all"])');
+
+            allCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    pageCheckboxes.forEach(checkbox => checkbox.checked = false);
+                }
+            });
+
+            pageCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        allCheckbox.checked = false;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block title %}الصيدليات المناوبة - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-heavy: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-medium);
+            padding: 40px 0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+
+        .main-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-heavy);
+            margin-bottom: 30px;
+        }
+
+        .today-pharmacy {
+            background: var(--success-gradient);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .today-pharmacies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .today-pharmacy-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .today-pharmacy-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .pharmacy-number {
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: rgba(255,255,255,0.9);
+            color: #e74c3c;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .today-pharmacy::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            animation: move 20s linear infinite;
+        }
+
+        @keyframes move {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(50px) translateY(50px); }
+        }
+
+        .today-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .today-info {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .schedule-section {
+            margin-top: 40px;
+        }
+
+        .schedule-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .schedule-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--success-gradient);
+            border-radius: 2px;
+        }
+
+        .pharmacy-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pharmacy-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--success-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .pharmacy-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .pharmacy-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .pharmacy-card.today {
+            border: 2px solid #38ef7d;
+            background: linear-gradient(135deg, rgba(56, 239, 125, 0.05) 0%, rgba(17, 153, 142, 0.05) 100%);
+        }
+
+        .pharmacy-date {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .pharmacy-date.today {
+            background: var(--success-gradient);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pharmacy-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pharmacy-icon {
+            background: var(--success-gradient);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-size: 1.3rem;
+        }
+
+        .pharmacy-info {
+            color: var(--text-light);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pharmacy-info i {
+            margin-left: 12px;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            width: 20px;
+        }
+
+        .no-pharmacy {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .no-pharmacy-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 20px;
+            padding: 12px 25px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        .back-btn i {
+            margin-left: 8px;
+        }
+
+        .emergency-notice {
+            background: var(--warning-gradient);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .main-container {
+                margin: 10px;
+                padding: 25px 20px;
+            }
+
+            .today-pharmacy {
+                padding: 20px;
+            }
+
+            .today-title {
+                font-size: 1.8rem;
+            }
+
+            .pharmacy-name {
+                font-size: 1.2rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pharmacy-icon {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- هيدر الصفحة -->
+        <div class="page-header">
+            <div class="container">
+                <h1 class="page-title">
+                    <i class="bi bi-heart-pulse-fill"></i> الصيدليات المناوبة
+                </h1>
+                <p class="page-subtitle">جدول مناوبات الصيدليات في منطقة الحسينية</p>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="main-container">
+                <!-- تنبيه الطوارئ -->
+                <!-- عرض التوقيت الحالي -->
+                <div class="current-time-display" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                    <i class="bi bi-clock"></i>
+                    <strong>التوقيت الحالي (دمشق):</strong>
+                    <span id="current-time">
+                        {% if damascus_time %}
+                            {{ damascus_time.strftime('%A, %d %B %Y - %I:%M %p') }}
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="emergency-notice">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>ملاحظة هامة:</strong> في حالات الطوارئ، يرجى الاتصال بالرقم 110 أو التوجه إلى أقرب مستشفى
+                </div>
+
+                <!-- صيدليات اليوم -->
+                {% if today_pharmacies %}
+                <div class="today-pharmacy">
+                    {% if today_pharmacies|length > 1 %}
+                    <h2 class="today-title">
+                        <i class="bi bi-calendar-check-fill"></i> الصيدليات المناوبة اليوم ({{ today_pharmacies|length }} صيدليات)
+                    </h2>
+                    <div class="today-pharmacies-grid">
+                        {% for pharmacy in today_pharmacies %}
+                        <div class="today-pharmacy-card">
+                            <div class="pharmacy-number">{{ loop.index }}</div>
+                            <div class="today-info">
+                                <strong>{{ pharmacy[1] }}</strong>
+                            </div>
+                            <div class="today-info">
+                                <i class="bi bi-geo-alt-fill"></i> {{ pharmacy[2] }}
+                            </div>
+                            <div class="today-info">
+                                <i class="bi bi-telephone-fill"></i> {{ pharmacy[3] }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <h2 class="today-title">
+                        <i class="bi bi-calendar-check-fill"></i> صيدلية اليوم
+                    </h2>
+                    <div class="today-info">
+                        <strong>{{ today_pharmacies[0][1] }}</strong>
+                    </div>
+                    <div class="today-info">
+                        <i class="bi bi-geo-alt-fill"></i> {{ today_pharmacies[0][2] }}
+                    </div>
+                    <div class="today-info">
+                        <i class="bi bi-telephone-fill"></i> {{ today_pharmacies[0][3] }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="no-pharmacy">
+                    <div class="no-pharmacy-icon">
+                        <i class="bi bi-calendar-x"></i>
+                    </div>
+                    <h3>لا توجد صيدلية مناوبة اليوم</h3>
+                    <p>يرجى مراجعة الجدول أدناه لمعرفة مواعيد المناوبة</p>
+                </div>
+                {% endif %}
+
+                <!-- جدول المناوبات -->
+                <div class="schedule-section">
+                    <h3 class="schedule-title">جدول المناوبات للأيام القادمة</h3>
+
+                    {% if upcoming_pharmacies %}
+                        {% for pharmacy in upcoming_pharmacies %}
+                        <div class="pharmacy-card {% if loop.first and today_pharmacy and pharmacy[1] == today_pharmacy[1] %}today{% endif %}">
+                            <div class="pharmacy-date {% if loop.first and today_pharmacy and pharmacy[1] == today_pharmacy[1] %}today{% endif %}">
+                                <i class="bi bi-calendar-day-fill"></i>
+                                {% if pharmacy[4] %}
+                                    {% if pharmacy[4].__class__.__name__ == 'str' %}
+                                        <span id="date-{{ loop.index }}">{{ pharmacy[4] }}</span>
+                                    {% else %}
+                                        <span id="date-{{ loop.index }}">{{ pharmacy[4].strftime('%Y-%m-%d') }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    غير محدد
+                                {% endif %}
+                            </div>
+
+                            <div class="pharmacy-name">
+                                <div class="pharmacy-icon">
+                                    <i class="bi bi-capsule"></i>
+                                </div>
+                                {{ pharmacy[1] }}
+                            </div>
+
+                            <div class="pharmacy-info">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ pharmacy[2] }}
+                            </div>
+
+                            {% if pharmacy[3] %}
+                            <div class="pharmacy-info">
+                                <i class="bi bi-telephone-fill"></i>
+                                {{ pharmacy[3] }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-pharmacy">
+                            <div class="no-pharmacy-icon">
+                                <i class="bi bi-calendar-x"></i>
+                            </div>
+                            <h4>لا توجد مناوبات مجدولة</h4>
+                            <p>يرجى المراجعة لاحقاً أو الاتصال بالإدارة</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- أزرار التنقل -->
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('index') }}" class="back-btn me-3">
+                        <i class="bi bi-arrow-right"></i> العودة للرئيسية
+                    </a>
+                    <button class="btn btn-light btn-lg" onclick="window.print()">
+                        <i class="bi bi-printer"></i> طباعة الجدول
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endblock %}
+
+{% block scripts %}
+<script>
+    // تأثيرات التحميل
+    document.addEventListener('DOMContentLoaded', function() {
+        const pharmacyCards = document.querySelectorAll('.pharmacy-card');
+
+        pharmacyCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'all 0.6s ease-out';
+
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 150);
+        });
+
+        // تحديث الوقت الحالي بتوقيت دمشق
+        function updateDateTime() {
+            // الحصول على التوقيت الحالي من الخادم (بتوقيت دمشق)
+            fetch('/api/current-time')
+            .then(response => response.json())
+            .then(data => {
+                if (data.datetime) {
+                    const timeDisplay = document.getElementById('current-time');
+                    if (timeDisplay) {
+                        timeDisplay.textContent = data.datetime;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('خطأ في الحصول على التوقيت:', error);
+                // استخدام التوقيت المحلي كبديل
+                const now = new Date();
+                const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+                const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                
+                const dayName = arabicDays[now.getDay()];
+                const day = now.getDate();
+                const month = arabicMonths[now.getMonth()];
+                const year = now.getFullYear();
+                const hours = now.getHours();
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'مساءً' : 'صباحاً';
+                const displayHours = hours % 12 || 12;
+
+                const dateTimeString = `${dayName}, ${day} ${month} ${year} - ${displayHours}:${minutes} ${ampm}`;
+
+                const timeDisplay = document.getElementById('current-time');
+                if (timeDisplay) {
+                    timeDisplay.textContent = dateTimeString;
+                }
+            });
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 60000); // تحديث كل دقيقة
+
+        // تحويل التواريخ إلى العربية
+        function convertToArabicDate(dateString) {
+            const date = new Date(dateString);
+            const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+            if (isNaN(date.getTime())) return dateString;
+
+            const dayName = arabicDays[date.getDay()];
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+
+            return `${dayName} ${day}/${month}/${year}`;
+        }
+
+        // تطبيق التحويل على جميع التواريخ
+        document.querySelectorAll('[id^="date-"]').forEach(element => {
+            const originalDate = element.textContent;
+            if (originalDate && originalDate !== 'غير محدد') {
+                element.textContent = convertToArabicDate(originalDate);
+            }
+        });
+    });
+
+    // إضافة الدوال المفقودة لإنهاء أخطاء JavaScript
+    function showNotifications() {
+        // يمكن تطوير هذه الدالة لاحقاً
+        console.log('عرض الإشعارات');
+    }
+
+    function showScheduleTable() {
+        // يمكن تطوير هذه الدالة لاحقاً
+        console.log('عرض جدول المواعيد');
+    }
+</script>
+{% endblock %}

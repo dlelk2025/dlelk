@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النسخ الاحتياطي - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            --info-gradient: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 40px;
+            margin: 30px auto;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .btn-admin {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            color: white;
+        }
+
+        .btn-success-admin {
+            background: var(--success-gradient);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .btn-danger-admin {
+            background: var(--danger-gradient);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .btn-info-admin {
+            background: var(--info-gradient);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+
+        .backup-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .backup-card.database {
+            border-left-color: #38ef7d;
+        }
+
+        .backup-card.full {
+            border-left-color: #667eea;
+        }
+
+        .backup-card.restore {
+            border-left-color: #ff6b6b;
+        }
+
+        .backup-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #38ef7d;
+            background: rgba(56, 239, 125, 0.1);
+            transform: scale(1.02);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .feature-icon.database {
+            background: var(--success-gradient);
+        }
+
+        .feature-icon.full {
+            background: var(--primary-gradient);
+        }
+
+        .feature-icon.restore {
+            background: var(--danger-gradient);
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .backup-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .backup-history {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .backup-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-container">
+            <!-- الهيدر -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-shield-check"></i> النسخ الاحتياطي والاستعادة المتقدم</h2>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right"></i> العودة للوحة الإدارة
+                </a>
+            </div>
+
+            <!-- الرسائل -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- إحصائيات سريعة -->
+            <div class="backup-stats">
+                <div class="stat-card">
+                    <div class="stat-number text-success" id="dbBackupCount">-</div>
+                    <div class="text-muted">نسخ قاعدة البيانات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number text-primary" id="fullBackupCount">-</div>
+                    <div class="text-muted">النسخ الشاملة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number text-info" id="totalSize">-</div>
+                    <div class="text-muted">الحجم الإجمالي</div>
+                </div>
+            </div>
+
+            <!-- نسخة احتياطية لقاعدة البيانات -->
+            <div class="backup-card database">
+                <div class="feature-icon database">
+                    <i class="bi bi-database"></i>
+                </div>
+                <h4><i class="bi bi-download"></i> نسخة احتياطية لقاعدة البيانات</h4>
+                <p class="text-muted">إنشاء نسخة احتياطية من قاعدة البيانات فقط (سريع ومناسب للنسخ المتكررة)</p>
+                <a href="{{ url_for('create_backup') }}" class="btn btn-success-admin">
+                    <i class="bi bi-database-down"></i> إنشاء نسخة قاعدة البيانات
+                </a>
+            </div>
+
+            <!-- نسخة احتياطية شاملة -->
+            <div class="backup-card full">
+                <div class="feature-icon full">
+                    <i class="bi bi-archive"></i>
+                </div>
+                <h4><i class="bi bi-file-zip"></i> نسخة احتياطية شاملة</h4>
+                <p class="text-muted">إنشاء نسخة احتياطية شاملة تشمل جميع ملفات الموقع (قاعدة البيانات، القوالب، الملفات الثابتة)</p>
+                <a href="{{ url_for('create_full_backup') }}" class="btn btn-info-admin">
+                    <i class="bi bi-archive-fill"></i> إنشاء نسخة شاملة
+                </a>
+            </div>
+
+            <!-- قائمة النسخ الاحتياطية -->
+            <div class="backup-card">
+                <h4><i class="bi bi-folder"></i> النسخ الاحتياطية المتاحة</h4>
+                <div class="backup-history">
+                    <div id="backupsList">
+                        <div class="text-center py-3">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">جارٍ التحميل...</span>
+                            </div>
+                            <p class="mt-2">جارٍ تحميل قائمة النسخ الاحتياطية...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- استعادة نسخة احتياطية -->
+            <div class="backup-card restore">
+                <div class="feature-icon restore">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </div>
+                <h4><i class="bi bi-upload"></i> استعادة نسخة احتياطية</h4>
+                <p class="text-muted">رفع نسخة احتياطية واستعادة البيانات منها</p>
+                
+                <!-- استعادة قاعدة البيانات -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>استعادة قاعدة البيانات (.db)</h6>
+                        <form action="{{ url_for('restore_backup') }}" method="post" enctype="multipart/form-data" id="restoreDbForm">
+                            <div class="upload-area" id="uploadAreaDb">
+                                <i class="bi bi-database-up display-4 text-muted"></i>
+                                <h6 class="mt-3">قاعدة البيانات فقط</h6>
+                                <p class="text-muted">اسحب ملف .db هنا</p>
+                                <input type="file" name="backup_file" id="backupFileDb" accept=".db" style="display: none;">
+                                <button type="button" class="btn btn-outline-success" onclick="document.getElementById('backupFileDb').click()">
+                                    <i class="bi bi-folder-open"></i> اختيار ملف .db
+                                </button>
+                            </div>
+                            
+                            <div class="mt-3" id="selectedFileDb" style="display: none;">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-file-earmark-check"></i>
+                                    <span id="fileNameDb"></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Db')">إلغاء</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-success-admin" onclick="return confirm('هل أنت متأكد من استعادة قاعدة البيانات؟')">
+                                    <i class="bi bi-database-up"></i> استعادة قاعدة البيانات
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>استعادة النسخة الشاملة (.zip)</h6>
+                        <form action="{{ url_for('restore_full_backup') }}" method="post" enctype="multipart/form-data" id="restoreFullForm">
+                            <div class="upload-area" id="uploadAreaFull">
+                                <i class="bi bi-archive-up display-4 text-muted"></i>
+                                <h6 class="mt-3">النسخة الشاملة</h6>
+                                <p class="text-muted">اسحب ملف .zip هنا</p>
+                                <input type="file" name="backup_file" id="backupFileFull" accept=".zip" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('backupFileFull').click()">
+                                    <i class="bi bi-folder-open"></i> اختيار ملف .zip
+                                </button>
+                            </div>
+                            
+                            <div class="mt-3" id="selectedFileFull" style="display: none;">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-file-earmark-check"></i>
+                                    <span id="fileNameFull"></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Full')">إلغاء</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-info-admin" onclick="return confirm('هل أنت متأكد من استعادة النسخة الشاملة؟ سيتم استبدال جميع الملفات!')">
+                                    <i class="bi bi-archive-up"></i> استعادة النسخة الشاملة
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>تحذير:</strong> سيتم إنشاء نسخة احتياطية من الملفات الحالية قبل الاستعادة.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // تحميل قائمة النسخ الاحتياطية
+        function loadBackups() {
+            fetch('/admin/list-backups')
+                .then(response => response.json())
+                .then(data => {
+                    const backupsList = document.getElementById('backupsList');
+                    let dbCount = 0, fullCount = 0, totalSize = 0;
+                    
+                    if (data.backups && data.backups.length > 0) {
+                        let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>النوع</th><th>اسم الملف</th><th>الحجم</th><th>التاريخ</th><th>الإجراءات</th></tr></thead><tbody>';
+                        
+                        data.backups.forEach(backup => {
+                            const isFullBackup = backup.filename.includes('full_backup');
+                            const badgeClass = isFullBackup ? 'bg-primary' : 'bg-success';
+                            const badgeText = isFullBackup ? 'شامل' : 'قاعدة بيانات';
+                            const iconClass = isFullBackup ? 'bi-archive-fill' : 'bi-database-fill';
+                            
+                            if (isFullBackup) fullCount++;
+                            else dbCount++;
+                            
+                            // حساب الحجم الإجمالي (تحويل من KB إلى MB)
+                            const sizeInKB = parseFloat(backup.size.replace(' KB', ''));
+                            totalSize += sizeInKB;
+                            
+                            html += `
+                                <tr>
+                                    <td><span class="badge ${badgeClass}"><i class="${iconClass}"></i> ${badgeText}</span></td>
+                                    <td><i class="bi bi-file-earmark-zip"></i> ${backup.filename}</td>
+                                    <td>${backup.size}</td>
+                                    <td>${backup.date}</td>
+                                    <td>
+                                        <a href="/admin/download-backup/${backup.filename}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="bi bi-download"></i> تحميل
+                                        </a>
+                                        <a href="/admin/delete-backup/${backup.filename}" class="btn btn-sm btn-outline-danger" 
+                                           onclick="return confirm('هل أنت متأكد من حذف هذه النسخة الاحتياطية؟')">
+                                            <i class="bi bi-trash"></i> حذف
+                                        </a>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += '</tbody></table></div>';
+                        backupsList.innerHTML = html;
+                        
+                        // تحديث الإحصائيات
+                        document.getElementById('dbBackupCount').textContent = dbCount;
+                        document.getElementById('fullBackupCount').textContent = fullCount;
+                        document.getElementById('totalSize').textContent = totalSize > 1024 ? 
+                            (totalSize / 1024).toFixed(1) + ' MB' : totalSize.toFixed(1) + ' KB';
+                        
+                    } else {
+                        backupsList.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-folder-x display-4 text-muted"></i>
+                                <h5 class="mt-3">لا توجد نسخ احتياطية</h5>
+                                <p class="text-muted">قم بإنشاء نسخة احتياطية أولاً</p>
+                            </div>
+                        `;
+                        
+                        // تعيين الإحصائيات إلى صفر
+                        document.getElementById('dbBackupCount').textContent = '0';
+                        document.getElementById('fullBackupCount').textContent = '0';
+                        document.getElementById('totalSize').textContent = '0 KB';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading backups:', error);
+                    document.getElementById('backupsList').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            خطأ في تحميل قائمة النسخ الاحتياطية
+                        </div>
+                    `;
+                });
+        }
+
+        // تحميل القائمة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', loadBackups);
+
+        // التعامل مع رفع الملفات لقاعدة البيانات
+        setupFileUpload('Db', '.db');
+        
+        // التعامل مع رفع الملفات للنسخة الشاملة
+        setupFileUpload('Full', '.zip');
+
+        function setupFileUpload(type, allowedExtension) {
+            const uploadArea = document.getElementById(`uploadArea${type}`);
+            const fileInput = document.getElementById(`backupFile${type}`);
+            const selectedFile = document.getElementById(`selectedFile${type}`);
+            const fileName = document.getElementById(`fileName${type}`);
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.endsWith(allowedExtension)) {
+                        fileInput.files = files;
+                        showSelectedFile(file.name, type);
+                    } else {
+                        alert(`يرجى اختيار ملف بامتداد ${allowedExtension}`);
+                    }
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    if (file.name.endsWith(allowedExtension)) {
+                        showSelectedFile(file.name, type);
+                    } else {
+                        alert(`يرجى اختيار ملف بامتداد ${allowedExtension}`);
+                        e.target.value = '';
+                    }
+                }
+            });
+        }
+
+        function showSelectedFile(name, type) {
+            document.getElementById(`fileName${type}`).textContent = name;
+            document.getElementById(`selectedFile${type}`).style.display = 'block';
+        }
+
+        function clearFile(type) {
+            document.getElementById(`backupFile${type}`).value = '';
+            document.getElementById(`selectedFile${type}`).style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site_settings.site_title or 'دليل محلات الحسينية' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary_gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary_gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent_gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark_gradient: linear-gradient(135deg, #232526 0%, #414345 100%);
+            --success_gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning_gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --primary_color: #667eea;
+            --secondary_color: #764ba2;
+            --text_dark: #2c3e50;
+            --text_light: #7f8c8d;
+            --bg_light: #f8f9fa;
+            --shadow_light: 0 2px 10px rgba(0,0,0,0.05);
+            --shadow_medium: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow_heavy: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary_gradient);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* شريط الإشعارات المتحرك */
+        .notification-bar {
+            background: var(--secondary_gradient);
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow_medium);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .notification-carousel {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+
+        .notification-item {
+            display: none;
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 25px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.5s ease;
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .notification-item.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+            position: relative;
+        }
+
+        .notification-controls {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .notification-indicators {
+            display: flex;
+            gap: 8px;
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .indicator.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .indicator:hover {
+            background: rgba(255,255,255,0.8);
+        }
+
+        /* إخفاء التحكم في الشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .nav-btn {
+                display: none;
+            }
+
+            .notification-controls {
+                bottom: 8px;
+            }
+        }
+
+        /* الشريط المتحرك المحسن */
+        .ticker-container {
+            background: var(--dark_gradient);
+            color: white;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            height: 50px;
+            line-height: 50px;
+            font-weight: 500;
+            box-shadow: var(--shadow_medium);
+        }
+
+        .ticker-content {
+            display: inline-block;
+            animation: scroll-right 40s linear infinite;
+            padding-right: 100%;
+            font-size: 1.1rem;
+        }
+
+        @keyframes scroll-right {
+            0% { transform: translate3d(-100%, 0, 0); }
+            100% { transform: translate3d(100%, 0, 0); }
+        }
+
+        /* الهيدر الحديث */
+        .modern-header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow_medium);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--primary_gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: var(--text_dark) !important;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--primary_color) !important;
+            transform: translateY(-2px);
+        }
+
+        .btn-login {
+            background: var(--primary_gradient);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow_medium);
+            color: white;
+        }
+
+        /* قسم البحث الحديث */
+        .hero-search {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px;
+            margin: 50px 0;
+            box-shadow: var(--shadow_heavy);
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-search::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(102,126,234,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--primary_gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text_light);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .search-form {
+            position: relative;
+            z-index: 2;
+        }
+
+        .search-input {
+            border: none;
+            border-radius: 25px;
+            padding: 18px 30px;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow_light);
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow_medium);
+            border: 2px solid var(--primary_color);
+        }
+
+        .btn-search {
+            background: var(--primary_gradient);
+            border: none;
+            border-radius: 25px;
+            padding: 18px 35px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow_medium);
+            color: white;
+        }
+
+        /* البطاقات الحديثة */
+        .modern-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: var(--shadow_light);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow_heavy);
+        }
+
+        .modern-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary_gradient);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text_dark);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary_gradient);
+            border-radius: 2px;
+        }
+
+        /* بطاقات المحلات */
+        .store-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow_light);
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary_gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .store-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow_heavy);
+        }
+
+        .store-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .store-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text_dark);
+            margin-bottom: 12px;
+        }
+
+        .store-category {
+            background: var(--primary_gradient);
+            color: white;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .store-info {
+            color: var(--text_light);
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .store-info i {
+            margin-left: 8px;
+            color: var(--primary_color);
+        }
+
+        .rating-stars {
+            color: #ffc107;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .rating-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        .rating-modal .rating-input {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .rating-modal .star-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .rating-modal .star-btn:hover,
+        .rating-modal .star-btn.active {
+            color: #ffc107;
+        }
+
+        /* شبكة التصنيفات */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text_dark);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow_light);
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary_gradient);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .category-card:hover::before {
+            left: 0;
+        }
+
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow_heavy);
+            color: white;
+        }
+
+        .category-card > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary_color);
+            transition: color 0.3s ease;
+        }
+
+        .category-card:hover .category-icon {
+            color: white;
+        }
+
+        .category-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .category-desc {
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        /* صيدلية اليوم */
+        .pharmacy-highlight {
+            background: var(--success_gradient);
+            color: white;
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pharmacy-highlight::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            animation: move 20s linear infinite;
+        }
+
+        @keyframes move {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(50px) translateY(50px); }
+        }
+
+        /* أنماط carousel الصيدليات في الصفحة الرئيسية */
+        .pharmacy-carousel {
+            position: relative;
+            z-index: 2;
+        }
+
+        .carousel-container-main {
+            position: relative;
+            height: 160px;
+            overflow: hidden;
+        }
+
+        .pharmacy-content {
+            padding: 15px 0;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s ease;
+        }
+
+        .pharmacy-content.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .pharmacy-number {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .pharmacy-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .pharmacy-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .pharmacy-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .pharmacy-indicators {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pharmacy-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pharmacy-indicator.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            .pharmacy-content {
+                font-size: 0.9em;
+                height: 140px;
+            }
+
+            .pharmacy-controls {
+                bottom: 10px;
+                gap: 15px;
+            }
+
+            .pharmacy-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+        }
+
+        .pharmacy-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .pharmacy-info {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* الفوتر الحديث */
+        .modern-footer {
+            background: var(--dark_gradient);
+            color: white;
+            padding: 60px 0 30px;
+            margin-top: 80px;
+            position: relative;
+        }
+
+        .modern-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary_gradient);
+        }
+
+        .footer-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .footer-link {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .footer-link:hover {
+            color: white;
+        }
+
+        /* تحسينات الموبايل */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-search {
+                padding: 30px 20px;
+                margin: 20px 10px;
+            }
+
+            .modern-card {
+                padding: 25px 20px;
+                margin: 20px 10px;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* تأثيرات التحميل */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط الإشعارات المتحرك -->
+    {% if notifications %}
+    <div class="notification-bar" id="notificationBar">
+        <div class="notification-carousel">
+            {% for notification in notifications %}
+            <div class="notification-item {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}">
+                <i class="bi bi-bell-fill"></i> {{ notification[1] }}: {{ notification[2] }}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if notifications|length > 1 %}
+        <div class="notification-controls">
+            <button class="nav-btn prev-btn" onclick="previousNotification()">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="notification-indicators">
+                {% for notification in notifications %}
+                <span class="indicator {% if loop.first %}active{% endif %}" onclick="goToNotification({{ loop.index0 }})"></span>
+                {% endfor %}
+            </div>
+            <button class="nav-btn next-btn" onclick="nextNotification()">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- الشريط المتحرك -->
+    {% if ticker_messages %}
+    <div class="ticker-container">
+        <div class="ticker-content">
+            {% for message in ticker_messages %}
+            <i class="bi bi-megaphone-fill"></i> {{ message[1] }} • 
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- الهيدر الحديث -->
+    <header class="modern-header">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="bi bi-shop"></i> {{ site_settings.site_title or 'دليل محلات الحسينية' }}
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="bi bi-house-fill"></i> الرئيسية
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('duty_pharmacies') }}">
+                                <i class="bi bi-heart-pulse-fill"></i> الصيدليات المناوبة
+                            </a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav">
+                        {% if session.user_id %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> لوحة التحكم
+                            </a>
+                        </li>
+                        {% if session.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="bi bi-gear-fill"></i> الإدارة
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> تسجيل خروج
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-login me-2" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i> تسجيل دخول
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">التسجيل</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- صيدلية اليوم -->
+        {% if today_pharmacies and site_settings.get('show_pharmacy_ticker', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <div class="pharmacy-highlight">
+                {% if today_pharmacies|length > 1 %}
+                <h2 class="pharmacy-title">
+                    <i class="bi bi-heart-pulse-fill"></i> الصيدليات المناوبة اليوم ({{ today_pharmacies|length }} صيدليات)
+                </h2>
+                <div class="pharmacy-carousel" id="mainPharmacyCarousel">
+                    <div class="carousel-container-main">
+                        {% for pharmacy in today_pharmacies %}
+                        <div class="pharmacy-content {% if loop.first %}active{% endif %}">
+                            <div class="pharmacy-number">{{ loop.index }}/{{ today_pharmacies|length }}</div>
+                            <div class="pharmacy-info">
+                                <strong>{{ pharmacy[1] }}</strong>
+                            </div>
+                            <div class="pharmacy-info">
+                                <i class="bi bi-geo-alt-fill"></i> {{ pharmacy[2] }}
+                            </div>
+                            <div class="pharmacy-info">
+                                <i class="bi bi-telephone-fill"></i> {{ pharmacy[3] }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="pharmacy-controls">
+                        <button class="pharmacy-btn prev" onclick="previousMainPharmacy()">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <div class="pharmacy-indicators">
+                            {% for pharmacy in today_pharmacies %}
+                            <span class="pharmacy-indicator {% if loop.first %}active{% endif %}" onclick="showMainPharmacy({{ loop.index0 }})"></span>
+                            {% endfor %}
+                        </div>
+                        <button class="pharmacy-btn next" onclick="nextMainPharmacy()">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <h2 class="pharmacy-title">
+                    <i class="bi bi-heart-pulse-fill"></i> صيدلية اليوم المناوبة
+                </h2>
+                <div class="pharmacy-info">
+                    <strong>{{ today_pharmacies[0][1] }}</strong>
+                </div>
+                <div class="pharmacy-info">
+                    <i class="bi bi-geo-alt-fill"></i> {{ today_pharmacies[0][2] }}
+                </div>
+                <div class="pharmacy-info">
+                    <i class="bi bi-telephone-fill"></i> {{ today_pharmacies[0][3] }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- قسم البحث البطولي -->
+        <div class="hero-search fade-in">
+            <h1 class="hero-title">اكتشف أفضل المحلات في الحسينية</h1>
+            <p class="hero-subtitle">دليلك الشامل للوصول إلى أفضل المحلات والخدمات في منطقتك</p>
+
+            <form action="{{ url_for('search') }}" method="GET" class="search-form">
+                <div class="row g-3 justify-content-center">
+                    <div class="col-md-5">
+                        <input type="text" name="q" class="form-control search-input" 
+                               placeholder="ابحث عن محل، خدمة، أو منتج...">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-control search-input" name="category">
+                            <option value="">جميع التصنيفات</option>
+                            {% for category in all_categories %}
+                            <option value="{{ category[0] }}">{{ category[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-search w-100">
+                            <i class="bi bi-search"></i> بحث
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- التصنيفات -->
+        {% if categories and site_settings.get('show_categories_grid', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <h2 class="section-title">تصفح التصنيفات</h2>
+            <div class="categories-grid">
+                {% for category in categories %}
+                <a href="{{ url_for('search') }}?category={{ category[0] }}" class="category-card">
+                    <div class="category-icon">
+                        <i class="bi bi-shop"></i>
+                    </div>
+                    <h5 class="category-title">{{ category[1] }}</h5>
+                    <p class="category-desc">{{ category[2] or 'اكتشف جميع المحلات في هذا التصنيف' }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- أحدث المحلات -->
+        {% if latest_stores and site_settings.get('show_latest_stores', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <h2 class="section-title">أحدث المحلات المضافة</h2>
+            <div class="row">
+                {% for store in latest_stores %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="store-card">
+                        <div class="store-name">{{ store[1] }}</div>
+                        {% if store[8] %}
+                        <div class="store-category">
+                            <a href="{{ url_for('search') }}?category={{ store[2] }}" style="color: white; text-decoration: none;">
+                                <i class="bi bi-tag-fill"></i> {{ store[8] }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="store-info">
+                            <i class="bi bi-geo-alt-fill"></i> {{ store[3] }}
+                        </div>
+                        {% if store[4] %}
+                        <div class="store-info">
+                            <i class="bi bi-telephone-fill"></i> {{ store[4] }}
+                        </div>
+                        {% endif %}
+                        <div class="rating-section">
+                            <div class="rating-stars">
+                                {% if store[10] and store[10] > 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < store[10] %}
+                                        <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                        <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
+                                {% else %}
+                                    {% for i in range(5) %}
+                                    <i class="bi bi-star"></i>
+                                    {% endfor %}
+                                    <small class="text-muted">غير مقيم</small>
+                                {% endif %}
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- أكثر المحلات بحثاً -->
+        {% if popular_stores and site_settings.get('show_most_searched_stores', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <h2 class="section-title">الأكثر بحثاً</h2>
+            <div class="row">
+                {% for store in popular_stores %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="store-card">
+                        <div class="store-name">{{ store[1] }}</div>
+                        {% if store[8] %}
+                        <div class="store-category">
+                            <a href="{{ url_for('search') }}?category={{ store[2] }}" style="color: white; text-decoration: none;">
+                                <i class="bi bi-tag-fill"></i> {{ store[8] }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="store-info">
+                            <i class="bi bi-geo-alt-fill"></i> {{ store[3] }}
+                        </div>
+                        {% if store[4] %}
+                        <div class="store-info">
+                            <i classbi bi-telephone-fill"></i> {{ store[4] }}
+                        </div>
+                        {% endif %}
+                        <div class="rating-section">
+                            <div class="rating-stars">
+                                {% if store[10] and store[10] > 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < store[10] %}
+                                        <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                        <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
+                                {% else %}
+                                    {% for i in range(5) %}
+                                    <i class="bi bi-star"></i>
+                                    {% endfor %}
+                                    <small class="text-muted">غير مقيم</small>
+                                {% endif %}
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- أكثر المحلات تقييماً -->
+        {% if top_rated_stores and site_settings.get('show_top_rated_stores', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <h2 class="section-title">الأعلى تقييماً</h2>
+            <div class="row">
+                {% for store in top_rated_stores %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="store-card">
+                        <div class="store-name">{{ store[1] }}</div>
+                        {% if store[8] %}
+                        <div class="store-category">
+                            <a href="{{ url_for('search') }}?category={{ store[2] }}" style="color: white; text-decoration: none;">
+                                <i class="bi bi-tag-fill"></i> {{ store[8] }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="store-info">
+                            <i class="bi bi-geo-alt-fill"></i> {{ store[3] }}
+                        </div>
+                        {% if store[4] %}
+                        <div class="store-info">
+                            <i class="bi bi-telephone-fill"></i> {{ store[4] }}
+                        </div>
+                        {% endif %}
+                        <div class="rating-section">
+                            <div class="rating-stars">
+                                {% if store[10] and store[10] > 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < store[10] %}
+                                        <i class="bi bi-star-fill"></i>
+                                        {% else %}
+                                        <i class="bi bi-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
+                                {% else %}
+                                    {% for i in range(5) %}
+                                    <i class="bi bi-star"></i>
+                                    {% endfor %}
+                                    <small class="text-muted">غير مقيم</small>
+                                {% endif %}
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- الخدمات الهامة -->
+        {% if site_settings.get('show_important_services', '1') == '1' %}
+        <div class="modern-card slide-up">
+            <h2 class="section-title">الخدمات الهامة</h2>
+            <p class="text-center text-muted mb-4">الخدماتالأساسية والطوارئ في منطقة الحسينية</p>
+            <div class="text-center">
+                <a href="{{ url_for('important_services') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-telephone-fill"></i> عرض جميع الخدمات
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- الفوتر الحديث -->
+    <footer class="modern-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="footer-title">دليل محلات الحسينية</h5>
+                    <p>{{ site_settings.site_description or 'دليل شامل لجميع المحلات والخدمات في منطقة الحسينية. نساعدك في العثور على ما تحتاجه بسهولة وسرعة.' }}</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="footer-title">روابط سريعة</h6>
+                    <a href="{{ url_for('index') }}" class="footer-link">الرئيسية</a>
+                    <a href="{{ url_for('duty_pharmacies') }}" class="footer-link">الصيدليات المناوبة</a>
+                    <a href="{{ url_for('search') }}" class="footer-link">البحث</a>
+                    {% if session.user_id %}
+                    <a href="{{ url_for('dashboard') }}" class="footer-link">لوحة التحكم</a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="footer-link">تسجيل دخول</a>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <h6 class="footer-title">تواصل معنا</h6>
+                    <p><i class="bi bi-telephone-fill"></i> {{ site_settings.get('contact_phone', '0938074766') }}</p>
+                    <p><i class="bi bi-envelope-fill"></i> {{ site_settings.get('contact_email', 'dlelk2023@gmail.com') }}</p>
+                    <p><i class="bi bi-geo-alt-fill"></i> {{ site_settings.get('contact_address', 'ريف دمشق الحسينية') }}</p>
+                    {% if site_settings.get('facebook_link') %}
+                    <p><i class="bi bi-facebook"></i> <a href="{{ site_settings.facebook_link }}" target="_blank" class="text-light">فيسبوك</a></p>
+                    {% endif %}
+                    {% if site_settings.get('whatsapp_number') %}
+                    <p><i class="bi bi-whatsapp"></i> واتساب: {{ site_settings.whatsapp_number }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.2);">
+            <div class="text-center">
+                <p>دليلك في الحسينية ريف دمشق 2025</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- نافذة التقييم -->
+    <div class="modal fade" id="ratingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content rating-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title">تقييم المحل</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h6 id="storeNameForRating"></h6>
+                    <p>اختر تقييمك من 1 إلى 5 نجوم</p>
+                    <div class="rating-input">
+                        <button type="button" class="star-btn" data-rating="1">★</button>
+                        <button type="button" class="star-btn" data-rating="2">★</button>
+                        <button type="button" class="star-btn" data-rating="3">★</button>
+                        <button type="button" class="star-btn" data-rating="4">★</button>
+                        <button type="button" class="star-btn" data-rating="5">★</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="submitRating">تقييم</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // التحكم بصيدليات الصفحة الرئيسية
+        let currentMainPharmacyIndex = 0;
+        let mainPharmacyInterval;
+        let totalMainPharmacies = 0;
+
+        function initMainPharmacyCarousel() {
+            const pharmacyContents = document.querySelectorAll('#mainPharmacyCarousel .pharmacy-content');
+            const indicators = document.querySelectorAll('#mainPharmacyCarousel .pharmacy-indicator');
+            totalMainPharmacies = pharmacyContents.length;
+
+            if (totalMainPharmacies > 1) {
+                // بدء التبديل التلقائي كل 4 ثوان
+                mainPharmacyInterval = setInterval(nextMainPharmacy, 4000);
+            }
+        }
+
+        function showMainPharmacy(index) {
+            const pharmacyContents = document.querySelectorAll('#mainPharmacyCarousel .pharmacy-content');
+            const indicators = document.querySelectorAll('#mainPharmacyCarousel .pharmacy-indicator');
+
+            if (pharmacyContents.length === 0) return;
+
+            // إخفاء جميع الصيدليات
+            pharmacyContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // إخفاء جميع المؤشرات
+            indicators.forEach(indicator => {
+                indicator.classList.remove('active');
+            });
+
+            // عرض الصيدلية المحددة
+            if (pharmacyContents[index]) {
+                pharmacyContents[index].classList.add('active');
+            }
+
+            // تفعيل المؤشر المناسب
+            if (indicators[index]) {
+                indicators[index].classList.add('active');
+            }
+
+            currentMainPharmacyIndex = index;
+        }
+
+        function nextMainPharmacy() {
+            const nextIndex = (currentMainPharmacyIndex + 1) % totalMainPharmacies;
+            showMainPharmacy(nextIndex);
+        }
+
+        function previousMainPharmacy() {
+            const prevIndex = (currentMainPharmacyIndex - 1 + totalMainPharmacies) % totalMainPharmacies;
+            showMainPharmacy(prevIndex);
+        }
+
+        // إيقاف التبديل التلقائي عند التفاعل مع الأزرار
+        function pauseMainAutoPlay() {
+            if (mainPharmacyInterval) {
+                clearInterval(mainPharmacyInterval);
+                // إعادة تشغيل التبديل التلقائي بعد 8 ثوان
+                setTimeout(() => {
+                    if (totalMainPharmacies > 1) {
+                        mainPharmacyInterval = setInterval(nextMainPharmacy, 4000);
+                    }
+                }, 8000);
+            }
+        }
+
+        // ربط الأحداث بالأزرار
+        document.addEventListener('DOMContentLoaded', function() {
+            initMainPharmacyCarousel();
+
+            // إضافة أحداث للأزرار
+            const nextBtn = document.querySelector('#mainPharmacyCarousel .pharmacy-btn.next');
+            const prevBtn = document.querySelector('#mainPharmacyCarousel .pharmacy-btn.prev');
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    pauseMainAutoPlay();
+                    nextMainPharmacy();
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    pauseMainAutoPlay();
+                    previousMainPharmacy();
+                });
+            }
+
+            // إضافة أحداث للمؤشرات
+            document.querySelectorAll('#mainPharmacyCarousel .pharmacy-indicator').forEach((indicator, index) => {
+                indicator.addEventListener('click', function() {
+                    pauseMainAutoPlay();
+                    showMainPharmacy(index);
+                });
+            });
+
+            // إيقاف التبديل التلقائي عند hover
+            const mainPharmacyCarousel = document.getElementById('mainPharmacyCarousel');
+            if (mainPharmacyCarousel) {
+                mainPharmacyCarousel.addEventListener('mouseenter', function() {
+                    if (mainPharmacyInterval) {
+                        clearInterval(mainPharmacyInterval);
+                    }
+                });
+
+                mainPharmacyCarousel.addEventListener('mouseleave', function() {
+                    if (totalMainPharmacies > 1) {
+                        mainPharmacyInterval = setInterval(nextMainPharmacy, 4000);
+                    }
+                });
+            }
+        });
+
+        // إدارة الإشعارات المتحركة
+        let currentNotificationIndex = 0;
+        let notificationInterval;
+        let isHovered = false;
+
+        function showNotification(index) {
+            const notifications = document.querySelectorAll('.notification-item');
+            const indicators = document.querySelectorAll('.indicator');
+
+            if (notifications.length === 0) return;
+
+            // إخفاء الإشعار الحالي
+            notifications.forEach(notif => notif.classList.remove('active'));
+            indicators.forEach(ind => ind.classList.remove('active'));
+
+            // عرض الإشعار الجديد
+            notifications[index].classList.add('active');
+            if (indicators[index]) indicators[index].classList.add('active');
+
+            currentNotificationIndex = index;
+        }
+
+        function nextNotification() {
+            const notifications = document.querySelectorAll('.notification-item');
+            if (notifications.length <= 1) return;
+
+            currentNotificationIndex = (currentNotificationIndex + 1) % notifications.length;
+            showNotification(currentNotificationIndex);
+        }
+
+        function previousNotification() {
+            const notifications = document.querySelectorAll('.notification-item');
+            if (notifications.length <= 1) return;
+
+            currentNotificationIndex = currentNotificationIndex === 0 ? notifications.length - 1 : currentNotificationIndex - 1;
+            showNotification(currentNotificationIndex);
+        }
+
+        function goToNotification(index) {
+            showNotification(index);
+        }
+
+        function startNotificationCarousel() {
+            const notifications = document.querySelectorAll('.notification-item');
+            if (notifications.length > 1 && !isHovered) {
+                notificationInterval = setInterval(nextNotification, 4000);
+            }
+        }
+
+        function stopNotificationCarousel() {
+            clearInterval(notificationInterval);
+        }
+
+        // تهيئة الإشعارات
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationBar = document.getElementById('notificationBar');
+            if (notificationBar) {
+                // إيقاف التشغيل التلقائي عند وضع الماوس
+                notificationBar.addEventListener('mouseenter', function() {
+                    isHovered = true;
+                    stopNotificationCarousel();
+                });
+
+                notificationBar.addEventListener('mouseleave', function() {
+                    isHovered = false;
+                    startNotificationCarousel();
+                });
+
+                // دعم اللمس للأجهزة المحمولة
+                let touchStartX = 0;
+                let touchEndX = 0;
+
+                notificationBar.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                });
+
+                notificationBar.addEventListener('touchend', function(e) {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                });
+
+                function handleSwipe() {
+                    const swipeThreshold = 50;
+                    const diff = touchStartX - touchEndX;
+
+                    if (Math.abs(diff) > swipeThreshold) {
+                        if (diff > 0) {
+                            nextNotification();
+                        } else {
+                            previousNotification();
+                        }
+                    }
+                }
+
+                // بدء التشغيل التلقائي
+                startNotificationCarousel();
+            }
+        });
+    </script>
+    <script>
+        // تأثيرات التحميل التفاعلية
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.slide-up').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease-out';
+            observer.observe(el);
+        });
+
+        // تحسين تجربة البحث
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            searchInput.addEventListener('focus', function() {
+                this.parentElement.classList.add('search-focused');
+            });
+
+            searchInput.addEventListener('blur', function() {
+                this.parentElement.classList.remove('search-focused');
+            });
+        }
+
+        // تقييم المحلات
+        let currentStoreId = null;
+        let selectedRating = 0;
+
+        function openRatingModal(storeId, storeName) {
+            {% if session.user_id %}
+            currentStoreId = storeId;
+            document.getElementById('storeNameForRating').textContent = storeName;
+            selectedRating = 0;
+            updateStarDisplay();
+            const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+            modal.show();
+            {% else %}
+            alert('يجب تسجيل الدخول أولاً لتقييم المحلات');
+            window.location.href = '{{ url_for("login") }}';
+            {% endif %}
+        }
+
+        // التعامل مع النجوم
+        document.querySelectorAll('.star-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.rating);
+                updateStarDisplay();
+            });
+
+            btn.addEventListener('mouseover', function() {
+                const rating = parseInt(this.dataset.rating);
+                highlightStars(rating);
+            });
+        });
+
+        document.querySelector('.rating-input').addEventListener('mouseleave', function() {
+            updateStarDisplay();
+        });
+
+        function highlightStars(rating) {
+            document.querySelectorAll('.star-btn').forEach((btn, index) => {
+                if (index < rating) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function updateStarDisplay() {
+            highlightStars(selectedRating);
+        }
+
+        // إرسال التقييم
+        document.getElementById('submitRating').addEventListener('click', function() {
+            if (selectedRating === 0) {
+                alert('يرجى اختيار تقييم');
+                return;
+            }
+
+            fetch(`/rate-store/${currentStoreId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rating: selectedRating
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم حفظ التقييم بنجاح!');
+                    location.reload();
+                } else {
+                    alert('خطأ في حفظ التقييم: ' + (data.error || 'خطأ غير معروف'));
+                }
+            })
+            .catch(error => {
+                alert('خطأ في الاتصال: ' + error.message);
+            });
+
+            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
+        });
+    </script>
+</body>
+</html>

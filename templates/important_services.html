@@ -1,0 +1,319 @@
+
+{% extends "base.html" %}
+
+{% block title %}الخدمات الهامة - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --emergency-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        --medical-gradient: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        --security-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --transport-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --text-dark: #2c3e50;
+        --text-light: #7f8c8d;
+        --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+        --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+        --shadow-heavy: 0 8px 30px rgba(0,0,0,0.15);
+    }
+
+    body {
+        font-family: 'Cairo', sans-serif;
+        background: var(--primary-gradient);
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow-medium);
+        padding: 40px 0;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 3rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 15px;
+    }
+
+    .main-container {
+        background: rgba(255,255,255,0.95);
+        border-radius: 25px;
+        padding: 40px;
+        backdrop-filter: blur(20px);
+        box-shadow: var(--shadow-heavy);
+        margin-bottom: 30px;
+    }
+
+    .category-section {
+        margin-bottom: 40px;
+    }
+
+    .category-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .category-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 15px;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .category-icon {
+        background: linear-gradient(135deg, var(--category-color, #667eea) 0%, var(--category-color-dark, #764ba2) 100%);
+    }
+
+    .service-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-light);
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .service-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--primary-gradient);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-heavy);
+    }
+
+    .service-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .service-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .service-phone {
+        font-size: 1.2rem;
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .service-phone i {
+        margin-left: 10px;
+        color: #25d366;
+    }
+
+    .service-description {
+        color: var(--text-light);
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .call-btn {
+        background: #25d366;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 8px 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .call-btn:hover {
+        background: #128c7e;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        color: white;
+    }
+
+    .call-btn i {
+        margin-left: 8px;
+    }
+
+    .emergency-notice {
+        background: var(--emergency-gradient);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .no-services {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-light);
+    }
+
+    .no-services-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 2rem;
+        }
+
+        .main-container {
+            margin: 10px;
+            padding: 25px 20px;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .category-icon {
+            margin: 10px 0;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- هيدر الصفحة -->
+    <div class="page-header">
+        <div class="container">
+            <h1 class="page-title">
+                <i class="bi bi-telephone-fill"></i> الخدمات الهامة
+            </h1>
+            <p class="page-subtitle">أرقام مهمة للطوارئ والخدمات الأساسية في منطقة الحسينية</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-container">
+            <!-- تنبيه الطوارئ -->
+            <div class="emergency-notice">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>في حالات الطوارئ الشديدة:</strong> اتصل على 110 (شرطة) أو 113 (إسعاف) فوراً
+            </div>
+
+            {% if services_by_category %}
+                {% for category, services in services_by_category.items() %}
+                {% set category_info = services_by_category_info.get(category, {}) %}
+                <div class="category-section" style="--category-color: {{ category_info.get('color', '#667eea') }}; --category-color-dark: {{ category_info.get('color', '#667eea') }};">
+                    <h2 class="category-title">
+                        <div class="category-icon">
+                            {% if category_info.get('icon') %}
+                                <i class="{{ category_info.icon }}"></i>
+                            {% else %}
+                                <i class="bi bi-gear"></i>
+                            {% endif %}
+                        </div>
+                        {{ category }}
+                    </h2>
+
+                    <div class="row">
+                        {% for service in services %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="service-card">
+                                <div class="service-name">
+                                    <i class="bi bi-building"></i>
+                                    {{ service[1] }}
+                                </div>
+
+                                <div class="service-phone">
+                                    <i class="bi bi-telephone-fill"></i>
+                                    {{ service[2] }}
+                                </div>
+
+                                {% if service[3] %}
+                                <div class="service-description">
+                                    {{ service[3] }}
+                                </div>
+                                {% endif %}
+
+                                <a href="tel:{{ service[2] }}" class="call-btn">
+                                    <i class="bi bi-telephone-outbound"></i>
+                                    اتصال
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-services">
+                    <div class="no-services-icon">
+                        <i class="bi bi-telephone-x"></i>
+                    </div>
+                    <h3>لا توجد خدمات مضافة</h3>
+                    <p>سيتم إضافة الخدمات الهامة قريباً</p>
+                </div>
+            {% endif %}
+
+            <!-- أزرار التنقل -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-primary me-3">
+                    <i class="bi bi-arrow-right"></i> العودة للرئيسية
+                </a>
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="bi bi-printer"></i> طباعة الأرقام
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تأثيرات التحميل
+    const serviceCards = document.querySelectorAll('.service-card');
+    
+    serviceCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'all 0.6s ease-out';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+
+{% endblock %}

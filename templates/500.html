@@ -1,0 +1,15 @@
+
+{% extends "base.html" %}
+
+{% block title %}خطأ في الخادم - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center">
+        <div style="font-size: 8rem; color: #dc3545;">500</div>
+        <h1 class="display-4">خطأ في الخادم</h1>
+        <p class="lead">عذراً، حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">العودة للرئيسية</a>
+    </div>
+</div>
+{% endblock %}

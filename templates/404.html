@@ -1,0 +1,15 @@
+
+{% extends "base.html" %}
+
+{% block title %}الصفحة غير موجودة - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center">
+        <div style="font-size: 8rem; color: #6c757d;">404</div>
+        <h1 class="display-4">الصفحة غير موجودة</h1>
+        <p class="lead">عذراً، الصفحة التي تبحث عنها غير موجودة.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">العودة للرئيسية</a>
+    </div>
+</div>
+{% endblock %}

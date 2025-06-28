@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الصيدليات المناوبة - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .admin-sidebar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+        
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .sidebar-menu {
+            padding: 0;
+        }
+        
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 15px 20px;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-menu .nav-link:hover,
+        .sidebar-menu .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar-menu .nav-link i {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        
+        .table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="row g-0">
+        <!-- الشريط الجانبي -->
+        <div class="col-md-2">
+            <div class="admin-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="bi bi-shield-check"></i></h4>
+                    <h5>لوحة الإدارة</h5>
+                    <small>{{ session.user_name }}</small>
+                </div>
+                
+                <nav class="sidebar-menu">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i>
+                        الرئيسية
+                    </a>
+                    <a href="{{ url_for('admin_duty_pharmacies') }}" class="nav-link active">
+                        <i class="bi bi-clipboard2-pulse"></i>
+                        الصيدليات المناوبة
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-shop"></i>
+                        إدارة المحلات
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        إدارة المستخدمين
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-tags"></i>
+                        إدارة التصنيفات
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-telephone"></i>
+                        الخدمات الهامة
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        الإعدادات
+                    </a>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{{ url_for('index') }}" class="nav-link">
+                        <i class="bi bi-house"></i>
+                        العودة للموقع
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        تسجيل خروج
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- المحتوى الرئيسي -->
+        <div class="col-md-10">
+            <div class="admin-content p-4">
+                <!-- الرسائل -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-clipboard2-pulse"></i> إدارة الصيدليات المناوبة</h2>
+                    <div>
+                        <button class="btn btn-admin me-2" data-bs-toggle="modal" data-bs-target="#addPharmacyModal">
+                            <i class="bi bi-plus-circle"></i> إضافة صيدلية مناوبة
+                        </button>
+                        <button class="btn btn-admin me-2" data-bs-toggle="modal" data-bs-target="#generateScheduleModal">
+                            <i class="bi bi-calendar-plus"></i> إنشاء جدول شهري
+                        </button>
+                        <a href="{{ url_for('delete_all_duty_pharmacies') }}" 
+                           class="btn btn-danger" 
+                           onclick="return confirm('هل أنت متأكد من حذف جميع الصيدليات المناوبة؟ هذا الإجراء لا يمكن التراجع عنه!')">
+                            <i class="bi bi-trash"></i> حذف الكل
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- جدول الصيدليات المناوبة -->
+                <div class="card">
+                    <div class="card-body">
+                        {% if pharmacies %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>اسم الصيدلية</th>
+                                        <th>العنوان</th>
+                                        <th>الهاتف</th>
+                                        <th>تاريخ المناوبة</th>
+                                        <th>العمليات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pharmacy in pharmacies %}
+                                    <tr>
+                                        <td><span class="badge bg-primary">{{ pharmacy[0] }}</span></td>
+                                        <td><strong>{{ pharmacy[1] }}</strong></td>
+                                        <td>{{ pharmacy[2] }}</td>
+                                        <td><span class="text-primary">{{ pharmacy[3] }}</span></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ pharmacy[4] }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        onclick="editPharmacy({{ pharmacy[0] }}, '{{ pharmacy[1] }}', '{{ pharmacy[2] }}', '{{ pharmacy[3] }}', '{{ pharmacy[4] }}')"
+                                                        title="تعديل">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <a href="{{ url_for('delete_duty_pharmacy', pharmacy_id=pharmacy[0]) }}" 
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('هل أنت متأكد من حذف هذه الصيدلية؟')"
+                                                   title="حذف">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-clipboard2-x display-1 text-muted"></i>
+                            <h4 class="mt-3">لا توجد صيدليات مناوبة</h4>
+                            <p class="text-muted">ابدأ بإضافة صيدلية مناوبة أو إنشاء جدول شهري</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة صيدلية مناوبة -->
+    <div class="modal fade" id="addPharmacyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة صيدلية مناوبة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_duty_pharmacy') }}">
+                    <div class="modal-body">
+                        <!-- خيار الاختيار من الصيدليات المسجلة -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">طريقة الإدخال</label>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadExistingPharmacies()">
+                                        <i class="bi bi-list"></i> اختر من الصيدليات المسجلة
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPharmacyForm()">
+                                        <i class="bi bi-plus"></i> إدخال جديد
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- قائمة الصيدليات المسجلة -->
+                            <div id="existingPharmaciesDiv" style="display: none;">
+                                <select class="form-control" id="existingPharmacies" onchange="fillPharmacyData()">
+                                    <option value="">اختر صيدلية...</option>
+                                </select>
+                                <small class="text-muted">سيتم تعبئة البيانات تلقائياً من المحلات المسجلة في تصنيف الصيدليات</small>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label">اسم الصيدلية</label>
+                            <input type="text" class="form-control" id="pharmacyName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">العنوان</label>
+                            <input type="text" class="form-control" id="pharmacyAddress" name="address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" id="pharmacyPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">تاريخ المناوبة</label>
+                            <input type="date" class="form-control" name="duty_date" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-admin">إضافة</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تعديل صيدلية مناوبة -->
+    <div class="modal fade" id="editPharmacyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل صيدلية مناوبة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" id="editPharmacyForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">اسم الصيدلية</label>
+                            <input type="text" class="form-control" name="name" id="editName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">العنوان</label>
+                            <input type="text" class="form-control" name="address" id="editAddress" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" name="phone" id="editPhone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">تاريخ المناوبة</label>
+                            <input type="date" class="form-control" name="duty_date" id="editDate" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-admin">تحديث</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إنشاء جدول شهري -->
+    <div class="modal fade" id="generateScheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إنشاء جدول مناوبات شهري</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('generate_monthly_schedule') }}">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">السنة</label>
+                                <input type="number" class="form-control" name="year" value="2024" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">الشهر</label>
+                                <select class="form-control" name="month" required>
+                                    <option value="1">1 - يناير</option>
+                                    <option value="2">2 - فبراير</option>
+                                    <option value="3">3 - مارس</option>
+                                    <option value="4">4 - أبريل</option>
+                                    <option value="5">5 - مايو</option>
+                                    <option value="6">6 - يونيو</option>
+                                    <option value="7" selected>7 - يوليو</option>
+                                    <option value="8">8 - أغسطس</option>
+                                    <option value="9">9 - سبتمبر</option>
+                                    <option value="10">10 - أكتوبر</option>
+                                    <option value="11">11 - نوفمبر</option>
+                                    <option value="12">12 - ديسمبر</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6>الصيدليات المشاركة في المناوبة:</h6>
+                        <div id="pharmacyList">
+                            <div class="pharmacy-item mb-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control" name="pharmacy_names[]" placeholder="اسم الصيدلية" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control" name="pharmacy_addresses[]" placeholder="العنوان" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="tel" class="form-control" name="pharmacy_phones[]" placeholder="الهاتف" required>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removePharmacy(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-admin btn-sm" onclick="addPharmacy()">
+                            <i class="bi bi-plus"></i> إضافة صيدلية أخرى
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-admin">إنشاء الجدول</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let pharmaciesData = [];
+
+    function editPharmacy(id, name, address, phone, date) {
+        document.getElementById('editName').value = name;
+        document.getElementById('editAddress').value = address;
+        document.getElementById('editPhone').value = phone;
+        document.getElementById('editDate').value = date;
+        document.getElementById('editPharmacyForm').action = `/admin/update-duty-pharmacy/${id}`;
+        
+        new bootstrap.Modal(document.getElementById('editPharmacyModal')).show();
+    }
+
+    function addPharmacy() {
+        const pharmacyList = document.getElementById('pharmacyList');
+        const newPharmacy = document.createElement('div');
+        newPharmacy.className = 'pharmacy-item mb-3';
+        newPharmacy.innerHTML = `
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="pharmacy_names[]" placeholder="اسم الصيدلية" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="pharmacy_addresses[]" placeholder="العنوان" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="tel" class="form-control" name="pharmacy_phones[]" placeholder="الهاتف" required>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removePharmacy(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        pharmacyList.appendChild(newPharmacy);
+    }
+
+    function removePharmacy(button) {
+        const pharmacyList = document.getElementById('pharmacyList');
+        if (pharmacyList.children.length > 1) {
+            button.closest('.pharmacy-item').remove();
+        }
+    }
+
+    async function loadExistingPharmacies() {
+        try {
+            const response = await fetch('/api/get-pharmacies-from-category');
+            const data = await response.json();
+            
+            if (data.pharmacies && data.pharmacies.length > 0) {
+                pharmaciesData = data.pharmacies;
+                const select = document.getElementById('existingPharmacies');
+                select.innerHTML = '<option value="">اختر صيدلية...</option>';
+                
+                data.pharmacies.forEach((pharmacy, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = pharmacy.name;
+                    select.appendChild(option);
+                });
+                
+                document.getElementById('existingPharmaciesDiv').style.display = 'block';
+            } else {
+                alert('لا توجد صيدليات مسجلة في تصنيف الصيدليات');
+            }
+        } catch (error) {
+            console.error('خطأ في تحميل الصيدليات:', error);
+            alert('حدث خطأ في تحميل الصيدليات');
+        }
+    }
+
+    function fillPharmacyData() {
+        const select = document.getElementById('existingPharmacies');
+        const selectedIndex = select.value;
+        
+        if (selectedIndex !== '' && pharmaciesData[selectedIndex]) {
+            const pharmacy = pharmaciesData[selectedIndex];
+            document.getElementById('pharmacyName').value = pharmacy.name;
+            document.getElementById('pharmacyAddress').value = pharmacy.address;
+            document.getElementById('pharmacyPhone').value = pharmacy.phone;
+        }
+    }
+
+    function clearPharmacyForm() {
+        document.getElementById('pharmacyName').value = '';
+        document.getElementById('pharmacyAddress').value = '';
+        document.getElementById('pharmacyPhone').value = '';
+        document.getElementById('existingPharmaciesDiv').style.display = 'none';
+        document.getElementById('existingPharmacies').value = '';
+    }
+    </script>
+</body>
+</html>
