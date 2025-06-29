@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة بوت التليجرام - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Cairo', sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .telegram-id {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- الشريط الجانبي -->
+            <div class="col-md-3">
+                <div class="main-container p-4">
+                    <h5 class="mb-4"><i class="bi bi-gear"></i> لوحة الإدارة</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-speedometer2"></i> الرئيسية
+                        </a>
+                        <a href="{{ url_for('admin_stores') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-shop"></i> المحلات
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-people"></i> المستخدمين
+                        </a>
+                        <a href="{{ url_for('admin_telegram_bot') }}" class="list-group-item list-group-item-action active">
+                            <i class="bi bi-telegram"></i> بوت التليجرام
+                        </a>
+                        <a href="{{ url_for('admin_settings') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-gear"></i> الإعدادات
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('index') }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-house"></i> العودة للموقع
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- المحتوى الرئيسي -->
+            <div class="col-md-9">
+                <div class="main-container p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3><i class="bi bi-telegram"></i> إدارة بوت التليجرام</h3>
+                    </div>
+
+                    <!-- حالة البوت -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-info-circle"></i> حالة البوت</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>التوكن:</strong> 
+                                        {% if bot_token_exists %}
+                                            <span class="status-badge status-connected">موجود</span>
+                                        {% else %}
+                                            <span class="status-badge status-disconnected">غير موجود</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>حالة الاتصال:</strong> 
+                                        {% if bot_status == 'متصل' %}
+                                            <span class="status-badge status-connected">{{ bot_status }}</span>
+                                        {% else %}
+                                            <span class="status-badge status-disconnected">{{ bot_status }}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            {% if not bot_token_exists %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>تنبيه:</strong> يجب إضافة التوكن في صفحة Secrets بالاسم: <code>TELEGRAM_BOT_TOKEN</code>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- إدارة المديرين -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="bi bi-people-fill"></i> المديرين المخولين</h5>
+                            <button type="button" class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                                <i class="bi bi-plus"></i> إضافة مدير
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            {% if admin_telegram_ids %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>معرف التليجرام</th>
+                                            <th>اسم المدير</th>
+                                            <th>تاريخ الإضافة</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for admin in admin_telegram_ids %}
+                                        <tr>
+                                            <td><span class="telegram-id">{{ admin[1] }}</span></td>
+                                            <td>{{ admin[2] or 'غير محدد' }}</td>
+                                            <td>{{ admin[3][:19] if admin[3] else 'غير محدد' }}</td>
+                                            <td>
+                                                <a href="{{ url_for('delete_telegram_admin', admin_id=admin[0]) }}" 
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('هل أنت متأكد من حذف هذا المدير؟')">
+                                                    <i class="bi bi-trash"></i> حذف
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
+                                <h5 class="mt-3 text-muted">لا يوجد مديرين مضافين</h5>
+                                <p class="text-muted">أضف معرف التليجرام الخاص بك للبدء</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- تعليمات الاستخدام -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-question-circle"></i> كيفية الاستخدام</h5>
+                        </div>
+                        <div class="card-body">
+                            <ol>
+                                <li><strong>إنشاء البوت:</strong> توجه إلى <a href="https://t.me/BotFather" target="_blank">@BotFather</a> على التليجرام وأنشئ بوت جديد</li>
+                                <li><strong>الحصول على التوكن:</strong> انسخ التوكن الذي سيرسله لك BotFather</li>
+                                <li><strong>إضافة التوكن:</strong> اذهب إلى صفحة Secrets وأضف التوكن باسم <code>TELEGRAM_BOT_TOKEN</code></li>
+                                <li><strong>إضافة معرفك:</strong> أضف معرف التليجرام الخاص بك في القائمة أعلاه</li>
+                                <li><strong>بدء البوت:</strong> ابحث عن البوت في التليجرام وأرسل <code>/start</code></li>
+                            </ol>
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-lightbulb"></i>
+                                <strong>نصيحة:</strong> للحصول على معرف التليجرام الخاص بك، أرسل رسالة لـ <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal إضافة مدير -->
+    <div class="modal fade" id="addAdminModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مدير جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_telegram_admin') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">معرف التليجرام <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="telegram_id" required 
+                                   placeholder="مثال: 123456789">
+                            <small class="form-text text-muted">
+                                للحصول على معرفك، أرسل رسالة لـ @userinfobot
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">اسم المدير (اختياري)</label>
+                            <input type="text" class="form-control" name="admin_name" 
+                                   placeholder="اسم المدير للتمييز">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-admin">إضافة المدير</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
