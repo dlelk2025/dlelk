@@ -10,9 +10,23 @@ from werkzeug.utils import secure_filename
 import pytz
 import threading
 import time
+import asyncio
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
+
+# إعداد التسجيل للبوت
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+# متغيرات البوت
+telegram_bot = None
+telegram_app = None
 
 # Middleware للتحقق من وضع الصيانة
 @app.before_request
@@ -2312,6 +2326,298 @@ def get_site_settings():
             'whatsapp_number': '0938074766'
         }
 
+# وظائف بوت التليجرام
+async def start_command(update, context):
+    """بداية البوت - للمديرين فقط"""
+    user_id = update.effective_user.id
+    
+    # التحقق من أن المستخدم مدير من قاعدة البيانات
+    if not is_admin_user(user_id):
+        await update.message.reply_text("عذراً، هذا البوت مخصص للمديرين فقط.")
+        return
+    
+    keyboard = [
+        [InlineKeyboardButton("عرض المحلات الغير مفعلة", callback_data='pending_stores')],
+        [InlineKeyboardButton("إحصائيات سريعة", callback_data='stats')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        "مرحباً بك في بوت إدارة دليل محلات الحسينية!\n\n"
+        "يمكنك من خلال هذا البوت:\n"
+        "• مراجعة المحلات الجديدة\n"
+        "• الموافقة على المحلات أو رفضها\n"
+        "• مراجعة الإحصائيات",
+        reply_markup=reply_markup
+    )
+
+async def button_callback(update, context):
+    """معالج الأزرار"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    if not is_admin_user(user_id):
+        await query.edit_message_text("عذراً، ليس لديك صلاحية لاستخدام هذا البوت.")
+        return
+    
+    if query.data == 'pending_stores':
+        await show_pending_stores(query)
+    elif query.data == 'stats':
+        await show_stats(query)
+    elif query.data.startswith('approve_'):
+        store_id = int(query.data.split('_')[1])
+        await approve_store_bot(query, store_id)
+    elif query.data.startswith('reject_'):
+        store_id = int(query.data.split('_')[1])
+        await reject_store_bot(query, store_id)
+    elif query.data == 'back_to_main':
+        keyboard = [
+            [InlineKeyboardButton("عرض المحلات الغير مفعلة", callback_data='pending_stores')],
+            [InlineKeyboardButton("إحصائيات سريعة", callback_data='stats')]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(
+            "مرحباً بك في بوت إدارة دليل محلات الحسينية!\n\n"
+            "يمكنك من خلال هذا البوت:\n"
+            "• مراجعة المحلات الجديدة\n"
+            "• الموافقة على المحلات أو رفضها\n"
+            "• مراجعة الإحصائيات",
+            reply_markup=reply_markup
+        )
+
+async def show_pending_stores(query):
+    """عرض المحلات في انتظار الموافقة"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT s.id, s.name, s.address, s.phone, c.name as category_name, u.full_name as owner_name
+            FROM stores s 
+            LEFT JOIN categories c ON s.category_id = c.id 
+            LEFT JOIN users u ON s.user_id = u.id
+            WHERE s.is_approved = 0
+            ORDER BY s.created_at DESC
+            LIMIT 10
+        ''')
+        
+        pending_stores = cursor.fetchall()
+        conn.close()
+        
+        if not pending_stores:
+            keyboard = [[InlineKeyboardButton("العودة للقائمة الرئيسية", callback_data='back_to_main')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(
+                "✅ لا توجد محلات في انتظار الموافقة",
+                reply_markup=reply_markup
+            )
+            return
+        
+        message = "📋 المحلات في انتظار الموافقة:\n\n"
+        keyboard = []
+        
+        for store in pending_stores:
+            store_id, name, address, phone, category, owner = store
+            message += f"🏪 {name}\n"
+            message += f"📍 {address}\n"
+            message += f"📞 {phone or 'غير محدد'}\n"
+            message += f"🏷️ {category or 'غير محدد'}\n"
+            message += f"👤 {owner or 'غير محدد'}\n"
+            message += "━━━━━━━━━━━━━━━━━\n\n"
+            
+            keyboard.extend([
+                [InlineKeyboardButton(f"✅ الموافقة على {name}", callback_data=f'approve_{store_id}')],
+                [InlineKeyboardButton(f"❌ رفض {name}", callback_data=f'reject_{store_id}')]
+            ])
+        
+        keyboard.append([InlineKeyboardButton("العودة للقائمة الرئيسية", callback_data='back_to_main')])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        # تقسيم الرسالة إذا كانت طويلة
+        if len(message) > 4000:
+            message = message[:4000] + "...\n\n(عرض أول 10 محلات)"
+        
+        await query.edit_message_text(message, reply_markup=reply_markup)
+        
+    except Exception as e:
+        await query.edit_message_text(f"خطأ في جلب المحلات: {str(e)}")
+
+async def show_stats(query):
+    """عرض الإحصائيات"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 1')
+        approved_stores = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+        pending_stores = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM users WHERE is_active = 1')
+        active_users = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM categories')
+        categories_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        message = "📊 إحصائيات النظام:\n\n"
+        message += f"🏪 المحلات المفعلة: {approved_stores}\n"
+        message += f"⏳ المحلات في الانتظار: {pending_stores}\n"
+        message += f"👥 المستخدمين النشطين: {active_users}\n"
+        message += f"🏷️ التصنيفات: {categories_count}\n"
+        
+        keyboard = [[InlineKeyboardButton("العودة للقائمة الرئيسية", callback_data='back_to_main')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(message, reply_markup=reply_markup)
+        
+    except Exception as e:
+        await query.edit_message_text(f"خطأ في جلب الإحصائيات: {str(e)}")
+
+async def approve_store_bot(query, store_id):
+    """الموافقة على محل"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # الحصول على معلومات المحل
+        cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+        store = cursor.fetchone()
+        
+        if not store:
+            await query.edit_message_text("المحل غير موجود")
+            return
+        
+        # الموافقة على المحل
+        cursor.execute('UPDATE stores SET is_approved = 1 WHERE id = ?', (store_id,))
+        conn.commit()
+        conn.close()
+        
+        await query.edit_message_text(f"✅ تم الموافقة على محل: {store[0]}")
+        
+    except Exception as e:
+        await query.edit_message_text(f"خطأ في الموافقة: {str(e)}")
+
+async def reject_store_bot(query, store_id):
+    """رفض محل"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # الحصول على معلومات المحل
+        cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+        store = cursor.fetchone()
+        
+        if not store:
+            await query.edit_message_text("المحل غير موجود")
+            return
+        
+        # حذف المحل
+        cursor.execute('DELETE FROM stores WHERE id = ?', (store_id,))
+        conn.commit()
+        conn.close()
+        
+        await query.edit_message_text(f"❌ تم رفض وحذف محل: {store[0]}")
+        
+    except Exception as e:
+        await query.edit_message_text(f"خطأ في الرفض: {str(e)}")
+
+def is_admin_user(telegram_user_id):
+    """التحقق من أن المستخدم مدير"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # التحقق من وجود التليجرام ID في جدول المديرين
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admin_telegram_ids (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id INTEGER UNIQUE NOT NULL,
+                admin_name TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids WHERE telegram_id = ?', (telegram_user_id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result is not None
+    except Exception as e:
+        print(f"خطأ في التحقق من المدير: {e}")
+        return False
+
+async def send_new_store_notification(store_name, owner_name, category_name):
+    """إرسال إشعار للمديرين عند إضافة محل جديد"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        message = f"🆕 محل جديد يحتاج للموافقة!\n\n"
+        message += f"🏪 اسم المحل: {store_name}\n"
+        message += f"👤 المالك: {owner_name}\n"
+        message += f"🏷️ التصنيف: {category_name}\n\n"
+        message += "استخدم الأوامر للموافقة أو الرفض"
+        
+        keyboard = [[InlineKeyboardButton("عرض المحلات المعلقة", callback_data='pending_stores')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message,
+                    reply_markup=reply_markup
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال الإشعار للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات التليجرام: {e}")
+
+def init_telegram_bot():
+    """تهيئة بوت التليجرام"""
+    global telegram_bot, telegram_app
+    
+    try:
+        # الحصول على التوكن من Secrets
+        bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        if not bot_token:
+            print("⚠️ لم يتم العثور على TELEGRAM_BOT_TOKEN في Secrets")
+            return
+        
+        telegram_bot = Bot(token=bot_token)
+        telegram_app = Application.builder().token(bot_token).build()
+        
+        # إضافة المعالجات
+        telegram_app.add_handler(CommandHandler("start", start_command))
+        telegram_app.add_handler(CallbackQueryHandler(button_callback))
+        
+        print("✅ تم تهيئة بوت التليجرام بنجاح")
+        
+    except Exception as e:
+        print(f"❌ خطأ في تهيئة بوت التليجرام: {e}")
+
+def run_telegram_bot():
+    """تشغيل البوت في خيط منفصل"""
+    try:
+        if telegram_app:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            telegram_app.run_polling()
+    except Exception as e:
+        print(f"خطأ في تشغيل بوت التليجرام: {e}")
+
 # وظيفة إنشاء جدول صيدليات تلقائي لشهر كامل
 @app.route('/admin/generate-monthly-schedule', methods=['POST'])
 def generate_monthly_schedule():
@@ -2482,8 +2788,24 @@ def add_user_store():
         VALUES (?, ?, ?, ?, ?, ?, 0)
     ''', (name, category_id, address, phone, description, session['user_id']))
 
+    # الحصول على معلومات المستخدم والتصنيف للإشعار
+    cursor.execute('SELECT full_name FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    owner_name = user[0] if user else 'غير محدد'
+    
+    cursor.execute('SELECT name FROM categories WHERE id = ?', (category_id,))
+    category = cursor.fetchone()
+    category_name = category[0] if category else 'غير محدد'
+
     conn.commit()
     conn.close()
+
+    # إرسال إشعار تليجرام للمديرين
+    try:
+        if telegram_bot:
+            asyncio.run(send_new_store_notification(name, owner_name, category_name))
+    except Exception as e:
+        print(f"خطأ في إرسال إشعار التليجرام: {e}")
 
     flash('تم إضافة المحل بنجاح وهو في انتظار الموافقة', 'success')
     return redirect(url_for('dashboard'))
@@ -3409,6 +3731,87 @@ def create_admin_user():
     conn.commit()
     conn.close()
 
+# إدارة بوت التليجرام
+@app.route('/admin/telegram-bot')
+def admin_telegram_bot():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # إنشاء جدول معرفات التليجرام للمديرين إذا لم يكن موجوداً
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admin_telegram_ids (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER UNIQUE NOT NULL,
+            admin_name TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    cursor.execute('SELECT * FROM admin_telegram_ids ORDER BY created_at DESC')
+    admin_telegram_ids = cursor.fetchall()
+    
+    conn.close()
+    
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    bot_status = 'متصل' if telegram_bot else 'غير متصل'
+    
+    return render_template('admin_telegram_bot.html', 
+                         admin_telegram_ids=admin_telegram_ids,
+                         bot_token_exists=bool(bot_token),
+                         bot_status=bot_status)
+
+# إضافة معرف تليجرام مدير
+@app.route('/admin/add-telegram-admin', methods=['POST'])
+def add_telegram_admin():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    telegram_id = request.form['telegram_id']
+    admin_name = request.form.get('admin_name', '')
+
+    try:
+        telegram_id = int(telegram_id)
+    except ValueError:
+        flash('معرف التليجرام يجب أن يكون رقماً', 'error')
+        return redirect(url_for('admin_telegram_bot'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            INSERT INTO admin_telegram_ids (telegram_id, admin_name) 
+            VALUES (?, ?)
+        ''', (telegram_id, admin_name))
+        conn.commit()
+        flash('تم إضافة المدير بنجاح', 'success')
+    except sqlite3.IntegrityError:
+        flash('هذا المعرف موجود مسبقاً', 'error')
+    finally:
+        conn.close()
+
+    return redirect(url_for('admin_telegram_bot'))
+
+# حذف معرف تليجرام مدير
+@app.route('/admin/delete-telegram-admin/<int:admin_id>')
+def delete_telegram_admin(admin_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('DELETE FROM admin_telegram_ids WHERE id = ?', (admin_id,))
+    conn.commit()
+    conn.close()
+
+    flash('تم حذف المدير بنجاح', 'success')
+    return redirect(url_for('admin_telegram_bot'))
+
 # معالج الأخطاء 404
 @app.errorhandler(404)
 def page_not_found(e):
@@ -3428,9 +3831,17 @@ if __name__ == '__main__':
         # بدء النظام التلقائي للتحقق من انتهاء صلاحية الإشعارات
         start_notification_checker()
         
+        # تهيئة وتشغيل بوت التليجرام
+        init_telegram_bot()
+        if telegram_app:
+            bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
+            bot_thread.start()
+            print("✅ تم تشغيل بوت التليجرام في الخلفية")
+        
         print("تم تهيئة قاعدة البيانات بنجاح")
         print("رابط التطبيق: http://0.0.0.0:5000")
         print("لوحة الإدارة: http://0.0.0.0:5000/admin")
+        print("إدارة بوت التليجرام: http://0.0.0.0:5000/admin/telegram-bot")
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         print(f"خطأ في تشغيل التطبيق: {e}")
