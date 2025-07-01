@@ -31,10 +31,12 @@ telegram_app = None
 # Middleware للتحقق من وضع الصيانة
 @app.before_request
 def check_maintenance_mode():
-    # استثناء صفحات الإدارة من وضع الصيانة
+    # استثناء صفحات الإدارة والترحيب من وضع الصيانة
     if request.endpoint and (request.endpoint.startswith('admin_') or 
                            request.endpoint == 'login' or 
                            request.endpoint == 'logout' or
+                           request.endpoint == 'register' or
+                           request.endpoint == 'welcome' or
                            request.endpoint == 'save_settings'):
         return
 
@@ -210,11 +212,32 @@ def init_db():
             store_id INTEGER,
             user_id INTEGER,
             rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+            comment TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (store_id) REFERENCES stores (id),
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
+
+    # إضافة عمود التعليق إذا لم يكن موجوداً
+    try:
+        cursor.execute('ALTER TABLE ratings ADD COLUMN comment TEXT')
+    except:
+        pass
+    
+    # إضافة عمود updated_at إذا لم يكن موجوداً
+    try:
+        cursor.execute('ALTER TABLE ratings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+    except:
+        pass
+    
+    # تحديث القيم الفارغة في updated_at
+    try:
+        cursor.execute('UPDATE ratings SET updated_at = created_at WHERE updated_at IS NULL')
+        conn.commit()
+    except:
+        pass
 
     # جدول الصيدليات المناوبة
     cursor.execute('''
@@ -510,9 +533,14 @@ def inject_notifications_and_ticker():
     conn.close()
     return dict(notifications=notifications, ticker_messages=ticker_messages, site_settings=site_settings)
 
-# البحث الشامل
+# البحث الشامل - مع التسجيل الإجباري
 @app.route('/search')
 def search():
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول للبحث', 'warning')
+        return redirect(url_for('login'))
+    
     query = request.args.get('q', '')
     category_id = request.args.get('category', '')
     service_category = request.args.get('service_category', '')
@@ -617,9 +645,14 @@ def search():
                          search_type=search_type,
                          total_results=total_results)
 
-# الصفحة الرئيسية
+# الصفحة الرئيسية - مع التسجيل الإجباري
 @app.route('/')
 def index():
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لمشاهدة المحتوى', 'warning')
+        return redirect(url_for('login'))
+    
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
@@ -741,6 +774,15 @@ def register():
 
     return render_template('register.html')
 
+# صفحة ترحيب للزوار غير المسجلين
+@app.route('/welcome')
+def welcome():
+    # إذا كان المستخدم مسجل دخول، توجيهه للصفحة الرئيسية
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+    
+    return render_template('welcome.html')
+
 # تسجيل الدخول
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -824,9 +866,14 @@ def dashboard():
                          approved_stores=approved_stores,
                          categories=categories)
 
-# صفحة الخدمات الهامة
+# صفحة الخدمات الهامة - مع التسجيل الإجباري
 @app.route('/important-services')
 def important_services():
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض الخدمات الهامة', 'warning')
+        return redirect(url_for('login'))
+    
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
@@ -868,9 +915,14 @@ def important_services():
                          services_by_category=services_by_category,
                          services_by_category_info=services_by_category_info)
 
-# صفحة الصيدليات المناوبة
+# صفحة الصيدليات المناوبة - مع التسجيل الإجباري
 @app.route('/duty-pharmacies')
 def duty_pharmacies():
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض الصيدليات المناوبة', 'warning')
+        return redirect(url_for('login'))
+    
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
@@ -1090,9 +1142,13 @@ def delete_duty_pharmacy(pharmacy_id):
     flash('تم حذف الصيدلية المناوبة بنجاح', 'success')
     return redirect(url_for('admin_duty_pharmacies'))
 
-# API للحصول على صيدليات اليوم
+# API للحصول على صيدليات اليوم - مع التسجيل الإجباري
 @app.route('/api/today-pharmacies')
 def get_today_pharmacies():
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'يجب تسجيل الدخول'}), 401
+    
     try:
         conn = sqlite3.connect('hussainiya_stores.db')
         cursor = conn.cursor()
@@ -3489,15 +3545,20 @@ def mark_all_notifications_read():
     # يمكن تنفيذ منطق تعيين الإشعارات كمقروءة هنا
     return jsonify({'success': True})
 
-# إضافة التقييمات
+# إضافة التقييمات مع التعليقات
 @app.route('/rate-store/<int:store_id>', methods=['POST'])
 def rate_store(store_id):
     if 'user_id' not in session:
         return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
 
     rating = int(request.json.get('rating', 0))
+    comment = request.json.get('comment', '').strip()
+    
     if rating < 1 or rating > 5:
         return jsonify({'error': 'التقييم يجب أن يكون بين 1 و 5'}), 400
+    
+    if not comment:
+        return jsonify({'error': 'يجب كتابة تعليق مع التقييم'}), 400
 
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
@@ -3507,14 +3568,29 @@ def rate_store(store_id):
                   (store_id, session['user_id']))
     existing_rating = cursor.fetchone()
 
+    from datetime import timezone, timedelta
+    damascus_tz = timezone(timedelta(hours=3))
+    damascus_time = datetime.now(damascus_tz)
+    current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
+
     if existing_rating:
-        # تحديث التقييم الموجود
-        cursor.execute('UPDATE ratings SET rating = ? WHERE store_id = ? AND user_id = ?',
-                      (rating, store_id, session['user_id']))
+        # تحديث التقييم الموجود - التحقق من وجود عمود updated_at
+        try:
+            cursor.execute('UPDATE ratings SET rating = ?, comment = ?, updated_at = ? WHERE store_id = ? AND user_id = ?',
+                          (rating, comment, current_time_str, store_id, session['user_id']))
+        except sqlite3.OperationalError:
+            # إذا لم يكن عمود updated_at موجوداً، تحديث بدونه
+            cursor.execute('UPDATE ratings SET rating = ?, comment = ? WHERE store_id = ? AND user_id = ?',
+                          (rating, comment, store_id, session['user_id']))
     else:
-        # إضافة تقييم جديد
-        cursor.execute('INSERT INTO ratings (store_id, user_id, rating) VALUES (?, ?, ?)',
-                      (store_id, session['user_id'], rating))
+        # إضافة تقييم جديد - التحقق من وجود عمود updated_at
+        try:
+            cursor.execute('INSERT INTO ratings (store_id, user_id, rating, comment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+                          (store_id, session['user_id'], rating, comment, current_time_str, current_time_str))
+        except sqlite3.OperationalError:
+            # إذا لم يكن عمود updated_at موجوداً، إدراج بدونه
+            cursor.execute('INSERT INTO ratings (store_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)',
+                          (store_id, session['user_id'], rating, comment, current_time_str))
 
     # حساب متوسط التقييم الجديد
     cursor.execute('SELECT AVG(rating) FROM ratings WHERE store_id = ?', (store_id,))
@@ -3526,7 +3602,157 @@ def rate_store(store_id):
     conn.commit()
     conn.close()
 
-    return jsonify({'success': True, 'new_average': avg_rating})
+    return jsonify({'success': True, 'new_average': avg_rating, 'message': 'تم حفظ التقييم والتعليق بنجاح'})
+
+# عرض التقييمات والتعليقات - مع التسجيل الإجباري
+@app.route('/store-ratings/<int:store_id>')
+def store_ratings(store_id):
+    # التحقق من تسجيل الدخول
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض التقييمات', 'warning')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب معلومات المحل
+    cursor.execute('SELECT name FROM stores WHERE id = ? AND is_approved = 1', (store_id,))
+    store = cursor.fetchone()
+    
+    if not store:
+        flash('المحل غير موجود', 'error')
+        return redirect(url_for('index'))
+
+    # جلب التقييمات مع أسماء المستخدمين
+    # التحقق من وجود عمود updated_at
+    try:
+        cursor.execute('''
+            SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at, u.full_name, r.user_id
+            FROM ratings r 
+            LEFT JOIN users u ON r.user_id = u.id 
+            WHERE r.store_id = ? 
+            ORDER BY r.created_at DESC
+        ''', (store_id,))
+    except sqlite3.OperationalError:
+        # إذا لم يكن عمود updated_at موجوداً، استخدم created_at كبديل
+        cursor.execute('''
+            SELECT r.id, r.rating, r.comment, r.created_at, r.created_at as updated_at, u.full_name, r.user_id
+            FROM ratings r 
+            LEFT JOIN users u ON r.user_id = u.id 
+            WHERE r.store_id = ? 
+            ORDER BY r.created_at DESC
+        ''', (store_id,))
+    ratings = cursor.fetchall()
+
+    # حساب الإحصائيات
+    cursor.execute('SELECT AVG(rating), COUNT(*) FROM ratings WHERE store_id = ?', (store_id,))
+    stats = cursor.fetchone()
+    avg_rating = stats[0] if stats[0] else 0
+    total_ratings = stats[1]
+
+    # توزيع النجوم
+    star_distribution = {}
+    for i in range(1, 6):
+        cursor.execute('SELECT COUNT(*) FROM ratings WHERE store_id = ? AND rating = ?', (store_id, i))
+        star_distribution[i] = cursor.fetchone()[0]
+
+    conn.close()
+
+    return render_template('store_ratings.html', 
+                         store_name=store[0],
+                         store_id=store_id,
+                         ratings=ratings,
+                         avg_rating=avg_rating,
+                         total_ratings=total_ratings,
+                         star_distribution=star_distribution)
+
+# حذف تقييم (للإدارة)
+@app.route('/admin/delete-rating/<int:rating_id>')
+def admin_delete_rating(rating_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'غير مصرح'}), 403
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على معلومات التقييم قبل الحذف
+    cursor.execute('SELECT store_id FROM ratings WHERE id = ?', (rating_id,))
+    rating = cursor.fetchone()
+    
+    if not rating:
+        conn.close()
+        return jsonify({'error': 'التقييم غير موجود'}), 404
+
+    store_id = rating[0]
+
+    # حذف التقييم
+    cursor.execute('DELETE FROM ratings WHERE id = ?', (rating_id,))
+
+    # إعادة حساب متوسط التقييم
+    cursor.execute('SELECT AVG(rating) FROM ratings WHERE store_id = ?', (store_id,))
+    avg_rating = cursor.fetchone()[0] or 0
+
+    # تحديث متوسط التقييم في جدول المحلات
+    cursor.execute('UPDATE stores SET rating_avg = ? WHERE id = ?', (avg_rating, store_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'message': 'تم حذف التقييم بنجاح'})
+
+# تحديث تعليق المستخدم
+@app.route('/update-rating/<int:rating_id>', methods=['POST'])
+def update_rating(rating_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
+
+    new_comment = request.json.get('comment', '').strip()
+    new_rating = int(request.json.get('rating', 0))
+    
+    if new_rating < 1 or new_rating > 5:
+        return jsonify({'error': 'التقييم يجب أن يكون بين 1 و 5'}), 400
+    
+    if not new_comment:
+        return jsonify({'error': 'يجب كتابة تعليق مع التقييم'}), 400
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # التحقق من أن التقييم يخص المستخدم الحالي
+    cursor.execute('SELECT store_id, user_id FROM ratings WHERE id = ?', (rating_id,))
+    rating = cursor.fetchone()
+    
+    if not rating or rating[1] != session['user_id']:
+        conn.close()
+        return jsonify({'error': 'غير مصرح لك بتعديل هذا التقييم'}), 403
+
+    store_id = rating[0]
+
+    from datetime import timezone, timedelta
+    damascus_tz = timezone(timedelta(hours=3))
+    damascus_time = datetime.now(damascus_tz)
+    current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # تحديث التقييم والتعليق - التحقق من وجود عمود updated_at
+    try:
+        cursor.execute('UPDATE ratings SET rating = ?, comment = ?, updated_at = ? WHERE id = ?',
+                      (new_rating, new_comment, current_time_str, rating_id))
+    except sqlite3.OperationalError:
+        # إذا لم يكن عمود updated_at موجوداً، تحديث بدونه
+        cursor.execute('UPDATE ratings SET rating = ?, comment = ? WHERE id = ?',
+                      (new_rating, new_comment, rating_id))
+
+    # إعادة حساب متوسط التقييم
+    cursor.execute('SELECT AVG(rating) FROM ratings WHERE store_id = ?', (store_id,))
+    avg_rating = cursor.fetchone()[0]
+
+    # تحديث متوسط التقييم في جدول المحلات
+    cursor.execute('UPDATE stores SET rating_avg = ? WHERE id = ?', (avg_rating, store_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'message': 'تم تحديث التقييم والتعليق بنجاح'})
 
 # إدارة الشريط المتحرك
 @app.route('/admin/ticker')
@@ -3842,6 +4068,20 @@ if __name__ == '__main__':
         print("رابط التطبيق: http://0.0.0.0:5000")
         print("لوحة الإدارة: http://0.0.0.0:5000/admin")
         print("إدارة بوت التليجرام: http://0.0.0.0:5000/admin/telegram-bot")
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        
+        # محاولة استخدام بورت مختلف إذا كان 5000 مشغولاً
+        import socket
+        def is_port_in_use(port):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(('0.0.0.0', port)) == 0
+        
+        port = 5000
+        while is_port_in_use(port) and port < 5010:
+            port += 1
+        
+        if port != 5000:
+            print(f"البورت 5000 مشغول، سيتم استخدام البورت {port}")
+        
+        app.run(host='0.0.0.0', port=port, debug=True)
     except Exception as e:
         print(f"خطأ في تشغيل التطبيق: {e}")
