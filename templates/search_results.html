@@ -760,20 +760,26 @@
                     <h5 class="modal-title">تقييم المحل</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <h6 id="storeNameForRating"></h6>
-                    <p>اختر تقييمك من 1 إلى 5 نجوم</p>
-                    <div class="rating-input" style="display: flex; justify-content: center; margin: 20px 0;">
-                        <button type="button" class="star-btn" data-rating="1" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
-                        <button type="button" class="star-btn" data-rating="2" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
-                        <button type="button" class="star-btn" data-rating="3" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
-                        <button type="button" class="star-btn" data-rating="4" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
-                        <button type="button" class="star-btn" data-rating="5" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                <div class="modal-body">
+                    <h6 id="storeNameForRating" class="text-center mb-3"></h6>
+                    <div class="mb-3">
+                        <label class="form-label">اختر تقييمك من 1 إلى 5 نجوم:</label>
+                        <div class="rating-input text-center">
+                            <button type="button" class="star-btn" data-rating="1" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                            <button type="button" class="star-btn" data-rating="2" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                            <button type="button" class="star-btn" data-rating="3" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                            <button type="button" class="star-btn" data-rating="4" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                            <button type="button" class="star-btn" data-rating="5" style="background: none; border: none; font-size: 2rem; color: #ddd; cursor: pointer; transition: color 0.2s;">★</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">اكتب تعليقك: <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="ratingComment" rows="3" placeholder="شاركنا تجربتك مع هذا المحل..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-primary" id="submitRating">تقييم</button>
+                    <button type="button" class="btn btn-primary" id="submitRating">إرسال التقييم</button>
                 </div>
             </div>
         </div>
@@ -801,9 +807,16 @@
         let currentStoreId = null;
         let selectedRating = 0;
 
+        function showLoginPrompt() {
+            if (confirm('يجب تسجيل الدخول أولاً لتقييم المحلات. هل تريد تسجيل الدخول الآن؟')) {
+                window.location.href = '{{ url_for("login") }}';
+            }
+        }
+
         function openRatingModal(storeId, storeName) {
             currentStoreId = storeId;
             document.getElementById('storeNameForRating').textContent = storeName;
+            document.getElementById('ratingComment').value = '';
             selectedRating = 0;
             updateStarDisplay();
             const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
@@ -848,29 +861,35 @@
                 return;
             }
 
+            const comment = document.getElementById('ratingComment').value.trim();
+            if (!comment) {
+                alert('يرجى كتابة تعليق');
+                return;
+            }
+
             fetch(`/rate-store/${currentStoreId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    rating: selectedRating
+                    rating: selectedRating,
+                    comment: comment
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('تم حفظ التقييم بنجاح!');
+                    alert(data.message || 'تم إرسال التقييم بنجاح!');
+                    bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
                     location.reload();
                 } else {
-                    alert('خطأ في حفظ التقييم: ' + (data.error || 'خطأ غير معروف'));
+                    alert(data.error);
                 }
             })
             .catch(error => {
-                alert('خطأ في الاتصال: ' + error.message);
+                alert('حدث خطأ أثناء إرسال التقييم');
             });
-
-            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
         });
 
         // تأثير الجلو للصيدلية المناوبة

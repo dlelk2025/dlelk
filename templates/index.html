@@ -1030,26 +1030,34 @@
                         </div>
                         {% endif %}
                         <div class="rating-section">
-                            <div class="rating-stars">
-                                {% if store[10] and store[10] > 0 %}
-                                    {% for i in range(5) %}
-                                        {% if i < store[10] %}
-                                        <i class="bi bi-star-fill"></i>
+                            {% if store[10] and store[10] > 0 %}
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= store[10] %}
+                                            <i class="bi bi-star-fill"></i>
                                         {% else %}
-                                        <i class="bi bi-star"></i>
+                                            <i class="bi bi-star"></i>
                                         {% endif %}
                                     {% endfor %}
-                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
-                                {% else %}
-                                    {% for i in range(5) %}
-                                    <i class="bi bi-star"></i>
-                                    {% endfor %}
-                                    <small class="text-muted">غير مقيم</small>
-                                {% endif %}
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                    ({{ "%.1f"|format(store[10]) }})
+                                    <a href="{{ url_for('store_ratings', store_id=store[0]) }}" class="text-decoration-none ms-2">
+                                        <small>عرض التقييمات</small>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div>
+                                    لا توجد تقييمات
+                                </div>
+                            {% endif %}
+                            {% if session.user_id %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="openRatingModal({{ store[0] }}, '{{ store[1] }}')">
                                 <i class="bi bi-star"></i> قيم
                             </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="showLoginPrompt()">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -1079,30 +1087,38 @@
                         </div>
                         {% if store[4] %}
                         <div class="store-info">
-                            <i classbi bi-telephone-fill"></i> {{ store[4] }}
+                            <i class="bi bi-telephone-fill"></i> {{ store[4] }}
                         </div>
                         {% endif %}
                         <div class="rating-section">
-                            <div class="rating-stars">
-                                {% if store[10] and store[10] > 0 %}
-                                    {% for i in range(5) %}
-                                        {% if i < store[10] %}
-                                        <i class="bi bi-star-fill"></i>
+                            {% if store[10] and store[10] > 0 %}
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= store[10] %}
+                                            <i class="bi bi-star-fill"></i>
                                         {% else %}
-                                        <i class="bi bi-star"></i>
+                                            <i class="bi bi-star"></i>
                                         {% endif %}
                                     {% endfor %}
-                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
-                                {% else %}
-                                    {% for i in range(5) %}
-                                    <i class="bi bi-star"></i>
-                                    {% endfor %}
-                                    <small class="text-muted">غير مقيم</small>
-                                {% endif %}
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                    ({{ "%.1f"|format(store[10]) }})
+                                    <a href="{{ url_for('store_ratings', store_id=store[0]) }}" class="text-decoration-none ms-2">
+                                        <small>عرض التقييمات</small>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div>
+                                    لا توجد تقييمات
+                                </div>
+                            {% endif %}
+                            {% if session.user_id %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="openRatingModal({{ store[0] }}, '{{ store[1] }}')">
                                 <i class="bi bi-star"></i> قيم
                             </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="showLoginPrompt()">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -1136,26 +1152,34 @@
                         </div>
                         {% endif %}
                         <div class="rating-section">
-                            <div class="rating-stars">
-                                {% if store[10] and store[10] > 0 %}
-                                    {% for i in range(5) %}
-                                        {% if i < store[10] %}
-                                        <i class="bi bi-star-fill"></i>
+                            {% if store[10] and store[10] > 0 %}
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= store[10] %}
+                                            <i class="bi bi-star-fill"></i>
                                         {% else %}
-                                        <i class="bi bi-star"></i>
+                                            <i class="bi bi-star"></i>
                                         {% endif %}
                                     {% endfor %}
-                                    <small class="text-muted">({{ "%.1f"|format(store[10]) }})</small>
-                                {% else %}
-                                    {% for i in range(5) %}
-                                    <i class="bi bi-star"></i>
-                                    {% endfor %}
-                                    <small class="text-muted">غير مقيم</small>
-                                {% endif %}
-                            </div>
-                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="openRatingModal({{ store[0] }}, '{{ store[1]|replace("'", "\\'") }}')">
+                                    ({{ "%.1f"|format(store[10]) }})
+                                    <a href="{{ url_for('store_ratings', store_id=store[0]) }}" class="text-decoration-none ms-2">
+                                        <small>عرض التقييمات</small>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div>
+                                    لا توجد تقييمات
+                                </div>
+                            {% endif %}
+                            {% if session.user_id %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="openRatingModal({{ store[0] }}, '{{ store[1] }}')">
                                 <i class="bi bi-star"></i> قيم
                             </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="showLoginPrompt()">
+                                <i class="bi bi-star"></i> قيم
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -1168,9 +1192,9 @@
         {% if site_settings.get('show_important_services', '1') == '1' %}
         <div class="modern-card slide-up">
             <h2 class="section-title">الخدمات الهامة</h2>
-            <p class="text-center text-muted mb-4">الخدماتالأساسية والطوارئ في منطقة الحسينية</p>
+            <p class="hero-subtitle">الخدمات الأساسية والطوارئ في منطقة الحسينية</p>
             <div class="text-center">
-                <a href="{{ url_for('important_services') }}" class="btn btn-primary btn-lg">
+                <a href="{{ url_for('important_services') }}" class="btn btn-search">
                     <i class="bi bi-telephone-fill"></i> عرض جميع الخدمات
                 </a>
             </div>
@@ -1187,7 +1211,7 @@
                     <p>{{ site_settings.site_description or 'دليل شامل لجميع المحلات والخدمات في منطقة الحسينية. نساعدك في العثور على ما تحتاجه بسهولة وسرعة.' }}</p>
                 </div>
                 <div class="col-md-4">
-                    <h6 class="footer-title">روابط سريعة</h6>
+                    <h5 class="footer-title">روابط سريعة</h5>
                     <a href="{{ url_for('index') }}" class="footer-link">الرئيسية</a>
                     <a href="{{ url_for('duty_pharmacies') }}" class="footer-link">الصيدليات المناوبة</a>
                     <a href="{{ url_for('search') }}" class="footer-link">البحث</a>
@@ -1198,47 +1222,71 @@
                     {% endif %}
                 </div>
                 <div class="col-md-4">
-                    <h6 class="footer-title">تواصل معنا</h6>
-                    <p><i class="bi bi-telephone-fill"></i> {{ site_settings.get('contact_phone', '0938074766') }}</p>
-                    <p><i class="bi bi-envelope-fill"></i> {{ site_settings.get('contact_email', 'dlelk2023@gmail.com') }}</p>
-                    <p><i class="bi bi-geo-alt-fill"></i> {{ site_settings.get('contact_address', 'ريف دمشق الحسينية') }}</p>
+                    <h5 class="footer-title">تواصل معنا</h5>
+                    <a href="tel:{{ site_settings.get('contact_phone', '0938074766') }}" class="footer-link">
+                        <i class="bi bi-telephone-fill"></i> {{ site_settings.get('contact_phone', '0938074766') }}
+                    </a>
+                    <a href="mailto:{{ site_settings.get('contact_email', 'dlelk2023@gmail.com') }}" class="footer-link">
+                        <i class="bi bi-envelope-fill"></i> {{ site_settings.get('contact_email', 'dlelk2023@gmail.com') }}
+                    </a>
+                    <p class="footer-link">
+                        <i class="bi bi-geo-alt-fill"></i> {{ site_settings.get('contact_address', 'ريف دمشق الحسينية') }}
+                    </p>
                     {% if site_settings.get('facebook_link') %}
-                    <p><i class="bi bi-facebook"></i> <a href="{{ site_settings.facebook_link }}" target="_blank" class="text-light">فيسبوك</a></p>
+                    <a href="{{ site_settings.facebook_link }}" class="footer-link" target="_blank">
+                        <i class="bi bi-facebook"></i> فيسبوك
+                    </a>
                     {% endif %}
                     {% if site_settings.get('whatsapp_number') %}
-                    <p><i class="bi bi-whatsapp"></i> واتساب: {{ site_settings.whatsapp_number }}</p>
+                    <a href="https://wa.me/{{ site_settings.whatsapp_number }}" class="footer-link" target="_blank">
+                        <i class="bi bi-whatsapp"></i> واتساب: {{ site_settings.whatsapp_number }}
+                    </a>
                     {% endif %}
                 </div>
             </div>
-            <hr style="border-color: rgba(255,255,255,0.2);">
+            <hr style="margin: 40px 0 20px; border-color: rgba(255,255,255,0.1);">
             <div class="text-center">
-                <p>دليلك في الحسينية ريف دمشق 2025</p>
+                <p>&copy; 2025 دليلك في الحسينية ريف دمشق</p>
             </div>
         </div>
     </footer>
 
     <!-- نافذة التقييم -->
-    <div class="modal fade" id="ratingModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content rating-modal">
+    <div class="modal fade rating-modal" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">تقييم المحل</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="ratingModalLabel">
+                        تقييم المحل
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <h6 id="storeNameForRating"></h6>
-                    <p>اختر تقييمك من 1 إلى 5 نجوم</p>
-                    <div class="rating-input">
-                        <button type="button" class="star-btn" data-rating="1">★</button>
-                        <button type="button" class="star-btn" data-rating="2">★</button>
-                        <button type="button" class="star-btn" data-rating="3">★</button>
-                        <button type="button" class="star-btn" data-rating="4">★</button>
-                        <button type="button" class="star-btn" data-rating="5">★</button>
-                    </div>
+                <div class="modal-body">
+                    <p>
+                        أنت تقيم: <strong id="storeNameForRating"></strong>
+                    </p>
+                    <form>
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">
+                                اختر تقييمك من 1 إلى 5 نجوم:
+                            </label>
+                            <div class="rating-input">
+                                {% for i in range(1, 6) %}
+                                <button type="button" class="star-btn" data-rating="{{ i }}">
+                                    ★
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ratingComment" class="form-label">اكتب تعليقك:</label>
+                            <textarea class="form-control" id="ratingComment" rows="3" placeholder="شاركنا تجربتك مع هذا المحل..." required></textarea>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" class="btn btn-primary" id="submitRating">تقييم</button>
+                    <button type="button" class="btn btn-primary" id="submitRating">إرسال التقييم</button>
                 </div>
             </div>
         </div>
@@ -1513,6 +1561,13 @@
             {% endif %}
         }
 
+        // دالة لعرض رسالة تسجيل الدخول
+        function showLoginPrompt() {
+            alert('لتتمكن من التقييم، يرجى تسجيل الدخول أولاً.');
+            window.location.href = "{{ url_for('login') }}";
+        }
+
+
         // التعامل مع النجوم
         document.querySelectorAll('.star-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -1551,29 +1606,35 @@
                 return;
             }
 
+            const comment = document.getElementById('ratingComment').value.trim();
+            if (!comment) {
+                alert('يرجى كتابة تعليق');
+                return;
+            }
+
             fetch(`/rate-store/${currentStoreId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    rating: selectedRating
+                    rating: selectedRating,
+                    comment: comment
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('تم حفظ التقييم بنجاح!');
+                    alert(data.message || 'تم إرسال التقييم بنجاح!');
+                    bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
                     location.reload();
                 } else {
-                    alert('خطأ في حفظ التقييم: ' + (data.error || 'خطأ غير معروف'));
+                    alert(data.error);
                 }
             })
             .catch(error => {
-                alert('خطأ في الاتصال: ' + error.message);
+                alert('حدث خطأ أثناء إرسال التقييم');
             });
-
-            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
         });
     </script>
 </body>
