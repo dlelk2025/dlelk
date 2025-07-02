@@ -94,38 +94,94 @@
                         <h3><i class="bi bi-telegram"></i> إدارة بوت التليجرام</h3>
                     </div>
 
+                    <!-- إدارة التوكن -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="bi bi-key"></i> إدارة توكن البوت</h5>
+                            <button class="btn btn-admin btn-sm" onclick="toggleTokenForm()">
+                                <i class="bi bi-gear"></i> إدارة التوكن
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="tokenDisplay">
+                                <p><strong>التوكن الحالي:</strong> 
+                                    <span id="currentToken" class="font-monospace text-muted">جاري التحميل...</span>
+                                </p>
+                            </div>
+                            
+                            <div id="tokenForm" class="d-none">
+                                <div class="mb-3">
+                                    <label class="form-label">توكن بوت التليجرام</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="tokenInput" placeholder="أدخل توكن البوت">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleTokenVisibility()">
+                                            <i class="bi bi-eye" id="tokenToggleIcon"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        احصل على التوكن من <a href="https://t.me/BotFather" target="_blank">@BotFather</a>
+                                    </small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary" onclick="saveToken()">
+                                        <i class="bi bi-check"></i> حفظ التوكن
+                                    </button>
+                                    <button class="btn btn-danger" onclick="deleteToken()">
+                                        <i class="bi bi-trash"></i> حذف التوكن
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="toggleTokenForm()">
+                                        <i class="bi bi-x"></i> إلغاء
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- حالة البوت -->
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5><i class="bi bi-info-circle"></i> حالة البوت</h5>
+                            <div>
+                                <button id="refreshStatusBtn" class="btn btn-outline-secondary btn-sm me-2" onclick="refreshBotStatus()">
+                                    <i class="bi bi-arrow-clockwise"></i> تحديث الحالة
+                                </button>
+                                <button id="reconnectBtn" class="btn btn-admin btn-sm" onclick="reconnectBot()">
+                                    <i class="bi bi-arrow-repeat"></i> إعادة الاتصال
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <p><strong>التوكن:</strong> 
-                                        {% if bot_token_exists %}
-                                            <span class="status-badge status-connected">موجود</span>
-                                        {% else %}
-                                            <span class="status-badge status-disconnected">غير موجود</span>
-                                        {% endif %}
+                                        <span id="tokenStatus" class="status-badge {{ 'status-connected' if bot_token_exists else 'status-disconnected' }}">
+                                            {{ 'موجود' if bot_token_exists else 'غير موجود' }}
+                                        </span>
                                     </p>
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>حالة الاتصال:</strong> 
-                                        {% if bot_status == 'متصل' %}
-                                            <span class="status-badge status-connected">{{ bot_status }}</span>
-                                        {% else %}
-                                            <span class="status-badge status-disconnected">{{ bot_status }}</span>
-                                        {% endif %}
+                                        <span id="connectionStatus" class="status-badge {{ 'status-connected' if bot_status == 'متصل' else 'status-disconnected' }}">
+                                            {{ bot_status }}
+                                        </span>
                                     </p>
                                 </div>
                             </div>
-                            {% if not bot_token_exists %}
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                <strong>تنبيه:</strong> يجب إضافة التوكن في صفحة Secrets بالاسم: <code>TELEGRAM_BOT_TOKEN</code>
+                            
+                            <div id="statusAlert" class="alert d-none">
+                                <i class="bi bi-info-circle"></i>
+                                <span id="statusMessage"></span>
                             </div>
-                            {% endif %}
+                            
+                            <div id="tokenWarning" class="alert alert-warning {{ 'd-none' if bot_token_exists else '' }}">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>تنبيه:</strong> يجب إضافة التوكن من خلال "إدارة التوكن" أعلاه أو عبر Secrets
+                            </div>
+                            
+                            <div id="disconnectedWarning" class="alert alert-info {{ 'd-none' if bot_status == 'متصل' else '' }}">
+                                <i class="bi bi-wifi-off"></i>
+                                <strong>ملاحظة:</strong> البوت غير متصل حالياً. استخدم زر "إعادة الاتصال" لمحاولة الاتصال مرة أخرى.
+                            </div>
                         </div>
                     </div>
 
@@ -235,5 +291,239 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // تحميل التوكن المحفوظ عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedToken();
+        });
+
+        // تحميل التوكن المحفوظ
+        async function loadSavedToken() {
+            try {
+                const response = await fetch('/api/get-telegram-token');
+                const data = await response.json();
+                
+                const currentTokenSpan = document.getElementById('currentToken');
+                if (data.has_token) {
+                    currentTokenSpan.textContent = data.token;
+                    currentTokenSpan.className = 'font-monospace text-success';
+                } else {
+                    currentTokenSpan.textContent = 'لم يتم إضافة توكن';
+                    currentTokenSpan.className = 'font-monospace text-muted';
+                }
+            } catch (error) {
+                console.error('خطأ في تحميل التوكن:', error);
+            }
+        }
+
+        // إظهار/إخفاء نموذج التوكن
+        function toggleTokenForm() {
+            const tokenDisplay = document.getElementById('tokenDisplay');
+            const tokenForm = document.getElementById('tokenForm');
+            
+            if (tokenForm.classList.contains('d-none')) {
+                tokenDisplay.classList.add('d-none');
+                tokenForm.classList.remove('d-none');
+            } else {
+                tokenDisplay.classList.remove('d-none');
+                tokenForm.classList.add('d-none');
+                document.getElementById('tokenInput').value = '';
+            }
+        }
+
+        // إظهار/إخفاء التوكن
+        function toggleTokenVisibility() {
+            const tokenInput = document.getElementById('tokenInput');
+            const toggleIcon = document.getElementById('tokenToggleIcon');
+            
+            if (tokenInput.type === 'password') {
+                tokenInput.type = 'text';
+                toggleIcon.className = 'bi bi-eye-slash';
+            } else {
+                tokenInput.type = 'password';
+                toggleIcon.className = 'bi bi-eye';
+            }
+        }
+
+        // حفظ التوكن
+        async function saveToken() {
+            const token = document.getElementById('tokenInput').value.trim();
+            
+            if (!token) {
+                showStatusMessage('يرجى إدخال التوكن', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/save-telegram-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatusMessage(data.message, 'success');
+                    toggleTokenForm();
+                    loadSavedToken();
+                    setTimeout(refreshBotStatus, 1000);
+                } else {
+                    showStatusMessage(data.message, 'danger');
+                }
+                
+            } catch (error) {
+                showStatusMessage('خطأ في الاتصال بالخادم', 'danger');
+                console.error('Error saving token:', error);
+            }
+        }
+
+        // حذف التوكن
+        async function deleteToken() {
+            if (!confirm('هل أنت متأكد من حذف التوكن؟ سيتم قطع الاتصال مع البوت.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/delete-telegram-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatusMessage(data.message, 'success');
+                    toggleTokenForm();
+                    loadSavedToken();
+                    setTimeout(refreshBotStatus, 1000);
+                } else {
+                    showStatusMessage(data.message, 'danger');
+                }
+                
+            } catch (error) {
+                showStatusMessage('خطأ في الاتصال بالخادم', 'danger');
+                console.error('Error deleting token:', error);
+            }
+        }
+
+        // تحديث حالة البوت
+        async function refreshBotStatus() {
+            const refreshBtn = document.getElementById('refreshStatusBtn');
+            const originalHtml = refreshBtn.innerHTML;
+            
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> جاري التحديث...';
+            refreshBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/telegram-bot-status');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatusMessage('خطأ في جلب الحالة', 'danger');
+                    return;
+                }
+                
+                // تحديث عرض التوكن
+                const tokenStatus = document.getElementById('tokenStatus');
+                tokenStatus.className = `status-badge ${data.token_exists ? 'status-connected' : 'status-disconnected'}`;
+                tokenStatus.textContent = data.token_exists ? 'موجود' : 'غير موجود';
+                
+                // تحديث حالة الاتصال
+                const connectionStatus = document.getElementById('connectionStatus');
+                connectionStatus.className = `status-badge ${data.connected ? 'status-connected' : 'status-disconnected'}`;
+                connectionStatus.textContent = data.status;
+                
+                // إظهار/إخفاء التحذيرات
+                const tokenWarning = document.getElementById('tokenWarning');
+                tokenWarning.className = `alert alert-warning ${data.token_exists ? 'd-none' : ''}`;
+                
+                const disconnectedWarning = document.getElementById('disconnectedWarning');
+                disconnectedWarning.className = `alert alert-info ${data.connected ? 'd-none' : ''}`;
+                
+                showStatusMessage('تم تحديث الحالة بنجاح', 'success');
+                
+            } catch (error) {
+                showStatusMessage('خطأ في الاتصال بالخادم', 'danger');
+                console.error('Error refreshing status:', error);
+            } finally {
+                refreshBtn.innerHTML = originalHtml;
+                refreshBtn.disabled = false;
+            }
+        }
+        
+        // إعادة الاتصال بالبوت
+        async function reconnectBot() {
+            const reconnectBtn = document.getElementById('reconnectBtn');
+            const originalHtml = reconnectBtn.innerHTML;
+            
+            reconnectBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> جاري الاتصال...';
+            reconnectBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/admin/reconnect-telegram-bot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatusMessage(data.message, 'success');
+                    // تحديث الحالة تلقائياً بعد الاتصال
+                    setTimeout(refreshBotStatus, 1000);
+                } else {
+                    showStatusMessage(data.message, 'danger');
+                }
+                
+            } catch (error) {
+                showStatusMessage('خطأ في الاتصال بالخادم', 'danger');
+                console.error('Error reconnecting bot:', error);
+            } finally {
+                reconnectBtn.innerHTML = originalHtml;
+                reconnectBtn.disabled = false;
+            }
+        }
+        
+        // عرض رسائل الحالة
+        function showStatusMessage(message, type) {
+            const alert = document.getElementById('statusAlert');
+            const messageSpan = document.getElementById('statusMessage');
+            
+            alert.className = `alert alert-${type}`;
+            messageSpan.textContent = message;
+            
+            // إزالة الفئة d-none لإظهار الرسالة
+            alert.classList.remove('d-none');
+            
+            // إخفاء الرسالة بعد 5 ثوان
+            setTimeout(() => {
+                alert.classList.add('d-none');
+            }, 5000);
+        }
+        
+        // تحديث الحالة تلقائياً كل 30 ثانية
+        setInterval(refreshBotStatus, 30000);
+        
+        // CSS للحركة الدوارة
+        const style = document.createElement('style');
+        style.textContent = `
+            .spin {
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>
