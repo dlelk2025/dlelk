@@ -326,6 +326,99 @@ def init_db():
     except:
         pass
 
+    # جدول إعدادات النقاط
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS points_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            setting_key TEXT UNIQUE NOT NULL,
+            setting_value INTEGER DEFAULT 0,
+            description TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # إدراج الإعدادات الافتراضية للنقاط
+    default_points_settings = [
+        ('points_add_store', 10, 'نقاط إضافة محل جديد'),
+        ('points_rate_store', 5, 'نقاط تقييم محل'),
+        ('points_daily_login', 2, 'نقاط الدخول اليومي')
+    ]
+
+    for setting in default_points_settings:
+        cursor.execute('''
+            INSERT OR IGNORE INTO points_settings (setting_key, setting_value, description) 
+            VALUES (?, ?, ?)
+        ''', setting)
+
+    # جدول نقاط المستخدمين
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_points (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            total_points INTEGER DEFAULT 0,
+            available_points INTEGER DEFAULT 0,
+            spent_points INTEGER DEFAULT 0,
+            last_daily_login DATE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+    ''')
+
+    # جدول سجل النقاط
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS points_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            points INTEGER NOT NULL,
+            activity_type TEXT NOT NULL,
+            activity_description TEXT,
+            related_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+    ''')
+
+    # جدول الهدايا
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS gifts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            points_cost INTEGER NOT NULL,
+            is_active BOOLEAN DEFAULT 1,
+            stock_quantity INTEGER DEFAULT -1,
+            image_url TEXT,
+            category TEXT DEFAULT 'عام',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # جدول طلبات استبدال الهدايا
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS gift_redemptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            gift_id INTEGER NOT NULL,
+            points_spent INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            admin_notes TEXT,
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP,
+            processed_by INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            FOREIGN KEY (gift_id) REFERENCES gifts (id) ON DELETE CASCADE,
+            FOREIGN KEY (processed_by) REFERENCES users (id)
+        )
+    ''')
+
+    # إضافة عمود النقاط للمستخدمين الحاليين
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN total_points INTEGER DEFAULT 0')
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -801,7 +894,13 @@ def login():
                 session['user_id'] = user[0]
                 session['user_name'] = user[1]
                 session['is_admin'] = user[4]
-                flash('مرحباً بك!', 'success')
+                
+                # منح نقاط الدخول اليومي
+                if award_daily_login_points(user[0]):
+                    flash('مرحباً بك! تم منحك نقاط الدخول اليومي', 'success')
+                else:
+                    flash('مرحباً بك!', 'success')
+                
                 return redirect(url_for('dashboard'))
             else:
                 flash('حسابك معطل، تواصل مع الإدارة', 'error')
@@ -816,6 +915,152 @@ def logout():
     session.clear()
     flash('تم تسجيل الخروج بنجاح', 'success')
     return redirect(url_for('index'))
+
+# عرض تفاصيل الهدية للمستخدمين
+@app.route('/gift-details/<int:gift_id>')
+def gift_details(gift_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM gifts 
+        WHERE id = ? AND is_active = 1
+    ''', (gift_id,))
+    gift = cursor.fetchone()
+    
+    if not gift:
+        flash('الهدية غير موجودة أو غير متاحة', 'error')
+        conn.close()
+        return redirect(url_for('user_points'))
+    
+    # التحقق من نقاط المستخدم
+    points_summary = get_user_points_summary(session['user_id'])
+    
+    conn.close()
+    
+    return render_template('gift_details.html', 
+                         gift=gift,
+                         points_summary=points_summary)
+
+# صفحة النقاط والهدايا
+@app.route('/points')
+def user_points():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    points_summary = get_user_points_summary(user_id)
+    
+    # الحصول على الهدايا المتاحة
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT * FROM gifts 
+        WHERE is_active = 1 AND (stock_quantity > 0 OR stock_quantity = -1)
+        ORDER BY points_cost ASC
+    ''')
+    available_gifts = cursor.fetchall()
+    
+    # الحصول على طلبات الاستبدال السابقة
+    cursor.execute('''
+        SELECT gr.*, g.name as gift_name, g.points_cost
+        FROM gift_redemptions gr
+        LEFT JOIN gifts g ON gr.gift_id = g.id
+        WHERE gr.user_id = ?
+        ORDER BY gr.requested_at DESC
+        LIMIT 10
+    ''', (user_id,))
+    redemption_history = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('user_points.html', 
+                         points_summary=points_summary,
+                         available_gifts=available_gifts,
+                         redemption_history=redemption_history)
+
+# استبدال هدية
+@app.route('/redeem-gift/<int:gift_id>', methods=['POST'])
+def redeem_gift(gift_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
+    
+    user_id = session['user_id']
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من وجود الهدية وتوفرها
+    cursor.execute('SELECT * FROM gifts WHERE id = ? AND is_active = 1', (gift_id,))
+    gift = cursor.fetchone()
+    
+    if not gift:
+        conn.close()
+        return jsonify({'error': 'الهدية غير موجودة أو غير متاحة'}), 400
+    
+    gift_points_cost = gift[3]
+    gift_stock = gift[5]
+    
+    # التحقق من المخزون
+    if gift_stock == 0:
+        conn.close()
+        return jsonify({'error': 'الهدية غير متوفرة في المخزون'}), 400
+    
+    # التحقق من نقاط المستخدم
+    points_summary = get_user_points_summary(user_id)
+    if points_summary['available_points'] < gift_points_cost:
+        conn.close()
+        return jsonify({'error': 'نقاطك غير كافية لاستبدال هذه الهدية'}), 400
+    
+    # خصم النقاط مؤقتاً وإنشاء طلب الاستبدال
+    try:
+        cursor.execute('''
+            UPDATE user_points 
+            SET available_points = available_points - ?, 
+                spent_points = spent_points + ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (gift_points_cost, gift_points_cost, user_id))
+        
+        # إنشاء طلب الاستبدال
+        cursor.execute('''
+            INSERT INTO gift_redemptions (user_id, gift_id, points_spent, status) 
+            VALUES (?, ?, ?, 'pending')
+        ''', (user_id, gift_id, gift_points_cost))
+        
+        # إضافة سجل النقاط
+        cursor.execute('''
+            INSERT INTO points_history 
+            (user_id, points, activity_type, activity_description, related_id) 
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, -gift_points_cost, 'gift_redemption', f'استبدال هدية: {gift[1]}', gift_id))
+        
+        # تقليل المخزون إذا لم يكن لا نهائي
+        if gift_stock > 0:
+            cursor.execute('UPDATE gifts SET stock_quantity = stock_quantity - 1 WHERE id = ?', (gift_id,))
+        
+        conn.commit()
+        
+        # إرسال إشعار للإدارة عبر التليجرام
+        try:
+            if telegram_bot:
+                asyncio.run(send_redemption_notification(user_id, gift[1], gift_points_cost))
+        except Exception as e:
+            print(f"خطأ في إرسال إشعار التليجرام: {e}")
+        
+        conn.close()
+        return jsonify({'success': True, 'message': 'تم إرسال طلب الاستبدال بنجاح'})
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'error': f'خطأ في العملية: {str(e)}'}), 500
 
 # لوحة التحكم الشخصية
 @app.route('/dashboard')
@@ -856,6 +1101,9 @@ def dashboard():
     cursor.execute('SELECT * FROM categories ORDER BY name')
     categories = cursor.fetchall()
 
+    # الحصول على نقاط المستخدم
+    points_summary = get_user_points_summary(session['user_id'])
+
     conn.close()
 
     return render_template('dashboard.html', 
@@ -864,7 +1112,8 @@ def dashboard():
                          total_ratings=total_ratings,
                          avg_rating=avg_rating,
                          approved_stores=approved_stores,
-                         categories=categories)
+                         categories=categories,
+                         user_points=points_summary['available_points'])
 
 # صفحة الخدمات الهامة - مع التسجيل الإجباري
 @app.route('/important-services')
@@ -1614,6 +1863,41 @@ def toggle_store(store_id):
     flash(f'{status_text} المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
 
+# API للحصول على جميع المستخدمين
+@app.route('/api/get-all-users')
+def get_all_users():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT u.id, u.full_name, u.phone, COALESCE(up.total_points, 0) as points
+            FROM users u 
+            LEFT JOIN user_points up ON u.id = up.user_id
+            WHERE u.is_active = 1
+            ORDER BY u.full_name
+        ''')
+        
+        users_data = cursor.fetchall()
+        conn.close()
+        
+        users = []
+        for user in users_data:
+            users.append({
+                'id': user[0],
+                'name': user[1],
+                'phone': user[2],
+                'points': user[3]
+            })
+        
+        return jsonify(users)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # API للحصول على التوقيت الحالي بتوقيت دمشق
 @app.route('/api/current-time')
 def get_current_time():
@@ -1664,19 +1948,33 @@ def approve_store(store_id):
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
-    # الحصول على اسم المحل للنسخة الاحتياطية
-    cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+    # الحصول على معلومات المحل والمالك
+    cursor.execute('SELECT name, user_id FROM stores WHERE id = ?', (store_id,))
     store = cursor.fetchone()
-    store_name = store[0] if store else f'محل #{store_id}'
+    
+    if not store:
+        flash('المحل غير موجود', 'error')
+        return redirect(url_for('admin_stores'))
+    
+    store_name = store[0]
+    store_owner_id = store[1]
 
     cursor.execute('UPDATE stores SET is_approved = 1 WHERE id = ?', (store_id,))
     conn.commit()
     conn.close()
 
+    # منح النقاط لصاحب المحل
+    if store_owner_id:
+        settings = get_points_settings()
+        store_points = settings.get('points_add_store', 10)
+        add_points(store_owner_id, store_points, 'store_approved', f'الموافقة على محل: {store_name}', store_id)
+
     # إنشاء نسخة احتياطية تلقائية
     create_auto_backup('edit', 'store', f'{store_name} (موافقة)')
 
-    flash('تم الموافقة على المحل بنجاح', 'success')
+    settings = get_points_settings()
+    points_awarded = settings.get('points_add_store', 10)
+    flash(f'تم الموافقة على المحل بنجاح ومنح {points_awarded} نقطة لصاحب المحل', 'success')
     return redirect(url_for('admin_stores'))
 
 # رفض محل
@@ -2130,6 +2428,556 @@ def delete_service(service_id):
     flash('تم حذف الخدمة بنجاح', 'success')
     return redirect(url_for('admin_services'))
 
+# إدارة النقاط والهدايا
+@app.route('/admin/points')
+def admin_points():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # إعدادات النقاط
+    cursor.execute('SELECT * FROM points_settings ORDER BY setting_key')
+    points_settings = cursor.fetchall()
+
+    # الهدايا
+    cursor.execute('SELECT * FROM gifts ORDER BY created_at DESC')
+    gifts = cursor.fetchall()
+
+    # طلبات الاستبدال
+    cursor.execute('''
+        SELECT gr.*, u.full_name as user_name, g.name as gift_name
+        FROM gift_redemptions gr
+        LEFT JOIN users u ON gr.user_id = u.id
+        LEFT JOIN gifts g ON gr.gift_id = g.id
+        ORDER BY gr.requested_at DESC
+        LIMIT 50
+    ''')
+    redemptions = cursor.fetchall()
+
+    # إحصائيات النقاط
+    cursor.execute('SELECT COUNT(*) FROM user_points WHERE total_points > 0')
+    active_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT SUM(total_points) FROM user_points')
+    total_points_issued = cursor.fetchone()[0] or 0
+
+    cursor.execute('SELECT SUM(spent_points) FROM user_points')
+    total_points_spent = cursor.fetchone()[0] or 0
+
+    cursor.execute('SELECT COUNT(*) FROM gift_redemptions WHERE status = "pending"')
+    pending_redemptions = cursor.fetchone()[0]
+
+    conn.close()
+
+    stats = {
+        'active_users': active_users,
+        'total_points_issued': total_points_issued,
+        'total_points_spent': total_points_spent,
+        'pending_redemptions': pending_redemptions
+    }
+
+    return render_template('admin_points.html', 
+                         points_settings=points_settings,
+                         gifts=gifts,
+                         redemptions=redemptions,
+                         stats=stats)
+
+# صفحة إضافة هدية جديدة
+@app.route('/admin/add-gift-page')
+def admin_add_gift_page():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+    
+    # إضافة الإحصائيات المطلوبة للقالب
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # إحصائيات سريعة
+    cursor.execute('SELECT COUNT(*) FROM stores')
+    total_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+    pending_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM categories')
+    total_categories = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM important_services')
+    total_services = cursor.fetchone()[0]
+
+    conn.close()
+
+    stats = {
+        'total_stores': total_stores,
+        'total_users': total_users,
+        'pending_stores': pending_stores,
+        'total_categories': total_categories,
+        'total_services': total_services
+    }
+    
+    return render_template('admin_add_gift.html', stats=stats)
+
+# تحديث إعدادات النقاط
+@app.route('/admin/update-points-settings', methods=['POST'])
+def update_points_settings():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    for key, value in request.form.items():
+        cursor.execute('UPDATE points_settings SET setting_value = ? WHERE setting_key = ?', 
+                      (int(value), key))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم تحديث إعدادات النقاط بنجاح', 'success')
+    return redirect(url_for('admin_points'))
+
+# إضافة هدية جديدة
+@app.route('/admin/add-gift', methods=['POST'])
+def add_gift():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    name = request.form['name']
+    description = request.form.get('description', '')
+    points_cost = int(request.form['points_cost'])
+    stock_quantity = int(request.form.get('stock_quantity', -1))
+    category = request.form.get('category', 'عام')
+    image_url = request.form.get('image_url', '')
+    is_active = 1 if request.form.get('is_active') else 0
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO gifts (name, description, points_cost, stock_quantity, category, image_url, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (name, description, points_cost, stock_quantity, category, image_url, is_active))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم إضافة الهدية بنجاح', 'success')
+    return redirect(url_for('admin_points'))
+
+# تعديل هدية
+@app.route('/admin/edit-gift/<int:gift_id>', methods=['POST'])
+def edit_gift(gift_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    name = request.form['name']
+    description = request.form.get('description', '')
+    points_cost = int(request.form['points_cost'])
+    stock_quantity = int(request.form.get('stock_quantity', -1))
+    category = request.form.get('category', 'عام')
+    is_active = 1 if request.form.get('is_active') else 0
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE gifts 
+        SET name = ?, description = ?, points_cost = ?, stock_quantity = ?, 
+            category = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (name, description, points_cost, stock_quantity, category, is_active, gift_id))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم تحديث الهدية بنجاح', 'success')
+    return redirect(url_for('admin_points'))
+
+# عرض تفاصيل الهدية في صفحة منفصلة
+@app.route('/admin/gift-details/<int:gift_id>')
+def admin_gift_details(gift_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب تفاصيل الهدية
+    cursor.execute('SELECT * FROM gifts WHERE id = ?', (gift_id,))
+    gift = cursor.fetchone()
+
+    if not gift:
+        flash('الهدية غير موجودة', 'error')
+        conn.close()
+        return redirect(url_for('admin_points'))
+
+    # جلب طلبات الاستبدال للهدية
+    cursor.execute('''
+        SELECT gr.*, u.full_name as user_name
+        FROM gift_redemptions gr
+        LEFT JOIN users u ON gr.user_id = u.id
+        WHERE gr.gift_id = ?
+        ORDER BY gr.requested_at DESC
+    ''', (gift_id,))
+    redemptions = cursor.fetchall()
+
+    # إحصائيات الهدية
+    cursor.execute('SELECT COUNT(*) FROM gift_redemptions WHERE gift_id = ?', (gift_id,))
+    total_redemptions = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM gift_redemptions WHERE gift_id = ? AND status = "pending"', (gift_id,))
+    pending_redemptions = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM gift_redemptions WHERE gift_id = ? AND status = "approved"', (gift_id,))
+    approved_redemptions = cursor.fetchone()[0]
+
+    # إحصائيات سريعة للوحة الإدارة
+    cursor.execute('SELECT COUNT(*) FROM stores')
+    total_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+    pending_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM categories')
+    total_categories = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM important_services')
+    total_services = cursor.fetchone()[0]
+
+    stats = {
+        'total_stores': total_stores,
+        'total_users': total_users,
+        'pending_stores': pending_stores,
+        'total_categories': total_categories,
+        'total_services': total_services
+    }
+
+    conn.close()
+    return render_template('admin_gift_details.html', 
+                         gift=gift, 
+                         redemptions=redemptions,
+                         total_redemptions=total_redemptions,
+                         pending_redemptions=pending_redemptions,
+                         approved_redemptions=approved_redemptions,
+                         stats=stats)
+
+# حذف هدية
+@app.route('/admin/delete-gift/<int:gift_id>')
+def delete_gift(gift_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('DELETE FROM gifts WHERE id = ?', (gift_id,))
+    conn.commit()
+    conn.close()
+    
+    flash('تم حذف الهدية بنجاح', 'success')
+    return redirect(url_for('admin_points'))
+
+# الموافقة على طلب استبدال
+@app.route('/admin/approve-redemption/<int:redemption_id>')
+def approve_redemption(redemption_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # تحديث حالة الطلب
+    cursor.execute('''
+        UPDATE gift_redemptions 
+        SET status = 'approved', processed_at = CURRENT_TIMESTAMP, processed_by = ?
+        WHERE id = ?
+    ''', (session['user_id'], redemption_id))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم الموافقة على طلب الاستبدال', 'success')
+    return redirect(url_for('admin_points'))
+
+# رفض طلب استبدال
+@app.route('/admin/reject-redemption/<int:redemption_id>')
+def reject_redemption(redemption_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    reason = request.args.get('reason', '')
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على معلومات الطلب
+    cursor.execute('SELECT user_id, gift_id, points_spent FROM gift_redemptions WHERE id = ?', (redemption_id,))
+    redemption = cursor.fetchone()
+    
+    if redemption:
+        user_id, gift_id, points_spent = redemption
+        
+        # إعادة النقاط للمستخدم
+        cursor.execute('''
+            UPDATE user_points 
+            SET available_points = available_points + ?, 
+                spent_points = spent_points - ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (points_spent, points_spent, user_id))
+        
+        # إعادة المخزون
+        cursor.execute('SELECT stock_quantity FROM gifts WHERE id = ?', (gift_id,))
+        gift = cursor.fetchone()
+        if gift and gift[0] > 0:
+            cursor.execute('UPDATE gifts SET stock_quantity = stock_quantity + 1 WHERE id = ?', (gift_id,))
+        
+        # تحديث حالة الطلب
+        cursor.execute('''
+            UPDATE gift_redemptions 
+            SET status = 'rejected', admin_notes = ?, processed_at = CURRENT_TIMESTAMP, processed_by = ?
+            WHERE id = ?
+        ''', (reason, session['user_id'], redemption_id))
+        
+        # إضافة سجل إعادة النقاط
+        cursor.execute('''
+            INSERT INTO points_history 
+            (user_id, points, activity_type, activity_description, related_id) 
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, points_spent, 'redemption_refund', f'إعادة نقاط استبدال مرفوض: {reason}', redemption_id))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم رفض طلب الاستبدال وإعادة النقاط', 'success')
+    return redirect(url_for('admin_points'))
+
+# إدارة نقاط المستخدمين - صفحة إدارة نقاط مستخدم محدد
+@app.route('/admin/manage-user-points/<int:user_id>')
+def admin_manage_user_points(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على معلومات المستخدم
+    cursor.execute('SELECT id, full_name, phone FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    
+    if not user:
+        flash('المستخدم غير موجود', 'error')
+        return redirect(url_for('admin_users'))
+    
+    # الحصول على نقاط المستخدم
+    points_summary = get_user_points_summary(user_id)
+    
+    conn.close()
+    
+    return render_template('admin_manage_user_points.html', 
+                         user=user, 
+                         points_summary=points_summary)
+
+# إضافة نقاط لمستخدم محدد
+@app.route('/admin/add-user-points/<int:user_id>', methods=['POST'])
+def admin_add_user_points(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        points = int(request.form['points'])
+        reason = request.form.get('reason', 'إضافة نقاط من قبل الإدارة')
+        
+        if points <= 0:
+            flash('عدد النقاط يجب أن يكون أكبر من صفر', 'error')
+            return redirect(url_for('admin_manage_user_points', user_id=user_id))
+        
+        # إضافة النقاط
+        success = add_points(user_id, points, 'admin_add', reason)
+        
+        if success:
+            flash(f'تم إضافة {points} نقطة بنجاح', 'success')
+        else:
+            flash('خطأ في إضافة النقاط', 'error')
+            
+    except ValueError:
+        flash('عدد النقاط يجب أن يكون رقماً صحيحاً', 'error')
+    except Exception as e:
+        flash(f'خطأ: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_manage_user_points', user_id=user_id))
+
+# خصم نقاط من مستخدم محدد
+@app.route('/admin/deduct-user-points/<int:user_id>', methods=['POST'])
+def admin_deduct_user_points(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        points = int(request.form['points'])
+        reason = request.form.get('reason', 'خصم نقاط من قبل الإدارة')
+        
+        if points <= 0:
+            flash('عدد النقاط يجب أن يكون أكبر من صفر', 'error')
+            return redirect(url_for('admin_manage_user_points', user_id=user_id))
+        
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # التحقق من وجود نقاط كافية
+        cursor.execute('SELECT available_points FROM user_points WHERE user_id = ?', (user_id,))
+        result = cursor.fetchone()
+        
+        if not result:
+            initialize_user_points(user_id)
+            available_points = 0
+        else:
+            available_points = result[0]
+        
+        if available_points < points:
+            flash(f'المستخدم لديه {available_points} نقطة فقط، لا يمكن خصم {points} نقطة', 'error')
+            conn.close()
+            return redirect(url_for('admin_manage_user_points', user_id=user_id))
+        
+        # خصم النقاط
+        cursor.execute('''
+            UPDATE user_points 
+            SET available_points = available_points - ?, 
+                spent_points = spent_points + ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (points, points, user_id))
+        
+        # إضافة سجل النقاط
+        cursor.execute('''
+            INSERT INTO points_history 
+            (user_id, points, activity_type, activity_description) 
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, -points, 'admin_deduct', reason))
+        
+        # تحديث النقاط في جدول المستخدمين
+        cursor.execute('''
+            UPDATE users SET total_points = (
+                SELECT total_points FROM user_points WHERE user_id = ?
+            ) WHERE id = ?
+        ''', (user_id, user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        flash(f'تم خصم {points} نقطة بنجاح', 'success')
+        
+    except ValueError:
+        flash('عدد النقاط يجب أن يكون رقماً صحيحاً', 'error')
+    except Exception as e:
+        flash(f'خطأ: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_manage_user_points', user_id=user_id))
+
+# تعديل إجمالي نقاط المستخدم
+@app.route('/admin/set-user-points/<int:user_id>', methods=['POST'])
+def admin_set_user_points(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        new_total = int(request.form['total_points'])
+        new_available = int(request.form['available_points'])
+        reason = request.form.get('reason', 'تعديل النقاط من قبل الإدارة')
+        
+        if new_total < 0 or new_available < 0:
+            flash('النقاط لا يمكن أن تكون أرقاماً سالبة', 'error')
+            return redirect(url_for('admin_manage_user_points', user_id=user_id))
+        
+        if new_available > new_total:
+            flash('النقاط المتاحة لا يمكن أن تكون أكثر من إجمالي النقاط', 'error')
+            return redirect(url_for('admin_manage_user_points', user_id=user_id))
+        
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # تهيئة نقاط المستخدم إذا لم تكن موجودة
+        initialize_user_points(user_id)
+        
+        # الحصول على النقاط الحالية
+        cursor.execute('SELECT total_points, available_points FROM user_points WHERE user_id = ?', (user_id,))
+        current = cursor.fetchone()
+        old_total = current[0] if current else 0
+        old_available = current[1] if current else 0
+        
+        # حساب النقاط المستخدمة
+        spent_points = new_total - new_available
+        
+        # تحديث النقاط
+        cursor.execute('''
+            UPDATE user_points 
+            SET total_points = ?, 
+                available_points = ?, 
+                spent_points = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (new_total, new_available, spent_points, user_id))
+        
+        # إضافة سجل التعديل
+        points_change = new_total - old_total
+        if points_change != 0:
+            cursor.execute('''
+                INSERT INTO points_history 
+                (user_id, points, activity_type, activity_description) 
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, points_change, 'admin_set', f'{reason} - تعديل من {old_total} إلى {new_total} نقطة'))
+        
+        # تحديث النقاط في جدول المستخدمين
+        cursor.execute('UPDATE users SET total_points = ? WHERE id = ?', (new_total, user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        flash(f'تم تعديل النقاط بنجاح - الإجمالي: {new_total}، المتاح: {new_available}', 'success')
+        
+    except ValueError:
+        flash('النقاط يجب أن تكون أرقاماً صحيحة', 'error')
+    except Exception as e:
+        flash(f'خطأ: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_manage_user_points', user_id=user_id))
+
+# مسح تاريخ نقاط المستخدم
+@app.route('/admin/clear-user-points-history/<int:user_id>')
+def admin_clear_user_points_history(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # حذف تاريخ النقاط
+        cursor.execute('DELETE FROM points_history WHERE user_id = ?', (user_id,))
+        deleted_count = cursor.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        flash(f'تم مسح {deleted_count} سجل من تاريخ النقاط', 'success')
+        
+    except Exception as e:
+        flash(f'خطأ: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_manage_user_points', user_id=user_id))
+
 # إعدادات النظام
 @app.route('/admin/settings')
 def admin_settings():
@@ -2493,6 +3341,178 @@ async def send_backup_to_telegram(backup_path, action_type, item_type, item_name
     except Exception as e:
         print(f"❌ خطأ في إرسال النسخة الاحتياطية لتليجرام: {e}")
 
+# وظائف إدارة النقاط
+def initialize_user_points(user_id):
+    """تهيئة نقاط المستخدم الجديد"""
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT id FROM user_points WHERE user_id = ?', (user_id,))
+    if not cursor.fetchone():
+        cursor.execute('''
+            INSERT INTO user_points (user_id, total_points, available_points, spent_points) 
+            VALUES (?, 0, 0, 0)
+        ''', (user_id,))
+        conn.commit()
+    
+    conn.close()
+
+def get_points_settings():
+    """الحصول على إعدادات النقاط"""
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT setting_key, setting_value FROM points_settings')
+    settings_data = cursor.fetchall()
+    
+    settings = {}
+    for setting in settings_data:
+        settings[setting[0]] = setting[1]
+    
+    conn.close()
+    return settings
+
+def add_points(user_id, points, activity_type, activity_description, related_id=None):
+    """إضافة نقاط للمستخدم"""
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # تهيئة نقاط المستخدم إذا لم تكن موجودة
+        initialize_user_points(user_id)
+        
+        # إضافة النقاط
+        cursor.execute('''
+            UPDATE user_points 
+            SET total_points = total_points + ?, 
+                available_points = available_points + ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (points, points, user_id))
+        
+        # إضافة سجل النقاط
+        cursor.execute('''
+            INSERT INTO points_history 
+            (user_id, points, activity_type, activity_description, related_id) 
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, points, activity_type, activity_description, related_id))
+        
+        # تحديث النقاط في جدول المستخدمين
+        cursor.execute('''
+            UPDATE users SET total_points = (
+                SELECT total_points FROM user_points WHERE user_id = ?
+            ) WHERE id = ?
+        ''', (user_id, user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ تم إضافة {points} نقطة للمستخدم {user_id} - {activity_description}")
+        return True
+        
+    except Exception as e:
+        print(f"خطأ في إضافة النقاط: {e}")
+        return False
+
+def can_award_daily_login(user_id):
+    """التحقق من إمكانية منح نقاط الدخول اليومي"""
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على التوقيت الحالي بتوقيت دمشق
+    from datetime import timezone, timedelta
+    damascus_tz = timezone(timedelta(hours=3))
+    today = datetime.now(damascus_tz).date()
+    
+    cursor.execute('SELECT last_daily_login FROM user_points WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    
+    if not result:
+        initialize_user_points(user_id)
+        conn.close()
+        return True
+    
+    last_login = result[0]
+    if not last_login:
+        conn.close()
+        return True
+    
+    # تحويل النص إلى تاريخ للمقارنة
+    try:
+        last_login_date = datetime.strptime(last_login, '%Y-%m-%d').date()
+        conn.close()
+        return today > last_login_date
+    except:
+        conn.close()
+        return True
+
+def award_daily_login_points(user_id):
+    """منح نقاط الدخول اليومي"""
+    if not can_award_daily_login(user_id):
+        return False
+    
+    settings = get_points_settings()
+    daily_points = settings.get('points_daily_login', 2)
+    
+    # الحصول على التوقيت الحالي بتوقيت دمشق
+    from datetime import timezone, timedelta
+    damascus_tz = timezone(timedelta(hours=3))
+    today = datetime.now(damascus_tz).date().strftime('%Y-%m-%d')
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # تحديث تاريخ آخر دخول
+    cursor.execute('''
+        UPDATE user_points 
+        SET last_daily_login = ? 
+        WHERE user_id = ?
+    ''', (today, user_id))
+    
+    conn.commit()
+    conn.close()
+    
+    # إضافة النقاط
+    return add_points(user_id, daily_points, 'daily_login', 'دخول يومي')
+
+def get_user_points_summary(user_id):
+    """الحصول على ملخص نقاط المستخدم"""
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # تهيئة نقاط المستخدم إذا لم تكن موجودة
+    initialize_user_points(user_id)
+    
+    cursor.execute('''
+        SELECT total_points, available_points, spent_points, last_daily_login 
+        FROM user_points WHERE user_id = ?
+    ''', (user_id,))
+    
+    result = cursor.fetchone()
+    if not result:
+        result = (0, 0, 0, None)
+    
+    # تاريخ النقاط
+    cursor.execute('''
+        SELECT points, activity_type, activity_description, created_at 
+        FROM points_history 
+        WHERE user_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ''', (user_id,))
+    
+    history = cursor.fetchall()
+    
+    conn.close()
+    
+    return {
+        'total_points': result[0],
+        'available_points': result[1], 
+        'spent_points': result[2],
+        'last_daily_login': result[3],
+        'history': history
+    }
+
 # وظائف بوت التليجرام
 async def start_command(update, context):
     """بداية البوت - للمديرين فقط"""
@@ -2716,6 +3736,42 @@ def is_admin_user(telegram_user_id):
     except Exception as e:
         print(f"خطأ في التحقق من المدير: {e}")
         return False
+
+async def send_redemption_notification(user_id, gift_name, points_spent):
+    """إرسال إشعار للمديرين عند طلب استبدال هدية"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # الحصول على اسم المستخدم
+        cursor.execute('SELECT full_name FROM users WHERE id = ?', (user_id,))
+        user = cursor.fetchone()
+        user_name = user[0] if user else f'مستخدم #{user_id}'
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        message = f"🎁 طلب استبدال هدية جديد!\n\n"
+        message += f"👤 المستخدم: {user_name}\n"
+        message += f"🎁 الهدية: {gift_name}\n"
+        message += f"⭐ النقاط المستخدمة: {points_spent}\n\n"
+        message += "يرجى مراجعة الطلب من لوحة الإدارة"
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال إشعار الاستبدال للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات استبدال الهدايا: {e}")
 
 async def send_new_store_notification(store_name, owner_name, category_name):
     """إرسال إشعار للمديرين عند إضافة محل جديد"""
@@ -3690,6 +4746,8 @@ def rate_store(store_id):
     damascus_time = datetime.now(damascus_tz)
     current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
 
+    is_new_rating = not existing_rating
+
     if existing_rating:
         # تحديث التقييم الموجود - التحقق من وجود عمود updated_at
         try:
@@ -3716,10 +4774,24 @@ def rate_store(store_id):
     # تحديث متوسط التقييم في جدول المحلات
     cursor.execute('UPDATE stores SET rating_avg = ? WHERE id = ?', (avg_rating, store_id))
 
+    # الحصول على اسم المحل
+    cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+    store_name = cursor.fetchone()
+    store_name = store_name[0] if store_name else f'محل #{store_id}'
+
     conn.commit()
     conn.close()
 
-    return jsonify({'success': True, 'new_average': avg_rating, 'message': 'تم حفظ التقييم والتعليق بنجاح'})
+    # منح النقاط للتقييم الجديد فقط
+    if is_new_rating:
+        settings = get_points_settings()
+        rating_points = settings.get('points_rate_store', 5)
+        add_points(session['user_id'], rating_points, 'store_rating', f'تقييم محل: {store_name}', store_id)
+        message = 'تم حفظ التقييم والتعليق بنجاح وحصلت على نقاط!'
+    else:
+        message = 'تم تحديث التقييم والتعليق بنجاح'
+
+    return jsonify({'success': True, 'new_average': avg_rating, 'message': message})
 
 # عرض التقييمات والتعليقات - مع التسجيل الإجباري
 @app.route('/store-ratings/<int:store_id>')
