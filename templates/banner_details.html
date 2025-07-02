@@ -1,0 +1,146 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{ banner[1] }} - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h2><i class="bi bi-card-image"></i> {{ banner[1] }}</h2>
+                </div>
+                <div class="card-body">
+                    <!-- صورة البنر -->
+                    <div class="text-center mb-4">
+                        <img src="{{ banner[2] }}" alt="{{ banner[1] }}" 
+                             class="img-fluid rounded shadow" 
+                             style="max-height: 400px; width: 100%; object-fit: cover;">
+                    </div>
+                    
+                    <!-- محتوى التفاصيل -->
+                    {% if banner[5] %}
+                    <div class="banner-content">
+                        {{ banner[5]|safe }}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        <p>لا توجد تفاصيل إضافية لهذا البنر</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- معلومات إضافية -->
+                    <div class="mt-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-info-circle"></i> معلومات البنر:</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>الأولوية:</strong> {{ banner[9] }}</li>
+                                    <li><strong>الموضع:</strong> 
+                                        {% if banner[6] == 'top' %}أعلى الصفحة
+                                        {% elif banner[6] == 'middle' %}وسط الصفحة
+                                        {% elif banner[6] == 'bottom' %}أسفل الصفحة
+                                        {% else %}{{ banner[6] }}{% endif %}
+                                    </li>
+                                    <li><strong>تاريخ الإنشاء:</strong> {{ banner[16] if banner[16] else 'غير محدد' }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-graph-up"></i> الإحصائيات:</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>المشاهدات:</strong> {{ banner[15] or 0 }}</li>
+                                    <li><strong>النقرات:</strong> {{ banner[14] or 0 }}</li>
+                                    {% if banner[14] and banner[15] and banner[15] > 0 %}
+                                    <li><strong>معدل النقر:</strong> {{ "%.1f"|format((banner[14] / banner[15]) * 100) }}%</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="text-center mt-4">
+                        {% if banner[3] and banner[4] == 'external' %}
+                        <a href="{{ banner[3] }}" class="btn btn-primary" target="_blank">
+                            <i class="bi bi-link-45deg"></i> زيارة الرابط
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> العودة للرئيسية
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} -->
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="bi bi-eye"></i> 
+                                تم عرضه {{ banner[15] or 0 }} مرة
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> 
+                                تم النشر في {{ banner[16][:10] if banner[16] else 'غير محدد' }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="bi bi-house"></i> العودة للرئيسية
+                    </a>
+                    
+                    {% if banner[3] and banner[4] == 'external' %}
+                    <a href="{{ banner[3] }}" class="btn btn-success" target="_blank">
+                        <i class="bi bi-link-45deg"></i> زيارة الرابط
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.banner-content {
+    font-size: 1.1em;
+    line-height: 1.8;
+    color: #333;
+}
+
+.banner-content p {
+    margin-bottom: 1rem;
+}
+
+.banner-content h1, .banner-content h2, .banner-content h3 {
+    color: var(--primary-color);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.banner-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.banner-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    background: rgba(102, 126, 234, 0.05);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+}
+</style>
+{% endblock %}

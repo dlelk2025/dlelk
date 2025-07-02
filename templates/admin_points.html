@@ -1,0 +1,375 @@
+
+{% extends "admin_dashboard.html" %}
+
+{% block title %}إدارة النقاط والهدايا - لوحة الإدارة{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إدارة النقاط والهدايا</h2>
+        <div>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-success me-2">
+                <i class="bi bi-search"></i> إدارة نقاط المستخدمين
+            </a>
+            <a href="{{ url_for('admin_add_gift_page') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> إضافة هدية جديدة
+            </a>
+        </div>
+    </div>
+
+    <!-- الإحصائيات -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>المستخدمين النشطين</h5>
+                    <h2>{{ stats.active_users }}</h2>
+                    <small>لديهم نقاط</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>إجمالي النقاط المصدرة</h5>
+                    <h2>{{ stats.total_points_issued }}</h2>
+                    <small>نقطة</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5>النقاط المستخدمة</h5>
+                    <h2>{{ stats.total_points_spent }}</h2>
+                    <small>نقطة</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>طلبات الاستبدال المعلقة</h5>
+                    <h2>{{ stats.pending_redemptions }}</h2>
+                    <small>طلب</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- علامات التبويب -->
+    <ul class="nav nav-tabs" id="adminPointsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button">
+                <i class="bi bi-gear"></i> إعدادات النقاط
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gifts-tab" data-bs-toggle="tab" data-bs-target="#gifts" type="button">
+                <i class="bi bi-gift"></i> إدارة الهدايا
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="redemptions-tab" data-bs-toggle="tab" data-bs-target="#redemptions" type="button">
+                <i class="bi bi-arrow-repeat"></i> طلبات الاستبدال
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- إعدادات النقاط -->
+        <div class="tab-pane fade show active" id="settings">
+            <div class="card">
+                <div class="card-header">
+                    <h5>إعدادات النقاط</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('update_points_settings') }}">
+                        <div class="row">
+                            {% for setting in points_settings %}
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ setting[3] }}</label>
+                                <input type="number" class="form-control" 
+                                       name="{{ setting[1] }}" 
+                                       value="{{ setting[2] }}" 
+                                       min="0" required>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> حفظ الإعدادات
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- إدارة الهدايا -->
+        <div class="tab-pane fade" id="gifts">
+            <div class="card">
+                <div class="card-header">
+                    <h5>الهدايا المتاحة</h5>
+                </div>
+                <div class="card-body">
+                    {% if gifts %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>اسم الهدية</th>
+                                    <th>الوصف</th>
+                                    <th>تكلفة النقاط</th>
+                                    <th>المخزون</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gift in gifts %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('admin_gift_details', gift_id=gift[0]) }}" 
+                                           class="text-decoration-none fw-bold">
+                                            {{ gift[1] }}
+                                        </a>
+                                    </td>
+                                    <td>{{ gift[2] or 'لا يوجد' }}</td>
+                                    <td>{{ gift[3] }} نقطة</td>
+                                    <td>
+                                        {% if gift[5] == -1 %}
+                                            لا نهائي
+                                        {% else %}
+                                            {{ gift[5] }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if gift[4] else 'secondary' }}">
+                                            {{ 'نشط' if gift[4] else 'غير نشط' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_gift_details', gift_id=gift[0]) }}" 
+                                           class="btn btn-sm btn-outline-info me-1">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                                onclick="editGift({{ gift[0] }}, '{{ gift[1] }}', '{{ gift[2] or '' }}', {{ gift[3] }}, {{ gift[5] }}, {{ gift[4] }}, '{{ gift[7] or 'عام' }}')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteGift({{ gift[0] }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-gift display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">لا توجد هدايا بعد</h4>
+                        <p class="text-muted">أضف هدايا جديدة لتحفيز المستخدمين</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- طلبات الاستبدال -->
+        <div class="tab-pane fade" id="redemptions">
+            <div class="card">
+                <div class="card-header">
+                    <h5>طلبات الاستبدال</h5>
+                </div>
+                <div class="card-body">
+                    {% if redemptions %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>الهدية</th>
+                                    <th>النقاط</th>
+                                    <th>الحالة</th>
+                                    <th>تاريخ الطلب</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for redemption in redemptions %}
+                                <tr>
+                                    <td>{{ redemption[7] or 'غير محدد' }}</td>
+                                    <td>{{ redemption[8] or 'غير محدد' }}</td>
+                                    <td>{{ redemption[3] }} نقطة</td>
+                                    <td>
+                                        {% if redemption[4] == 'pending' %}
+                                            <span class="badge bg-warning">في الانتظار</span>
+                                        {% elif redemption[4] == 'approved' %}
+                                            <span class="badge bg-success">مقبول</span>
+                                        {% elif redemption[4] == 'rejected' %}
+                                            <span class="badge bg-danger">مرفوض</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ redemption[6] }}</td>
+                                    <td>
+                                        {% if redemption[4] == 'pending' %}
+                                        <button class="btn btn-sm btn-success me-1" 
+                                                onclick="approveRedemption({{ redemption[0] }})">
+                                            <i class="bi bi-check"></i> موافقة
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="rejectRedemption({{ redemption[0] }})">
+                                            <i class="bi bi-x"></i> رفض
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">تم المعالجة</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-arrow-repeat display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">لا توجد طلبات استبدال بعد</h4>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة إضافة هدية -->
+<div class="modal fade" id="addGiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة هدية جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_gift') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الهدية</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تكلفة النقاط</label>
+                        <input type="number" class="form-control" name="points_cost" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كمية المخزون</label>
+                        <input type="number" class="form-control" name="stock_quantity" value="-1">
+                        <div class="form-text">استخدم -1 للمخزون اللانهائي</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">التصنيف</label>
+                        <input type="text" class="form-control" name="category" value="عام">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">رابط الصورة</label>
+                        <input type="url" class="form-control" name="image_url">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+                        <label class="form-check-label" for="is_active">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إضافة الهدية</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تعديل هدية -->
+<div class="modal fade" id="editGiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تعديل الهدية</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="" id="editGiftForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">اسم الهدية</label>
+                        <input type="text" class="form-control" name="name" id="editName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">الوصف</label>
+                        <textarea class="form-control" name="description" id="editDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تكلفة النقاط</label>
+                        <input type="number" class="form-control" name="points_cost" id="editPointsCost" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">كمية المخزون</label>
+                        <input type="number" class="form-control" name="stock_quantity" id="editStock">
+                        <div class="form-text">استخدم -1 للمخزون اللانهائي</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">التصنيف</label>
+                        <input type="text" class="form-control" name="category" id="editCategory">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive">
+                        <label class="form-check-label" for="editIsActive">نشط</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editGift(id, name, description, pointsCost, stock, isActive, category) {
+    document.getElementById('editName').value = name;
+    document.getElementById('editDescription').value = description;
+    document.getElementById('editPointsCost').value = pointsCost;
+    document.getElementById('editStock').value = stock;
+    document.getElementById('editCategory').value = category;
+    document.getElementById('editIsActive').checked = isActive == 1;
+    document.getElementById('editGiftForm').action = `/admin/edit-gift/${id}`;
+    
+    new bootstrap.Modal(document.getElementById('editGiftModal')).show();
+}
+
+function deleteGift(id) {
+    if (confirm('هل تريد حذف هذه الهدية؟')) {
+        window.location.href = `/admin/delete-gift/${id}`;
+    }
+}
+
+function approveRedemption(id) {
+    if (confirm('هل تريد الموافقة على طلب الاستبدال؟')) {
+        window.location.href = `/admin/approve-redemption/${id}`;
+    }
+}
+
+function rejectRedemption(id) {
+    const reason = prompt('سبب الرفض (اختياري):');
+    if (reason !== null) {
+        window.location.href = `/admin/reject-redemption/${id}?reason=${encodeURIComponent(reason)}`;
+    }
+}
+
+</script>
+
+{% endblock %}

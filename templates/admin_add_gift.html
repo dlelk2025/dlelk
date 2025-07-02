@@ -1,0 +1,210 @@
+
+{% extends "admin_dashboard.html" %}
+
+{% block title %}إضافة هدية جديدة - لوحة الإدارة{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>إضافة هدية جديدة</h2>
+        <a href="{{ url_for('admin_points') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> العودة لإدارة النقاط
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gift"></i> بيانات الهدية الجديدة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_gift') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">اسم الهدية *</label>
+                                <input type="text" class="form-control" name="name" required 
+                                       placeholder="أدخل اسم الهدية">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تكلفة النقاط *</label>
+                                <input type="number" class="form-control" name="points_cost" min="1" required
+                                       placeholder="عدد النقاط المطلوبة">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">الوصف</label>
+                            <textarea class="form-control" name="description" rows="4" 
+                                      placeholder="وصف مفصل للهدية (اختياري)"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">كمية المخزون</label>
+                                <input type="number" class="form-control" name="stock_quantity" value="-1">
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle"></i> استخدم -1 للمخزون اللانهائي
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">التصنيف</label>
+                                <select class="form-select" name="category">
+                                    <option value="عام">عام</option>
+                                    <option value="إلكترونيات">إلكترونيات</option>
+                                    <option value="كتب">كتب</option>
+                                    <option value="رياضة">رياضة</option>
+                                    <option value="موضة">موضة</option>
+                                    <option value="طعام">طعام</option>
+                                    <option value="ألعاب">ألعاب</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">رابط الصورة</label>
+                            <input type="url" class="form-control" name="image_url" 
+                                   placeholder="https://example.com/image.jpg">
+                            <div class="form-text">
+                                <i class="bi bi-image"></i> رابط صورة توضيحية للهدية (اختياري)
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_active" 
+                                           id="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="bi bi-toggle-on"></i> تفعيل الهدية فوراً
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> إضافة الهدية
+                            </button>
+                            <a href="{{ url_for('admin_points') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> إلغاء
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- معاينة الهدية -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye"></i> معاينة الهدية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="gift-preview" class="text-center">
+                        <div class="gift-preview-card border rounded p-4" style="max-width: 300px; margin: 0 auto;">
+                            <div class="gift-image mb-3">
+                                <img id="preview-image" src="" class="img-fluid rounded d-none" 
+                                     style="height: 150px; object-fit: cover; width: 100%;">
+                                <div id="preview-placeholder" class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <i class="bi bi-gift display-4 text-muted"></i>
+                                </div>
+                            </div>
+                            <h6 id="preview-name" class="text-muted">اسم الهدية</h6>
+                            <p id="preview-description" class="small text-muted">وصف الهدية</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span id="preview-points" class="badge bg-primary">0 نقطة</span>
+                                <span id="preview-stock" class="small text-muted">لا نهائي</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// معاينة مباشرة للهدية
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.querySelector('input[name="name"]');
+    const descriptionInput = document.querySelector('textarea[name="description"]');
+    const pointsInput = document.querySelector('input[name="points_cost"]');
+    const stockInput = document.querySelector('input[name="stock_quantity"]');
+    const imageInput = document.querySelector('input[name="image_url"]');
+
+    const previewName = document.getElementById('preview-name');
+    const previewDescription = document.getElementById('preview-description');
+    const previewPoints = document.getElementById('preview-points');
+    const previewStock = document.getElementById('preview-stock');
+    const previewImage = document.getElementById('preview-image');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+
+    function updatePreview() {
+        // تحديث الاسم
+        previewName.textContent = nameInput.value || 'اسم الهدية';
+        
+        // تحديث الوصف
+        previewDescription.textContent = descriptionInput.value || 'وصف الهدية';
+        
+        // تحديث النقاط
+        const points = pointsInput.value || '0';
+        previewPoints.textContent = `${points} نقطة`;
+        
+        // تحديث المخزون
+        const stock = stockInput.value;
+        if (stock == -1) {
+            previewStock.textContent = 'لا نهائي';
+        } else {
+            previewStock.textContent = `المتبقي: ${stock}`;
+        }
+        
+        // تحديث الصورة
+        if (imageInput.value) {
+            previewImage.src = imageInput.value;
+            previewImage.classList.remove('d-none');
+            previewPlaceholder.classList.add('d-none');
+        } else {
+            previewImage.classList.add('d-none');
+            previewPlaceholder.classList.remove('d-none');
+        }
+    }
+
+    // ربط الأحداث
+    nameInput.addEventListener('input', updatePreview);
+    descriptionInput.addEventListener('input', updatePreview);
+    pointsInput.addEventListener('input', updatePreview);
+    stockInput.addEventListener('input', updatePreview);
+    imageInput.addEventListener('input', updatePreview);
+    
+    // معاينة أولية
+    updatePreview();
+});
+</script>
+
+<style>
+.gift-preview-card {
+    transition: all 0.3s ease;
+}
+
+.gift-preview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+#preview-image {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}

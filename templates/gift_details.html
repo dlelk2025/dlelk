@@ -1,0 +1,192 @@
+
+{% extends "base.html" %}
+
+{% block title %}تفاصيل الهدية - {{ gift[1] }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- عنوان الصفحة -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-gift text-primary"></i> تفاصيل الهدية
+                </h2>
+                <a href="{{ url_for('user_points') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> العودة للنقاط
+                </a>
+            </div>
+
+            <!-- بطاقة تفاصيل الهدية -->
+            <div class="card border-0 shadow">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if gift[6] %}
+                        <img src="{{ gift[6] }}" class="img-fluid rounded-start h-100" 
+                             style="object-fit: cover; min-height: 300px;" alt="{{ gift[1] }}">
+                        {% else %}
+                        <div class="bg-gradient-primary text-white rounded-start h-100 d-flex align-items-center justify-content-center"
+                             style="min-height: 300px;">
+                            <i class="bi bi-gift" style="font-size: 4rem;"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body h-100 d-flex flex-column">
+                            <!-- اسم الهدية -->
+                            <h3 class="card-title text-primary mb-3">{{ gift[1] }}</h3>
+                            
+                            <!-- الوصف -->
+                            <div class="mb-4 flex-grow-1">
+                                <h6 class="text-muted mb-2">الوصف:</h6>
+                                {% if gift[2] %}
+                                <p class="card-text">{{ gift[2] }}</p>
+                                {% else %}
+                                <p class="text-muted">لا يوجد وصف متاح لهذه الهدية</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- معلومات الهدية -->
+                            <div class="row mb-4">
+                                <div class="col-6">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h4 class="text-warning mb-1">
+                                            <i class="bi bi-star-fill"></i> {{ gift[3] }}
+                                        </h4>
+                                        <small class="text-muted">نقطة مطلوبة</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <h5 class="mb-1">
+                                            {% if gift[5] == -1 %}
+                                            <i class="bi bi-infinity text-success"></i>
+                                            {% else %}
+                                            <span class="text-info">{{ gift[5] }}</span>
+                                            {% endif %}
+                                        </h5>
+                                        <small class="text-muted">
+                                            {% if gift[5] == -1 %}متاح دائماً{% else %}متبقي{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- معلومات نقاط المستخدم -->
+                            <div class="alert alert-info mb-4">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <strong>{{ points_summary.available_points }}</strong><br>
+                                        <small>نقاطك المتاحة</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong>{{ points_summary.total_points }}</strong><br>
+                                        <small>إجمالي النقاط</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong>{{ points_summary.spent_points }}</strong><br>
+                                        <small>نقاط مستخدمة</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- زر الاستبدال -->
+                            <div class="mt-auto">
+                                {% if points_summary.available_points >= gift[3] %}
+                                    {% if gift[5] != 0 %}
+                                    <button class="btn btn-primary w-100 btn-lg" 
+                                            onclick="redeemGift({{ gift[0] }}, '{{ gift[1] }}', {{ gift[3] }})">
+                                        <i class="bi bi-arrow-repeat"></i> استبدال الهدية
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-secondary w-100 btn-lg" disabled>
+                                        <i class="bi bi-x-circle"></i> غير متوفر في المخزون
+                                    </button>
+                                    {% endif %}
+                                {% else %}
+                                <div class="text-center">
+                                    <button class="btn btn-secondary w-100 btn-lg" disabled>
+                                        <i class="bi bi-x-circle"></i> نقاط غير كافية
+                                    </button>
+                                    <small class="text-muted d-block mt-2">
+                                        تحتاج {{ gift[3] - points_summary.available_points }} نقطة إضافية
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- معلومات إضافية -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-shield-check text-success display-4 mb-3"></i>
+                            <h6>ضمان الجودة</h6>
+                            <p class="small text-muted">جميع الهدايا مضمونة الجودة</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock text-primary display-4 mb-3"></i>
+                            <h6>تسليم سريع</h6>
+                            <p class="small text-muted">سيتم التواصل معك لتسليم الهدية</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function redeemGift(giftId, giftName, pointsCost) {
+    if (confirm(`هل تريد استبدال "${giftName}" مقابل ${pointsCost} نقطة؟`)) {
+        fetch(`/redeem-gift/${giftId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في العملية');
+        });
+    }
+}
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card {
+    transition: transform 0.3s ease;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: none;
+}
+</style>
+{% endblock %}

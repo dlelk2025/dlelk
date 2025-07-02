@@ -28,6 +28,9 @@
                     <a href="#statistics" class="list-group-item list-group-item-action" onclick="showStatistics()">
                         <i class="bi bi-graph-up"></i> الإحصائيات
                     </a>
+                    <a href="{{ url_for('user_points') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-star-fill"></i> النقاط والهدايا
+                    </a>
                 </div>
             </div>
 
@@ -43,17 +46,21 @@
                     <h6 class="card-title">{{ session.user_name }}</h6>
                     <p class="card-text text-muted small">عضو منذ {{ join_year }}</p>
                     <div class="row text-center">
-                        <div class="col-4">
+                        <div class="col-3">
                             <strong class="d-block">{{ user_stores|length }}</strong>
                             <small class="text-muted">محل</small>
                         </div>
-                        <div class="col-4">
+                        <div class="col-3">
                             <strong class="d-block">{{ total_ratings }}</strong>
                             <small class="text-muted">تقييم</small>
                         </div>
-                        <div class="col-4">
+                        <div class="col-3">
                             <strong class="d-block">{{ "%.1f"|format(avg_rating) }}</strong>
                             <small class="text-muted">تقييم</small>
+                        </div>
+                        <div class="col-3">
+                            <strong class="d-block text-warning">{{ user_points }}</strong>
+                            <small class="text-muted">نقطة</small>
                         </div>
                     </div>
                 </div>
@@ -145,13 +152,11 @@
                                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editStoreModal{{ store[0] }}">
                                                     <i class="bi bi-pencil"></i> تعديل
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="rateStore({{ store[0] }})">
-                                                    <i class="bi bi-star"></i> تقييم
+                                                <li><a class="dropdown-item" href="{{ url_for('store_ratings', store_id=store[0]) }}">
+                                                    <i class="bi bi-star"></i> عرض التقييمات
                                                 </a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up"></i> إحصائيات</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteStore({{ store[0] }})">
-                                                    <i class="bi bi-trash"></i> حذف
+                                                <li><a class="dropdown-item" href="#" onclick="showStoreStatistics({{ store[0] }})">
+                                                    <i class="bi bi-graph-up"></i> إحصائيات المحل
                                                 </a></li>
                                             </ul>
                                         </div>
@@ -206,13 +211,9 @@
                                                 {% endif %}
                                             </small>
                                             <div>
-                                                <button class="btn btn-sm btn-outline-primary me-1" 
-                                                        onclick="editStore({{ store[0] }}, '{{ store[1] }}', {{ store[2] }}, '{{ store[3] }}', '{{ store[4] or '' }}', '{{ store[5] or '' }}')">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" 
-                                                        onclick="deleteStore({{ store[0] }})">
-                                                    <i class="bi bi-trash"></i>
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        data-bs-toggle="modal" data-bs-target="#editStoreModal{{ store[0] }}">
+                                                    <i class="bi bi-pencil"></i> تعديل
                                                 </button>
                                             </div>
                                         </div>
@@ -474,14 +475,9 @@ function rateStore(storeId) {
     new bootstrap.Modal(document.getElementById('ratingModal')).show();
 }
 
-function deleteStore(storeId) {
-    if (confirm('هل تريد حذف هذا المحل؟')) {
-        fetch(`/delete-user-store/${storeId}`, {
-            method: 'DELETE'
-        }).then(() => {
-            location.reload();
-        });
-    }
+function showStoreStatistics(storeId) {
+    // يمكن إضافة صفحة إحصائيات مفصلة للمحل هنا
+    alert('ميزة الإحصائيات المفصلة ستكون متاحة قريباً');
 }
 
 // التقييم بالنجوم
@@ -551,6 +547,10 @@ function submitRating() {
 function showStatistics() {
     const statisticsModal = new bootstrap.Modal(document.getElementById('statisticsModal'));
     statisticsModal.show();
+}
+
+function showPoints() {
+    window.location.href = '{{ url_for("user_points") }}';
 }
 </script>
 

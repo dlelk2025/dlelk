@@ -1,0 +1,375 @@
+
+{% extends "base.html" %}
+
+{% block title %}النقاط والهدايا - دليل محلات الحسينية{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- الشريط الجانبي -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header" style="background: var(--primary-gradient); color: white;">
+                    <h5 class="mb-0">
+                        <i class="bi bi-star-fill"></i> نقاطي
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; color: white; font-size: 2rem; font-weight: bold;">
+                            {{ points_summary.available_points }}
+                        </div>
+                    </div>
+                    <h6 class="card-title">نقاطك المتاحة</h6>
+                    <div class="row text-center mt-3">
+                        <div class="col-6">
+                            <strong class="d-block text-success">{{ points_summary.total_points }}</strong>
+                            <small class="text-muted">إجمالي النقاط</small>
+                        </div>
+                        <div class="col-6">
+                            <strong class="d-block text-danger">{{ points_summary.spent_points }}</strong>
+                            <small class="text-muted">نقاط مستخدمة</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- روابط سريعة -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">روابط سريعة</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-house"></i> لوحة التحكم
+                        </a>
+                        <button class="btn btn-outline-info btn-sm" onclick="showPointsGuide()">
+                            <i class="bi bi-question-circle"></i> كيف أحصل على نقاط؟
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="col-lg-9 col-md-8">
+            <!-- رسالة الترحيب -->
+            <div class="alert" style="background: var(--primary-gradient); color: white; border: none;">
+                <h4 class="alert-heading">
+                    <i class="bi bi-gift"></i> مرحباً {{ session.user_name }}!
+                </h4>
+                <p class="mb-0">استخدم نقاطك لاستبدال هدايا رائعة أو تابع أنشطتك لكسب المزيد</p>
+            </div>
+
+            <!-- علامات التبويب -->
+            <ul class="nav nav-tabs" id="pointsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="gifts-tab" data-bs-toggle="tab" data-bs-target="#gifts" type="button" role="tab">
+                        <i class="bi bi-gift"></i> الهدايا المتاحة
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                        <i class="bi bi-clock-history"></i> سجل النقاط
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="redemptions-tab" data-bs-toggle="tab" data-bs-target="#redemptions" type="button" role="tab">
+                        <i class="bi bi-arrow-repeat"></i> طلبات الاستبدال
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="pointsTabContent">
+                <!-- الهدايا المتاحة -->
+                <div class="tab-pane fade show active" id="gifts" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gift"></i> الهدايا المتاحة للاستبدال
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if available_gifts %}
+                            <div class="row">
+                                {% for gift in available_gifts %}
+                                <div class="col-lg-6 col-xl-4 mb-4">
+                                    <div class="card h-100 border-0 shadow-sm gift-card">
+                                        {% if gift[6] %}
+                                        <img src="{{ gift[6] }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                            <i class="bi bi-gift display-1 text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <a href="{{ url_for('gift_details', gift_id=gift[0]) }}" 
+                                                   class="text-decoration-none">
+                                                    {{ gift[1] }}
+                                                </a>
+                                            </h6>
+                                            <p class="card-text text-muted">{{ gift[2] or 'لا يوجد وصف' }}</p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-star-fill"></i> {{ gift[3] }} نقطة
+                                                </span>
+                                                {% if gift[5] != -1 %}
+                                                <small class="text-muted">المتبقي: {{ gift[5] }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            {% if points_summary.available_points >= gift[3] %}
+                                            <button class="btn btn-primary w-100" onclick="redeemGift({{ gift[0] }}, '{{ gift[1] }}', {{ gift[3] }})">
+                                                <i class="bi bi-arrow-repeat"></i> استبدال
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-secondary w-100" disabled>
+                                                <i class="bi bi-x-circle"></i> نقاط غير كافية
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-gift display-1 text-muted mb-3"></i>
+                                <h4 class="text-muted">لا توجد هدايا متاحة حالياً</h4>
+                                <p class="text-muted">تابع الموقع للحصول على هدايا جديدة</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- سجل النقاط -->
+                <div class="tab-pane fade" id="history" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history"></i> سجل النقاط
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if points_summary.history %}
+                            <div class="list-group">
+                                {% for record in points_summary.history %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ record[2] }}</h6>
+                                        <span class="badge bg-{{ 'success' if record[0] > 0 else 'danger' }}">
+                                            {{ '+' if record[0] > 0 else '' }}{{ record[0] }} نقطة
+                                        </span>
+                                    </div>
+                                    <p class="mb-1">{{ record[1] }}</p>
+                                    <small class="text-muted">{{ record[3] }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-clock-history display-1 text-muted mb-3"></i>
+                                <h4 class="text-muted">لا يوجد سجل نقاط بعد</h4>
+                                <p class="text-muted">ابدأ بإضافة محلات أو تقييمها لكسب النقاط</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- طلبات الاستبدال -->
+                <div class="tab-pane fade" id="redemptions" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-arrow-repeat"></i> طلبات الاستبدال
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if redemption_history %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>الهدية</th>
+                                            <th>النقاط المستخدمة</th>
+                                            <th>الحالة</th>
+                                            <th>تاريخ الطلب</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for redemption in redemption_history %}
+                                        <tr>
+                                            <td>{{ redemption[7] or 'غير محدد' }}</td>
+                                            <td>{{ redemption[3] }} نقطة</td>
+                                            <td>
+                                                {% if redemption[4] == 'pending' %}
+                                                    <span class="badge bg-warning">في الانتظار</span>
+                                                {% elif redemption[4] == 'approved' %}
+                                                    <span class="badge bg-success">مقبول</span>
+                                                {% elif redemption[4] == 'rejected' %}
+                                                    <span class="badge bg-danger">مرفوض</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ redemption[6] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-arrow-repeat display-1 text-muted mb-3"></i>
+                                <h4 class="text-muted">لا توجد طلبات استبدال بعد</h4>
+                                <p class="text-muted">استبدل نقاطك بهدايا رائعة</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تأكيد الاستبدال -->
+<div class="modal fade" id="redeemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الاستبدال</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل تريد استبدال <span id="giftPoints"></span> نقطة بهدية <span id="giftName"></span>؟</p>
+                <p class="text-muted">سيتم خصم النقاط من رصيدك وإرسال طلب للإدارة للموافقة.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="confirmRedeem">تأكيد الاستبدال</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة دليل النقاط -->
+<div class="modal fade" id="pointsGuideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle"></i> كيف أحصل على نقاط؟
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; color: white;">
+                            <i class="bi bi-plus-circle"></i>
+                        </div>
+                        <h6 class="mt-2">إضافة محل</h6>
+                        <p class="small text-muted">احصل على نقاط عند إضافة محل جديد وموافقة الإدارة عليه</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; color: white;">
+                            <i class="bi bi-star"></i>
+                        </div>
+                        <h6 class="mt-2">تقييم محل</h6>
+                        <p class="small text-muted">احصل على نقاط عند تقييم محل لأول مرة</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; color: white;">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <h6 class="mt-2">الدخول اليومي</h6>
+                        <p class="small text-muted">احصل على نقاط يومياً عند تسجيل دخولك للموقع</p>
+                    </div>
+                </div>
+                <hr>
+                <h6>استخدام النقاط:</h6>
+                <ul>
+                    <li>استبدل نقاطك بهدايا متنوعة</li>
+                    <li>كل هدية لها عدد نقاط محدد</li>
+                    <li>سيتم مراجعة طلب الاستبدال من قبل الإدارة</li>
+                    <li>ستحصل على إشعار عند الموافقة على طلبك</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">فهمت</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentGiftId = null;
+
+function redeemGift(giftId, giftName, points) {
+    currentGiftId = giftId;
+    document.getElementById('giftName').textContent = giftName;
+    document.getElementById('giftPoints').textContent = points;
+    new bootstrap.Modal(document.getElementById('redeemModal')).show();
+}
+
+function showPointsGuide() {
+    new bootstrap.Modal(document.getElementById('pointsGuideModal')).show();
+}
+
+document.getElementById('confirmRedeem').addEventListener('click', function() {
+    if (currentGiftId) {
+        fetch(`/redeem-gift/${currentGiftId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم إرسال طلب الاستبدال بنجاح! سيتم مراجعته من قبل الإدارة.');
+                location.reload();
+            } else {
+                alert('خطأ: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في العملية');
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById('redeemModal')).hide();
+    }
+});
+</script>
+
+<style>
+.gift-card {
+    transition: transform 0.2s;
+}
+
+.gift-card:hover {
+    transform: translateY(-5px);
+}
+
+.tab-content {
+    background: white;
+    border-radius: 0 0 0.375rem 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.nav-tabs .nav-link {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    background: white;
+    border-bottom-color: white;
+}
+</style>
+{% endblock %}

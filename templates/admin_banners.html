@@ -1,0 +1,493 @@
+
+{% extends "admin_dashboard.html" %}
+
+{% block title %}إدارة البنرات الإعلانية - لوحة الإدارة{% endblock %}
+
+{% block content %}
+<div class="row g-0">
+    <!-- الشريط الجانبي -->
+    <div class="col-md-2">
+        <div class="admin-sidebar">
+            <div class="sidebar-header">
+                <h4><i class="bi bi-shield-check"></i></h4>
+                <h5>لوحة الإدارة</h5>
+                <small>{{ session.user_name }}</small>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                    <i class="bi bi-speedometer2"></i>
+                    الرئيسية
+                </a>
+                <a href="{{ url_for('admin_duty_pharmacies') }}" class="nav-link">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                    الصيدليات المناوبة
+                </a>
+                <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                    <i class="bi bi-shop"></i>
+                    إدارة المحلات
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-link">
+                    <i class="bi bi-people"></i>
+                    إدارة المستخدمين
+                </a>
+                <a href="{{ url_for('admin_categories') }}" class="nav-link">
+                    <i class="bi bi-tags"></i>
+                    إدارة التصنيفات
+                </a>
+                <a href="{{ url_for('admin_services') }}" class="nav-link">
+                    <i class="bi bi-telephone"></i>
+                    الخدمات الهامة
+                </a>
+                <a href="{{ url_for('admin_notifications') }}" class="nav-link">
+                    <i class="bi bi-bell"></i>
+                    الإشعارات
+                </a>
+                <a href="{{ url_for('admin_banners') }}" class="nav-link active">
+                    <i class="bi bi-card-image"></i>
+                    البنرات الإعلانية
+                </a>
+                <a href="{{ url_for('admin_ticker') }}" class="nav-link">
+                    <i class="bi bi-text-paragraph"></i>
+                    الشريط المتحرك
+                </a>
+                <a href="{{ url_for('admin_backup') }}" class="nav-link">
+                    <i class="bi bi-cloud-download"></i>
+                    النسخ الاحتياطي
+                </a>
+                <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                    <i class="bi bi-gear"></i>
+                    الإعدادات
+                </a>
+                <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                <a href="{{ url_for('index') }}" class="nav-link">
+                    <i class="bi bi-house"></i>
+                    العودة للموقع
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="bi bi-box-arrow-right"></i>
+                    تسجيل خروج
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="col-md-10">
+        <div class="admin-content p-4">
+            <!-- الرأس -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-card-image"></i> إدارة البنرات الإعلانية</h2>
+                <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addBannerModal">
+                    <i class="bi bi-plus"></i> إضافة بنر جديد
+                </button>
+            </div>
+
+            <!-- الرسائل -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- جدول البنرات -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-list"></i> قائمة البنرات الإعلانية</h5>
+                </div>
+                <div class="card-body">
+                    {% if banners %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>العنوان</th>
+                                    <th>معاينة الصورة</th>
+                                    <th>الموضع</th>
+                                    <th>النوع</th>
+                                    <th>الحالة</th>
+                                    <th>الأولوية</th>
+                                    <th>الإحصائيات</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for banner in banners %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ banner[1] }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if banner[7] and banner[8] %}
+                                                من {{ banner[7] }} إلى {{ banner[8] }}
+                                            {% elif banner[7] %}
+                                                من {{ banner[7] }}
+                                            {% elif banner[8] %}
+                                                حتى {{ banner[8] }}
+                                            {% else %}
+                                                دائم
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <img src="{{ banner[2] }}" alt="{{ banner[1] }}" 
+                                             style="max-width: 100px; max-height: 60px; object-fit: cover; border-radius: 8px;">
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {% if banner[6] == 'top' %}أعلى الصفحة
+                                            {% elif banner[6] == 'bottom' %}أسفل الصفحة
+                                            {% elif banner[6] == 'middle' %}وسط الصفحة
+                                            {% else %}{{ banner[6] }}{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if banner[4] == 'external' %}
+                                            <span class="badge bg-primary">رابط خارجي</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">صفحة تفاصيل</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if banner[7] == 1 %}
+                                            <span class="badge bg-success">نشط</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">معطل</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">{{ banner[9] }}</span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <i class="bi bi-eye"></i> {{ banner[15] or 0 }} مشاهدة<br>
+                                            <i class="bi bi-cursor"></i> {{ banner[14] or 0 }} نقرة
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="editBanner({{ banner[0] }}, '{{ banner[1] }}', '{{ banner[2] }}', '{{ banner[4] }}', '{{ banner[3] }}', '{{ banner[5] }}', '{{ banner[6] }}', {{ banner[7] }}, {{ banner[9] }}, '{{ banner[7] }}', '{{ banner[8] }}', '{{ banner[10] }}', {{ banner[11] }}, {{ banner[12] }}, '{{ banner[13] }}')">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <a href="{{ url_for('delete_banner', banner_id=banner[0]) }}" 
+                                               class="btn btn-outline-danger"
+                                               onclick="return confirm('هل أنت متأكد من حذف هذا البنر؟')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-card-image display-1 text-muted"></i>
+                        <h4 class="mt-3">لا توجد بنرات إعلانية</h4>
+                        <p class="text-muted">ابدأ بإضافة أول بنر إعلاني للموقع</p>
+                        <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addBannerModal">
+                            <i class="bi bi-plus"></i> إضافة بنر جديد
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة إضافة بنر جديد -->
+<div class="modal fade" id="addBannerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> إضافة بنر إعلاني جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_banner') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">عنوان البنر</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رابط الصورة</label>
+                            <input type="url" class="form-control" name="image_url" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نوع الرابط</label>
+                            <select class="form-select" name="link_type" onchange="toggleLinkFields()">
+                                <option value="external">رابط خارجي</option>
+                                <option value="details">صفحة تفاصيل</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="linkUrlField">
+                            <label class="form-label">الرابط</label>
+                            <input type="url" class="form-control" name="link_url">
+                        </div>
+                        <div class="col-12 mb-3" id="detailsField" style="display: none;">
+                            <label class="form-label">محتوى صفحة التفاصيل</label>
+                            <textarea class="form-control" name="details_content" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">موضع البنر</label>
+                            <select class="form-select" name="position">
+                                <option value="top">أعلى الصفحة</option>
+                                <option value="middle">وسط الصفحة</option>
+                                <option value="bottom">أسفل الصفحة</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">الأولوية</label>
+                            <select class="form-select" name="priority">
+                                <option value="1">عالية جداً</option>
+                                <option value="2">عالية</option>
+                                <option value="3" selected>متوسطة</option>
+                                <option value="4">منخفضة</option>
+                                <option value="5">منخفضة جداً</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">عرض البنر</label>
+                            <select class="form-select" name="width_type">
+                                <option value="full">عرض كامل</option>
+                                <option value="container">عرض الحاوية</option>
+                                <option value="half">نصف العرض</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">ارتفاع البنر (بكسل)</label>
+                            <input type="number" class="form-control" name="height_px" value="200" min="50" max="800">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" name="show_on_mobile" checked>
+                                <label class="form-check-label">عرض على الجوال</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ البداية</label>
+                            <input type="date" class="form-control" name="start_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الانتهاء</label>
+                            <input type="date" class="form-control" name="end_date">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">الصفحات المعروض عليها</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="pages" value="all" checked onchange="toggleAllPages()">
+                                        <label class="form-check-label">جميع الصفحات</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input page-specific" name="pages" value="homepage">
+                                        <label class="form-check-label">الصفحة الرئيسية</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input page-specific" name="pages" value="search">
+                                        <label class="form-check-label">البحث</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input page-specific" name="pages" value="duty-pharmacies">
+                                        <label class="form-check-label">الصيدليات</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-admin">حفظ البنر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تعديل بنر -->
+<div class="modal fade" id="editBannerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> تعديل البنر الإعلاني</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editBannerForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">عنوان البنر</label>
+                            <input type="text" class="form-control" name="title" id="edit_title" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">رابط الصورة</label>
+                            <input type="url" class="form-control" name="image_url" id="edit_image_url" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">نوع الرابط</label>
+                            <select class="form-select" name="link_type" id="edit_link_type" onchange="toggleEditLinkFields()">
+                                <option value="external">رابط خارجي</option>
+                                <option value="details">صفحة تفاصيل</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="editLinkUrlField">
+                            <label class="form-label">الرابط</label>
+                            <input type="url" class="form-control" name="link_url" id="edit_link_url">
+                        </div>
+                        <div class="col-12 mb-3" id="editDetailsField" style="display: none;">
+                            <label class="form-label">محتوى صفحة التفاصيل</label>
+                            <textarea class="form-control" name="details_content" id="edit_details_content" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">موضع البنر</label>
+                            <select class="form-select" name="position" id="edit_position">
+                                <option value="top">أعلى الصفحة</option>
+                                <option value="middle">وسط الصفحة</option>
+                                <option value="bottom">أسفل الصفحة</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">الأولوية</label>
+                            <select class="form-select" name="priority" id="edit_priority">
+                                <option value="1">عالية جداً</option>
+                                <option value="2">عالية</option>
+                                <option value="3">متوسطة</option>
+                                <option value="4">منخفضة</option>
+                                <option value="5">منخفضة جداً</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">عرض البنر</label>
+                            <select class="form-select" name="width_type" id="edit_width_type">
+                                <option value="full">عرض كامل</option>
+                                <option value="container">عرض الحاوية</option>
+                                <option value="half">نصف العرض</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">ارتفاع البنر (بكسل)</label>
+                            <input type="number" class="form-control" name="height_px" id="edit_height_px" min="50" max="800">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" name="show_on_mobile" id="edit_show_on_mobile">
+                                <label class="form-check-label">عرض على الجوال</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" name="is_active" id="edit_is_active">
+                                <label class="form-check-label">نشط</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ البداية</label>
+                            <input type="date" class="form-control" name="start_date" id="edit_start_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الانتهاء</label>
+                            <input type="date" class="form-control" name="end_date" id="edit_end_date">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-admin">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLinkFields() {
+    const linkType = document.querySelector('select[name="link_type"]').value;
+    const linkUrlField = document.getElementById('linkUrlField');
+    const detailsField = document.getElementById('detailsField');
+    
+    if (linkType === 'details') {
+        linkUrlField.style.display = 'none';
+        detailsField.style.display = 'block';
+    } else {
+        linkUrlField.style.display = 'block';
+        detailsField.style.display = 'none';
+    }
+}
+
+function toggleEditLinkFields() {
+    const linkType = document.getElementById('edit_link_type').value;
+    const linkUrlField = document.getElementById('editLinkUrlField');
+    const detailsField = document.getElementById('editDetailsField');
+    
+    if (linkType === 'details') {
+        linkUrlField.style.display = 'none';
+        detailsField.style.display = 'block';
+    } else {
+        linkUrlField.style.display = 'block';
+        detailsField.style.display = 'none';
+    }
+}
+
+function toggleAllPages() {
+    const allPagesCheckbox = document.querySelector('input[name="pages"][value="all"]');
+    const pageSpecificCheckboxes = document.querySelectorAll('.page-specific');
+    
+    if (allPagesCheckbox.checked) {
+        pageSpecificCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            checkbox.disabled = true;
+        });
+    } else {
+        pageSpecificCheckboxes.forEach(checkbox => {
+            checkbox.disabled = false;
+        });
+    }
+}
+
+function editBanner(id, title, imageUrl, linkType, linkUrl, detailsContent, position, isActive, priority, startDate, endDate, widthType, heightPx, showOnMobile, pages) {
+    document.getElementById('edit_title').value = title;
+    document.getElementById('edit_image_url').value = imageUrl;
+    document.getElementById('edit_link_type').value = linkType;
+    document.getElementById('edit_link_url').value = linkUrl || '';
+    document.getElementById('edit_details_content').value = detailsContent || '';
+    document.getElementById('edit_position').value = position;
+    document.getElementById('edit_is_active').checked = isActive == 1;
+    document.getElementById('edit_priority').value = priority;
+    document.getElementById('edit_start_date').value = startDate || '';
+    document.getElementById('edit_end_date').value = endDate || '';
+    document.getElementById('edit_width_type').value = widthType;
+    document.getElementById('edit_height_px').value = heightPx;
+    document.getElementById('edit_show_on_mobile').checked = showOnMobile == 1;
+    
+    document.getElementById('editBannerForm').action = '/admin/update-banner/' + id;
+    
+    toggleEditLinkFields();
+    
+    const editModal = new bootstrap.Modal(document.getElementById('editBannerModal'));
+    editModal.show();
+}
+
+// تهيئة الحقول عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    toggleLinkFields();
+    toggleAllPages();
+});
+</script>
+{% endblock %}
