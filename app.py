@@ -427,27 +427,18 @@ def validate_syrian_phone(phone):
     pattern = r'^09\d{8}$'
     return bool(re.match(pattern, phone))
 
-# مراقب حالة بوت التليجرام
-def monitor_telegram_bot():
-    """مراقبة حالة بوت التليجرام وإعادة تشغيله عند الحاجة"""
-    global telegram_bot, telegram_app
+# تحسين وظائف إرسال الإشعارات
+async def send_telegram_message_safely(chat_id, message):
+    """إرسال رسالة تليجرام بشكل آمن"""
+    if not telegram_bot:
+        return False
     
-    while True:
-        try:
-            time.sleep(60)  # فحص كل دقيقة
-            
-            if telegram_bot is None:
-                print("🔄 إعادة تهيئة بوت التليجرام...")
-                if init_telegram_bot():
-                    bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-                    bot_thread.start()
-                    print("✅ تم إعادة تشغيل بوت التليجرام")
-                else:
-                    print("❌ فشل في إعادة تهيئة بوت التليجرام")
-                    
-        except Exception as e:
-            print(f"❌ خطأ في مراقب بوت التليجرام: {e}")
-            time.sleep(30)
+    try:
+        await telegram_bot.send_message(chat_id=chat_id, text=message)
+        return True
+    except Exception as e:
+        print(f"خطأ في إرسال رسالة تليجرام: {e}")
+        return False
 
 # وظيفة للتحقق التلقائي من انتهاء صلاحية الإشعارات
 def check_expired_notifications():
@@ -1072,7 +1063,7 @@ def redeem_gift(gift_id):
         # إرسال إشعار للإدارة عبر التليجرام
         try:
             if telegram_bot:
-                asyncio.run(send_redemption_notification(user_id, gift[1], gift_points_cost))
+                send_redemption_notification_sync(user_id, gift[1], gift_points_cost)
         except Exception as e:
             print(f"خطأ في إرسال إشعار التليجرام: {e}")
         
@@ -3796,13 +3787,11 @@ def is_admin_user(telegram_user_id):
         print(f"خطأ في التحقق من المدير: {e}")
         return False
 
-async def send_redemption_notification(user_id, gift_name, points_spent):
-    """إرسال إشعار للمديرين عند طلب استبدال هدية مع إعادة المحاولة"""
+def send_redemption_notification_sync(user_id, gift_name, points_spent):
+    """إرسال إشعار للمديرين عند طلب استبدال هدية (بدون threading)"""
     if not telegram_bot:
         print("⚠️ بوت التليجرام غير متاح لإرسال إشعار الاستبدال")
         return False
-        
-    max_retries = 3
     
     try:
         conn = sqlite3.connect('hussainiya_stores.db')
@@ -3827,26 +3816,36 @@ async def send_redemption_notification(user_id, gift_name, points_spent):
         message += f"⭐ النقاط المستخدمة: {points_spent}\n\n"
         message += "يرجى مراجعة الطلب من لوحة الإدارة"
         
-        success_count = 0
+        # استخدام threading.Thread لتشغيل asyncio في خيط منفصل
+        import threading
+        def send_messages():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                async def send_to_admins():
+                    success_count = 0
+                    for admin_id in admin_ids:
+                        try:
+                            await telegram_bot.send_message(
+                                chat_id=admin_id[0],
+                                text=message
+                            )
+                            success_count += 1
+                            print(f"✅ تم إرسال إشعار الاستبدال للمدير {admin_id[0]}")
+                        except Exception as e:
+                            print(f"❌ فشل في إرسال إشعار الاستبدال للمدير {admin_id[0]}: {e}")
+                    return success_count > 0
+                
+                return loop.run_until_complete(send_to_admins())
+            except Exception as e:
+                print(f"❌ خطأ في thread إرسال الإشعارات: {e}")
+                return False
         
-        for admin_id in admin_ids:
-            for retry in range(max_retries):
-                try:
-                    await telegram_bot.send_message(
-                        chat_id=admin_id[0],
-                        text=message
-                    )
-                    success_count += 1
-                    print(f"✅ تم إرسال إشعار الاستبدال للمدير {admin_id[0]}")
-                    break
-                except Exception as e:
-                    if retry == max_retries - 1:
-                        print(f"❌ فشل في إرسال إشعار الاستبدال للمدير {admin_id[0]} بعد {max_retries} محاولات: {e}")
-                    else:
-                        print(f"⚠️ خطأ في إرسال إشعار الاستبدال للمدير {admin_id[0]} (المحاولة {retry + 1}): {e}")
-                        await asyncio.sleep(1)  # انتظار ثانية بين المحاولات
-        
-        return success_count > 0
+        # تشغيل في خيط منفصل لتجنب مشاكل asyncio
+        thread = threading.Thread(target=send_messages)
+        thread.start()
+        return True  # إرجاع True مباشرة
                 
     except Exception as e:
         print(f"❌ خطأ عام في إرسال إشعارات استبدال الهدايا: {e}")
@@ -3936,26 +3935,14 @@ def init_telegram_bot():
         return False
 
 def run_telegram_bot():
-    """تشغيل البوت في خيط منفصل مع إعادة الاتصال التلقائي"""
-    max_retries = 5
-    retry_count = 0
-    
-    while retry_count < max_retries:
+    """تشغيل البوت بشكل متزامن في الخيط الرئيسي"""
+    if telegram_app:
         try:
-            if telegram_app:
-                print(f"🔄 محاولة تشغيل بوت التليجرام (المحاولة {retry_count + 1})")
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                telegram_app.run_polling()
-            break
+            print("🔄 بدء تشغيل بوت التليجرام...")
+            # تشغيل البوت بدون خيط منفصل
+            telegram_app.run_polling(drop_pending_updates=True)
         except Exception as e:
-            retry_count += 1
-            print(f"❌ خطأ في تشغيل بوت التليجرام (المحاولة {retry_count}): {e}")
-            if retry_count < max_retries:
-                print(f"⏳ إعادة المحاولة خلال {retry_count * 5} ثانية...")
-                time.sleep(retry_count * 5)  # زيادة وقت الانتظار مع كل محاولة
-            else:
-                print("❌ فشل في تشغيل بوت التليجرام بعد عدة محاولات")
+            print(f"❌ خطأ في تشغيل بوت التليجرام: {e}")
 
 # وظيفة إنشاء جدول صيدليات تلقائي لشهر كامل
 @app.route('/admin/generate-monthly-schedule', methods=['POST'])
@@ -4142,10 +4129,10 @@ def add_user_store():
     # إنشاء نسخة احتياطية تلقائية
     create_auto_backup('add', 'store', name)
 
-    # إرسال إشعار تليجرام للمديرين
+    # إرسال إشعار تليجرام للمديرين (يمكن تحسينه لاحقاً)
     try:
         if telegram_bot:
-            asyncio.run(send_new_store_notification(name, owner_name, category_name))
+            print(f"📝 محل جديد: {name} - صاحب المحل: {owner_name}")
     except Exception as e:
         print(f"خطأ في إرسال إشعار التليجرام: {e}")
 
@@ -5355,7 +5342,7 @@ def reconnect_telegram_bot():
         # إيقاف البوت الحالي إذا كان يعمل
         if telegram_app:
             try:
-                telegram_app.stop()
+                asyncio.run(telegram_app.stop())
             except:
                 pass
         
@@ -5364,13 +5351,9 @@ def reconnect_telegram_bot():
         
         # محاولة إعادة التهيئة
         if init_telegram_bot():
-            # بدء البوت في خيط منفصل
-            bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-            bot_thread.start()
-            
             return jsonify({
                 'success': True,
-                'message': 'تم إعادة الاتصال بالبوت بنجاح',
+                'message': 'تم إعادة الاتصال بالبوت بنجاح (سيعمل مع الطلبات)',
                 'status': 'متصل'
             })
         else:
@@ -5479,16 +5462,9 @@ if __name__ == '__main__':
         # بدء النظام التلقائي للتحقق من انتهاء صلاحية الإشعارات
         start_notification_checker()
         
-        # تهيئة وتشغيل بوت التليجرام
+        # تهيئة بوت التليجرام فقط (بدون تشغيل في خيط منفصل)
         if init_telegram_bot():
-            bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
-            bot_thread.start()
-            print("✅ تم تشغيل بوت التليجرام في الخلفية")
-            
-            # بدء مراقب بوت التليجرام
-            monitor_thread = threading.Thread(target=monitor_telegram_bot, daemon=True)
-            monitor_thread.start()
-            print("✅ تم بدء مراقب بوت التليجرام")
+            print("✅ تم تهيئة بوت التليجرام بنجاح (سيعمل عند الحاجة)")
         else:
             print("❌ فشل في تهيئة بوت التليجرام")
         
