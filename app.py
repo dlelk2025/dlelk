@@ -1268,6 +1268,9 @@ def add_store():
     conn.commit()
     conn.close()
 
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('add', 'store', name)
+
     flash('تم إضافة المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
 
@@ -1295,6 +1298,9 @@ def edit_store(store_id):
 
     conn.commit()
     conn.close()
+
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('edit', 'store', name)
 
     flash('تم تحديث المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
@@ -1658,9 +1664,17 @@ def approve_store(store_id):
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
+    # الحصول على اسم المحل للنسخة الاحتياطية
+    cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+    store = cursor.fetchone()
+    store_name = store[0] if store else f'محل #{store_id}'
+
     cursor.execute('UPDATE stores SET is_approved = 1 WHERE id = ?', (store_id,))
     conn.commit()
     conn.close()
+
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('edit', 'store', f'{store_name} (موافقة)')
 
     flash('تم الموافقة على المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
@@ -1754,6 +1768,9 @@ def add_user():
     conn.commit()
     conn.close()
 
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('add', 'user', full_name)
+
     flash('تم إضافة المستخدم بنجاح', 'success')
     return redirect(url_for('admin_users'))
 
@@ -1807,6 +1824,9 @@ def edit_user(user_id):
 
     conn.commit()
     conn.close()
+
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('edit', 'user', full_name)
 
     return redirect(url_for('admin_user_details', user_id=user_id))
 
@@ -2382,6 +2402,97 @@ def get_site_settings():
             'whatsapp_number': '0938074766'
         }
 
+# وظيفة النسخ الاحتياطي التلقائي
+def create_auto_backup(action_type, item_type, item_name):
+    """إنشاء نسخة احتياطية تلقائية وإرسالها لبوت التليجرام"""
+    try:
+        import zipfile
+        from datetime import datetime
+        
+        # إنشاء مجلد النسخ الاحتياطية المؤقتة
+        os.makedirs('temp_backups', exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'auto_backup_{action_type}_{item_type}_{timestamp}.zip'
+        backup_path = os.path.join('temp_backups', backup_filename)
+        
+        # إنشاء ملف ZIP
+        with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # إضافة قاعدة البيانات
+            if os.path.exists('hussainiya_stores.db'):
+                zipf.write('hussainiya_stores.db')
+        
+        # إرسال النسخة الاحتياطية لبوت التليجرام
+        if telegram_bot:
+            asyncio.run(send_backup_to_telegram(backup_path, action_type, item_type, item_name))
+        
+        # حذف النسخة الاحتياطية المؤقتة
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
+            print(f"✅ تم إنشاء وإرسال النسخة الاحتياطية التلقائية: {backup_filename}")
+        
+    except Exception as e:
+        print(f"❌ خطأ في النسخ الاحتياطي التلقائي: {e}")
+
+async def send_backup_to_telegram(backup_path, action_type, item_type, item_name):
+    """إرسال النسخة الاحتياطية لبوت التليجرام"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        if not admin_ids:
+            print("⚠️ لا توجد معرفات تليجرام للمديرين")
+            return
+        
+        # معلومات النسخة الاحتياطية
+        from datetime import timezone, timedelta
+        damascus_tz = timezone(timedelta(hours=3))
+        damascus_time = datetime.now(damascus_tz)
+        current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
+        
+        action_text = {
+            'add': 'إضافة',
+            'edit': 'تعديل',
+            'delete': 'حذف'
+        }.get(action_type, action_type)
+        
+        item_text = {
+            'user': 'مستخدم',
+            'store': 'محل',
+            'category': 'تصنيف',
+            'service': 'خدمة'
+        }.get(item_type, item_type)
+        
+        caption = f"🔄 نسخة احتياطية تلقائية\n\n"
+        caption += f"📝 العملية: {action_text} {item_text}\n"
+        caption += f"🏷️ العنصر: {item_name}\n"
+        caption += f"🕐 التوقيت: {current_time_str}\n"
+        caption += f"📁 حجم الملف: {os.path.getsize(backup_path) / 1024:.1f} KB"
+        
+        # إرسال الملف لجميع المديرين
+        for admin_id in admin_ids:
+            try:
+                with open(backup_path, 'rb') as backup_file:
+                    await telegram_bot.send_document(
+                        chat_id=admin_id[0],
+                        document=backup_file,
+                        caption=caption,
+                        filename=os.path.basename(backup_path)
+                    )
+                print(f"✅ تم إرسال النسخة الاحتياطية للمدير {admin_id[0]}")
+            except Exception as e:
+                print(f"❌ خطأ في إرسال النسخة الاحتياطية للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"❌ خطأ في إرسال النسخة الاحتياطية لتليجرام: {e}")
+
 # وظائف بوت التليجرام
 async def start_command(update, context):
     """بداية البوت - للمديرين فقط"""
@@ -2856,6 +2967,9 @@ def add_user_store():
     conn.commit()
     conn.close()
 
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('add', 'store', name)
+
     # إرسال إشعار تليجرام للمديرين
     try:
         if telegram_bot:
@@ -2897,6 +3011,9 @@ def edit_user_store(store_id):
 
     conn.commit()
     conn.close()
+
+    # إنشاء نسخة احتياطية تلقائية
+    create_auto_backup('edit', 'store', name)
 
     flash('تم تحديث المحل بنجاح', 'success')
     return redirect(url_for('dashboard'))
