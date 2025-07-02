@@ -427,19 +427,6 @@ def validate_syrian_phone(phone):
     pattern = r'^09\d{8}$'
     return bool(re.match(pattern, phone))
 
-# تحسين وظائف إرسال الإشعارات
-async def send_telegram_message_safely(chat_id, message):
-    """إرسال رسالة تليجرام بشكل آمن"""
-    if not telegram_bot:
-        return False
-    
-    try:
-        await telegram_bot.send_message(chat_id=chat_id, text=message)
-        return True
-    except Exception as e:
-        print(f"خطأ في إرسال رسالة تليجرام: {e}")
-        return False
-
 # وظيفة للتحقق التلقائي من انتهاء صلاحية الإشعارات
 def check_expired_notifications():
     """تشغيل مهمة تلقائية للتحقق من انتهاء صلاحية الإشعارات كل 30 ثانية"""
@@ -1063,7 +1050,7 @@ def redeem_gift(gift_id):
         # إرسال إشعار للإدارة عبر التليجرام
         try:
             if telegram_bot:
-                send_redemption_notification_sync(user_id, gift[1], gift_points_cost)
+                asyncio.run(send_redemption_notification(user_id, gift[1], gift_points_cost))
         except Exception as e:
             print(f"خطأ في إرسال إشعار التليجرام: {e}")
         
@@ -3165,43 +3152,6 @@ def save_settings():
     return redirect(url_for('admin_settings'))
 
 # الحصول على إعدادات الموقع
-def get_telegram_bot_token():
-    """الحصول على توكن بوت التليجرام من قاعدة البيانات أو Secrets"""
-    try:
-        conn = sqlite3.connect('hussainiya_stores.db')
-        cursor = conn.cursor()
-        
-        # البحث في قاعدة البيانات أولاً
-        cursor.execute('SELECT setting_value FROM site_settings WHERE setting_key = ?', ('telegram_bot_token',))
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result and result[0]:
-            return result[0]
-        
-        # إذا لم يوجد في قاعدة البيانات، البحث في Secrets
-        return os.getenv('TELEGRAM_BOT_TOKEN')
-    except:
-        return os.getenv('TELEGRAM_BOT_TOKEN')
-
-def save_telegram_bot_token(token):
-    """حفظ توكن بوت التليجرام في قاعدة البيانات"""
-    try:
-        conn = sqlite3.connect('hussainiya_stores.db')
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT OR REPLACE INTO site_settings (setting_key, setting_value, description, category) 
-            VALUES (?, ?, ?, ?)
-        ''', ('telegram_bot_token', token, 'توكن بوت التليجرام', 'telegram'))
-        
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"خطأ في حفظ توكن التليجرام: {e}")
-        return False
-
 def get_site_settings():
     try:
         conn = sqlite3.connect('hussainiya_stores.db')
@@ -3787,12 +3737,11 @@ def is_admin_user(telegram_user_id):
         print(f"خطأ في التحقق من المدير: {e}")
         return False
 
-def send_redemption_notification_sync(user_id, gift_name, points_spent):
-    """إرسال إشعار للمديرين عند طلب استبدال هدية (بدون threading)"""
+async def send_redemption_notification(user_id, gift_name, points_spent):
+    """إرسال إشعار للمديرين عند طلب استبدال هدية"""
     if not telegram_bot:
-        print("⚠️ بوت التليجرام غير متاح لإرسال إشعار الاستبدال")
-        return False
-    
+        return
+        
     try:
         conn = sqlite3.connect('hussainiya_stores.db')
         cursor = conn.cursor()
@@ -3806,50 +3755,23 @@ def send_redemption_notification_sync(user_id, gift_name, points_spent):
         admin_ids = cursor.fetchall()
         conn.close()
         
-        if not admin_ids:
-            print("⚠️ لا توجد معرفات تليجرام للمديرين")
-            return False
-        
         message = f"🎁 طلب استبدال هدية جديد!\n\n"
         message += f"👤 المستخدم: {user_name}\n"
         message += f"🎁 الهدية: {gift_name}\n"
         message += f"⭐ النقاط المستخدمة: {points_spent}\n\n"
         message += "يرجى مراجعة الطلب من لوحة الإدارة"
         
-        # استخدام threading.Thread لتشغيل asyncio في خيط منفصل
-        import threading
-        def send_messages():
+        for admin_id in admin_ids:
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-                async def send_to_admins():
-                    success_count = 0
-                    for admin_id in admin_ids:
-                        try:
-                            await telegram_bot.send_message(
-                                chat_id=admin_id[0],
-                                text=message
-                            )
-                            success_count += 1
-                            print(f"✅ تم إرسال إشعار الاستبدال للمدير {admin_id[0]}")
-                        except Exception as e:
-                            print(f"❌ فشل في إرسال إشعار الاستبدال للمدير {admin_id[0]}: {e}")
-                    return success_count > 0
-                
-                return loop.run_until_complete(send_to_admins())
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message
+                )
             except Exception as e:
-                print(f"❌ خطأ في thread إرسال الإشعارات: {e}")
-                return False
-        
-        # تشغيل في خيط منفصل لتجنب مشاكل asyncio
-        thread = threading.Thread(target=send_messages)
-        thread.start()
-        return True  # إرجاع True مباشرة
+                print(f"خطأ في إرسال إشعار الاستبدال للمدير {admin_id[0]}: {e}")
                 
     except Exception as e:
-        print(f"❌ خطأ عام في إرسال إشعارات استبدال الهدايا: {e}")
-        return False
+        print(f"خطأ في إرسال إشعارات استبدال الهدايا: {e}")
 
 async def send_new_store_notification(store_name, owner_name, category_name):
     """إرسال إشعار للمديرين عند إضافة محل جديد"""
@@ -3887,38 +3809,17 @@ async def send_new_store_notification(store_name, owner_name, category_name):
         print(f"خطأ في إرسال إشعارات التليجرام: {e}")
 
 def init_telegram_bot():
-    """تهيئة بوت التليجرام مع التحقق من صحة التوكن"""
+    """تهيئة بوت التليجرام"""
     global telegram_bot, telegram_app
     
     try:
-        # الحصول على التوكن من قاعدة البيانات أولاً، ثم من Secrets
-        bot_token = get_telegram_bot_token()
+        # الحصول على التوكن من Secrets
+        bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
         if not bot_token:
-            print("⚠️ لم يتم العثور على توكن بوت التليجرام")
-            print("💡 لإضافة التوكن: اذهب إلى لوحة الإدارة > إعدادات بوت التليجرام")
-            return False
+            print("⚠️ لم يتم العثور على TELEGRAM_BOT_TOKEN في Secrets")
+            return
         
-        # التحقق من صحة التوكن
         telegram_bot = Bot(token=bot_token)
-        
-        # اختبار الاتصال
-        async def test_connection():
-            try:
-                me = await telegram_bot.get_me()
-                print(f"✅ تم الاتصال بالبوت: @{me.username}")
-                return True
-            except Exception as e:
-                print(f"❌ فشل في الاتصال بالبوت: {e}")
-                return False
-        
-        # تشغيل اختبار الاتصال
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        connection_test = loop.run_until_complete(test_connection())
-        
-        if not connection_test:
-            return False
-        
         telegram_app = Application.builder().token(bot_token).build()
         
         # إضافة المعالجات
@@ -3926,23 +3827,19 @@ def init_telegram_bot():
         telegram_app.add_handler(CallbackQueryHandler(button_callback))
         
         print("✅ تم تهيئة بوت التليجرام بنجاح")
-        return True
         
     except Exception as e:
         print(f"❌ خطأ في تهيئة بوت التليجرام: {e}")
-        telegram_bot = None
-        telegram_app = None
-        return False
 
 def run_telegram_bot():
-    """تشغيل البوت بشكل متزامن في الخيط الرئيسي"""
-    if telegram_app:
-        try:
-            print("🔄 بدء تشغيل بوت التليجرام...")
-            # تشغيل البوت بدون خيط منفصل
-            telegram_app.run_polling(drop_pending_updates=True)
-        except Exception as e:
-            print(f"❌ خطأ في تشغيل بوت التليجرام: {e}")
+    """تشغيل البوت في خيط منفصل"""
+    try:
+        if telegram_app:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            telegram_app.run_polling()
+    except Exception as e:
+        print(f"خطأ في تشغيل بوت التليجرام: {e}")
 
 # وظيفة إنشاء جدول صيدليات تلقائي لشهر كامل
 @app.route('/admin/generate-monthly-schedule', methods=['POST'])
@@ -4129,10 +4026,10 @@ def add_user_store():
     # إنشاء نسخة احتياطية تلقائية
     create_auto_backup('add', 'store', name)
 
-    # إرسال إشعار تليجرام للمديرين (يمكن تحسينه لاحقاً)
+    # إرسال إشعار تليجرام للمديرين
     try:
         if telegram_bot:
-            print(f"📝 محل جديد: {name} - صاحب المحل: {owner_name}")
+            asyncio.run(send_new_store_notification(name, owner_name, category_name))
     except Exception as e:
         print(f"خطأ في إرسال إشعار التليجرام: {e}")
 
@@ -5330,119 +5227,6 @@ def delete_telegram_admin(admin_id):
     flash('تم حذف المدير بنجاح', 'success')
     return redirect(url_for('admin_telegram_bot'))
 
-# إعادة الاتصال ببوت التليجرام
-@app.route('/admin/reconnect-telegram-bot', methods=['POST'])
-def reconnect_telegram_bot():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return jsonify({'error': 'غير مصرح'}), 403
-    
-    global telegram_bot, telegram_app
-    
-    try:
-        # إيقاف البوت الحالي إذا كان يعمل
-        if telegram_app:
-            try:
-                asyncio.run(telegram_app.stop())
-            except:
-                pass
-        
-        telegram_bot = None
-        telegram_app = None
-        
-        # محاولة إعادة التهيئة
-        if init_telegram_bot():
-            return jsonify({
-                'success': True,
-                'message': 'تم إعادة الاتصال بالبوت بنجاح (سيعمل مع الطلبات)',
-                'status': 'متصل'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'فشل في إعادة الاتصال بالبوت. تأكد من صحة التوكن',
-                'status': 'غير متصل'
-            })
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'خطأ في إعادة الاتصال: {str(e)}',
-            'status': 'غير متصل'
-        })
-
-# API للحصول على حالة البوت
-@app.route('/api/telegram-bot-status')
-def get_telegram_bot_status():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return jsonify({'error': 'غير مصرح'}), 403
-    
-    bot_token = get_telegram_bot_token()
-    bot_status = 'متصل' if telegram_bot else 'غير متصل'
-    
-    return jsonify({
-        'token_exists': bool(bot_token),
-        'status': bot_status,
-        'connected': telegram_bot is not None
-    })
-
-# حفظ توكن بوت التليجرام
-@app.route('/admin/save-telegram-token', methods=['POST'])
-def save_telegram_token():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return jsonify({'error': 'غير مصرح'}), 403
-    
-    token = request.json.get('token', '').strip()
-    
-    if not token:
-        return jsonify({'success': False, 'message': 'التوكن مطلوب'})
-    
-    # التحقق من صحة تنسيق التوكن
-    import re
-    if not re.match(r'^\d+:[A-Za-z0-9_-]+$', token):
-        return jsonify({'success': False, 'message': 'تنسيق التوكن غير صحيح'})
-    
-    if save_telegram_bot_token(token):
-        return jsonify({'success': True, 'message': 'تم حفظ التوكن بنجاح'})
-    else:
-        return jsonify({'success': False, 'message': 'خطأ في حفظ التوكن'})
-
-# حذف توكن بوت التليجرام
-@app.route('/admin/delete-telegram-token', methods=['POST'])
-def delete_telegram_token():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return jsonify({'error': 'غير مصرح'}), 403
-    
-    try:
-        conn = sqlite3.connect('hussainiya_stores.db')
-        cursor = conn.cursor()
-        
-        cursor.execute('DELETE FROM site_settings WHERE setting_key = ?', ('telegram_bot_token',))
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'تم حذف التوكن بنجاح'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'خطأ في حذف التوكن: {str(e)}'})
-
-# الحصول على التوكن المحفوظ (مخفي جزئياً)
-@app.route('/api/get-telegram-token')
-def get_saved_telegram_token():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return jsonify({'error': 'غير مصرح'}), 403
-    
-    token = get_telegram_bot_token()
-    if token:
-        # إخفاء جزء من التوكن للأمان
-        if ':' in token:
-            parts = token.split(':')
-            hidden_token = parts[0] + ':' + parts[1][:8] + '...' + parts[1][-8:]
-        else:
-            hidden_token = token[:8] + '...' + token[-8:]
-        
-        return jsonify({'token': hidden_token, 'has_token': True})
-    else:
-        return jsonify({'token': '', 'has_token': False})
-
 # معالج الأخطاء 404
 @app.errorhandler(404)
 def page_not_found(e):
@@ -5462,11 +5246,12 @@ if __name__ == '__main__':
         # بدء النظام التلقائي للتحقق من انتهاء صلاحية الإشعارات
         start_notification_checker()
         
-        # تهيئة بوت التليجرام فقط (بدون تشغيل في خيط منفصل)
-        if init_telegram_bot():
-            print("✅ تم تهيئة بوت التليجرام بنجاح (سيعمل عند الحاجة)")
-        else:
-            print("❌ فشل في تهيئة بوت التليجرام")
+        # تهيئة وتشغيل بوت التليجرام
+        init_telegram_bot()
+        if telegram_app:
+            bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
+            bot_thread.start()
+            print("✅ تم تشغيل بوت التليجرام في الخلفية")
         
         print("تم تهيئة قاعدة البيانات بنجاح")
         print("رابط التطبيق: http://0.0.0.0:5000")
