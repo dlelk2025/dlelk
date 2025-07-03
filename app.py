@@ -106,6 +106,30 @@ def check_maintenance_mode():
         print(f"خطأ في التحقق من وضع الصيانة: {e}")
         pass
 
+# Context processor لإضافة معلومات المستخدم
+@app.context_processor
+def inject_user_info():
+    user_verification_status = False
+    user_can_edit_name = True
+    
+    if 'user_id' in session:
+        try:
+            conn = sqlite3.connect('hussainiya_stores.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT is_verified, can_edit_name FROM users WHERE id = ?', (session['user_id'],))
+            result = cursor.fetchone()
+            if result:
+                user_verification_status = bool(result[0])
+                user_can_edit_name = bool(result[1])
+            conn.close()
+        except Exception as e:
+            print(f"خطأ في الحصول على معلومات التحقق: {e}")
+    
+    return dict(
+        user_verification_status=user_verification_status,
+        user_can_edit_name=user_can_edit_name
+    )
+
 # Context processor لإضافة الصيدليات المناوبة لجميع الصفحات
 @app.context_processor
 def inject_today_pharmacy():
@@ -165,9 +189,22 @@ def init_db():
             password_hash TEXT NOT NULL,
             is_active BOOLEAN DEFAULT 1,
             is_admin BOOLEAN DEFAULT 0,
+            is_verified BOOLEAN DEFAULT 0,
+            can_edit_name BOOLEAN DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # إضافة أعمدة التحقق إذا لم تكن موجودة
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0')
+    except:
+        pass
+    
+    try:
+        cursor.execute('ALTER TABLE users ADD COLUMN can_edit_name BOOLEAN DEFAULT 1')
+    except:
+        pass
 
     # جدول التصنيفات
     cursor.execute('''
@@ -409,6 +446,22 @@ def init_db():
             processed_by INTEGER,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (gift_id) REFERENCES gifts (id) ON DELETE CASCADE,
+            FOREIGN KEY (processed_by) REFERENCES users (id)
+        )
+    ''')
+
+    # جدول طلبات التحقق
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS verification_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            full_name TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            admin_notes TEXT,
+            requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP,
+            processed_by INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
             FOREIGN KEY (processed_by) REFERENCES users (id)
         )
     ''')
@@ -727,6 +780,17 @@ def search():
 
     conn.close()
 
+    # التحقق من حالة التحقق للمستخدم
+    user_verification_status = False
+    if 'user_id' in session:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+        result = cursor.fetchone()
+        if result:
+            user_verification_status = bool(result[0])
+        conn.close()
+
     return render_template('search_results.html', 
                          store_results=store_results,
                          service_results=service_results, 
@@ -736,7 +800,8 @@ def search():
                          selected_category=category_id,
                          selected_service_category=service_category,
                          search_type=search_type,
-                         total_results=total_results)
+                         total_results=total_results,
+                         user_verification_status=user_verification_status)
 
 # الصفحة الرئيسية - مع التسجيل الإجباري
 @app.route('/')
@@ -833,15 +898,53 @@ def index():
                          all_categories=all_categories,
                          site_settings=settings)
 
+# وظيفة للتحقق من الأسماء العربية
+def validate_arabic_name(name):
+    """التحقق من أن الاسم باللغة العربية ويحتوي على اسم وكنية على الأقل"""
+    import re
+    
+    # إزالة المسافات الزائدة
+    name = name.strip()
+    
+    # التحقق من أن الاسم يحتوي على أحرف عربية فقط
+    arabic_pattern = r'^[\u0600-\u06FF\s]+$'
+    if not re.match(arabic_pattern, name):
+        return False, 'يجب أن يكون الاسم باللغة العربية فقط'
+    
+    # تقسيم الاسم إلى أجزاء
+    name_parts = [part for part in name.split() if part]
+    
+    # التحقق من عدد الأجزاء
+    if len(name_parts) < 2:
+        return False, 'يجب أن يتكون الاسم من اسم وكنية على الأقل'
+    
+    if len(name_parts) > 4:
+        return False, 'الاسم طويل جداً، يجب ألا يزيد عن 4 كلمات'
+    
+    # التحقق من طول كل جزء
+    for part in name_parts:
+        if len(part) < 2:
+            return False, 'كل جزء من الاسم يجب أن يكون على الأقل حرفين'
+        if len(part) > 15:
+            return False, 'كل جزء من الاسم يجب ألا يزيد عن 15 حرف'
+    
+    return True, 'الاسم صحيح'
+
 # تسجيل مستخدم جديد
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        full_name = request.form['full_name']
+        full_name = request.form['full_name'].strip()
         phone = request.form['phone']
         password = request.form['password']
 
-        # التحقق من صحة البيانات
+        # التحقق من صحة الاسم العربي
+        name_valid, name_error = validate_arabic_name(full_name)
+        if not name_valid:
+            flash(name_error, 'error')
+            return render_template('register.html')
+
+        # التحقق من صحة رقم الهاتف
         if not validate_syrian_phone(phone):
             flash('رقم الهاتف يجب أن يكون سوري ويبدأ بـ 09 ويتكون من 10 أرقام', 'error')
             return render_template('register.html')
@@ -855,15 +958,25 @@ def register():
             conn.close()
             return render_template('register.html')
 
-        # إنشاء المستخدم الجديد
+        # إنشاء المستخدم الجديد - بدون تحقق تلقائي
         password_hash = generate_password_hash(password)
-        cursor.execute('INSERT INTO users (full_name, phone, password_hash) VALUES (?, ?, ?)',
+        cursor.execute('INSERT INTO users (full_name, phone, password_hash, is_verified, can_edit_name) VALUES (?, ?, ?, 0, 1)',
                       (full_name, phone, password_hash))
+        
+        user_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
-        flash('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول', 'success')
-        return redirect(url_for('login'))
+        # تسجيل دخول المستخدم تلقائياً
+        session['user_id'] = user_id
+        session['user_name'] = full_name
+        session['is_admin'] = False
+        
+        # منح نقاط الدخول اليومي
+        award_daily_login_points(user_id)
+
+        flash('مرحباً بك! تم إنشاء حسابك بنجاح ودخولك تلقائياً', 'success')
+        return redirect(url_for('dashboard'))
 
     return render_template('register.html')
 
@@ -985,9 +1098,59 @@ def user_points():
                          available_gifts=available_gifts,
                          redemption_history=redemption_history)
 
-# استبدال هدية
-@app.route('/redeem-gift/<int:gift_id>', methods=['POST'])
-def redeem_gift(gift_id):
+# وظيفة للتحقق من التحقق والتوجيه
+def check_verification_required():
+    """التحقق من أن المستخدم محقق أو توجيهه لصفحة التحقق"""
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول أولاً', 'error')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user or not user[0]:
+        flash('يجب التحقق من حسابك لإجراء هذه العملية. يرجى طلب التحقق من الإدارة.', 'warning')
+        return redirect(url_for('verification_page'))
+    
+    return None
+
+# صفحة طلب التحقق
+@app.route('/verification')
+def verification_page():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول أولاً', 'error')
+        return redirect(url_for('login'))
+    
+    # التحقق من حالة المستخدم
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if user and user[0]:
+        flash('حسابك محقق بالفعل', 'success')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # التحقق من طلبات التحقق السابقة
+    cursor.execute('''
+        SELECT status, admin_notes, requested_at FROM verification_requests 
+        WHERE user_id = ? 
+        ORDER BY requested_at DESC 
+        LIMIT 1
+    ''', (session['user_id'],))
+    last_request = cursor.fetchone()
+    
+    conn.close()
+    
+    return render_template('verification_page.html', last_request=last_request)
+
+# طلب التحقق
+@app.route('/request-verification', methods=['POST'])
+def request_verification():
     if 'user_id' not in session:
         return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
     
@@ -995,6 +1158,76 @@ def redeem_gift(gift_id):
     
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
+    
+    # التحقق من وجود طلب معلق
+    cursor.execute('SELECT id FROM verification_requests WHERE user_id = ? AND status = "pending"', (user_id,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'لديك طلب تحقق معلق بالفعل'}), 400
+    
+    # التحقق من أن المستخدم غير محقق
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    if user and user[0]:
+        conn.close()
+        return jsonify({'error': 'حسابك محقق بالفعل'}), 400
+    
+    # الحصول على اسم المستخدم الحالي
+    cursor.execute('SELECT full_name FROM users WHERE id = ?', (user_id,))
+    user_data = cursor.fetchone()
+    if not user_data:
+        conn.close()
+        return jsonify({'error': 'خطأ في بيانات المستخدم'}), 400
+    
+    full_name = user_data[0]
+    
+    # التحقق من صحة الاسم العربي
+    name_valid, name_error = validate_arabic_name(full_name)
+    if not name_valid:
+        conn.close()
+        return jsonify({'error': name_error}), 400
+    
+    # إنشاء طلب التحقق
+    cursor.execute('''
+        INSERT INTO verification_requests (user_id, full_name) 
+        VALUES (?, ?)
+    ''', (user_id, full_name))
+    
+    conn.commit()
+    
+    # الحصول على معلومات المستخدم للإشعار
+    cursor.execute('SELECT full_name, phone FROM users WHERE id = ?', (user_id,))
+    user_info = cursor.fetchone()
+    
+    conn.close()
+    
+    # إرسال إشعار للإدارة عبر التليجرام
+    try:
+        if telegram_bot:
+            asyncio.run(send_verification_request_notification(user_id, user_info[0], user_info[1]))
+    except Exception as e:
+        print(f"خطأ في إرسال إشعار التحقق: {e}")
+    
+    return jsonify({'success': True, 'message': 'تم إرسال طلب التحقق بنجاح'})
+
+# استبدال هدية
+@app.route('/redeem-gift/<int:gift_id>', methods=['POST'])
+def redeem_gift(gift_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً', 'redirect': '/login'}), 401
+    
+    user_id = session['user_id']
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن المستخدم محقق
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    
+    if not user or not user[0]:
+        conn.close()
+        return jsonify({'error': 'يجب أن يكون حسابك محققاً لاستبدال النقاط', 'redirect': '/verification'}), 403
     
     # التحقق من وجود الهدية وتوفرها
     cursor.execute('SELECT * FROM gifts WHERE id = ? AND is_active = 1', (gift_id,))
@@ -1863,6 +2096,49 @@ def toggle_store(store_id):
     flash(f'{status_text} المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
 
+# API للحصول على حالة طلب التحقق
+@app.route('/api/verification-status')
+def get_verification_status():
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول'}), 401
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # التحقق من حالة المستخدم
+        cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+        user = cursor.fetchone()
+        
+        if user and user[0]:
+            conn.close()
+            return jsonify({'status': 'verified', 'message': 'حسابك محقق'})
+        
+        # البحث عن طلب تحقق معلق
+        cursor.execute('''
+            SELECT status, requested_at, admin_notes FROM verification_requests 
+            WHERE user_id = ? 
+            ORDER BY requested_at DESC 
+            LIMIT 1
+        ''', (session['user_id'],))
+        
+        request_data = cursor.fetchone()
+        conn.close()
+        
+        if request_data:
+            status, requested_at, admin_notes = request_data
+            if status == 'pending':
+                return jsonify({'status': 'pending', 'message': 'طلبك قيد المراجعة', 'requested_at': requested_at})
+            elif status == 'rejected':
+                return jsonify({'status': 'rejected', 'message': 'تم رفض طلبك', 'reason': admin_notes})
+            elif status == 'approved':
+                return jsonify({'status': 'approved', 'message': 'تم قبول طلبك'})
+        
+        return jsonify({'status': 'none', 'message': 'لم تطلب التحقق بعد'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # API للحصول على جميع المستخدمين
 @app.route('/api/get-all-users')
 def get_all_users():
@@ -2003,7 +2279,7 @@ def admin_users():
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM users ORDER BY created_at DESC')
+    cursor.execute('SELECT id, full_name, phone, password_hash, is_active, is_admin, is_verified, can_edit_name, created_at FROM users ORDER BY created_at DESC')
     users = cursor.fetchall()
 
     conn.close()
@@ -2072,6 +2348,36 @@ def add_user():
     flash('تم إضافة المستخدم بنجاح', 'success')
     return redirect(url_for('admin_users'))
 
+# تفعيل/إلغاء تفعيل التحقق للمستخدم
+@app.route('/admin/toggle-user-verification/<int:user_id>')
+def toggle_user_verification(user_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على الحالة الحالية
+    cursor.execute('SELECT is_verified, can_edit_name FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    
+    if user:
+        current_verified = user[0] if user[0] is not None else 0
+        new_verified = 0 if current_verified else 1
+        new_can_edit = 0 if new_verified else 1  # إذا تم التحقق، منع التعديل
+        
+        cursor.execute('UPDATE users SET is_verified = ?, can_edit_name = ? WHERE id = ?', 
+                      (new_verified, new_can_edit, user_id))
+        conn.commit()
+        
+        status_text = 'تم تفعيل التحقق' if new_verified else 'تم إلغاء التحقق'
+        flash(f'{status_text} للمستخدم بنجاح', 'success')
+    else:
+        flash('المستخدم غير موجود', 'error')
+
+    conn.close()
+    return redirect(url_for('admin_user_details', user_id=user_id))
+
 # تعديل مستخدم
 @app.route('/admin/edit-user/<int:user_id>', methods=['POST'])
 def edit_user(user_id):
@@ -2084,6 +2390,8 @@ def edit_user(user_id):
     confirm_password = request.form.get('confirm_password')
     is_admin = 1 if request.form.get('is_admin') else 0
     is_active = 1 if request.form.get('is_active') else 0
+    is_verified = 1 if request.form.get('is_verified') else 0
+    can_edit_name = 1 if request.form.get('can_edit_name') else 0
 
     # التحقق من تطابق كلمة المرور
     if new_password and new_password != confirm_password:
@@ -2109,15 +2417,15 @@ def edit_user(user_id):
     if new_password and new_password.strip():
         password_hash = generate_password_hash(new_password)
         cursor.execute('''
-            UPDATE users SET full_name = ?, phone = ?, password_hash = ?, is_admin = ?, is_active = ? 
+            UPDATE users SET full_name = ?, phone = ?, password_hash = ?, is_admin = ?, is_active = ?, is_verified = ?, can_edit_name = ? 
             WHERE id = ?
-        ''', (full_name, phone, password_hash, is_admin, is_active, user_id))
+        ''', (full_name, phone, password_hash, is_admin, is_active, is_verified, can_edit_name, user_id))
         flash('تم تحديث المستخدم وكلمة المرور بنجاح', 'success')
     else:
         cursor.execute('''
-            UPDATE users SET full_name = ?, phone = ?, is_admin = ?, is_active = ? 
+            UPDATE users SET full_name = ?, phone = ?, is_admin = ?, is_active = ?, is_verified = ?, can_edit_name = ? 
             WHERE id = ?
-        ''', (full_name, phone, is_admin, is_active, user_id))
+        ''', (full_name, phone, is_admin, is_active, is_verified, can_edit_name, user_id))
         flash('تم تحديث المستخدم بنجاح', 'success')
 
     conn.commit()
@@ -2427,6 +2735,225 @@ def delete_service(service_id):
 
     flash('تم حذف الخدمة بنجاح', 'success')
     return redirect(url_for('admin_services'))
+
+# إدارة طلبات التحقق
+@app.route('/admin/verification-requests')
+def admin_verification_requests():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب جميع طلبات التحقق مع تحويل التوقيت
+    cursor.execute('''
+        SELECT vr.id, vr.user_id, vr.full_name, vr.status, vr.admin_notes, 
+               datetime(vr.requested_at, '+3 hours') as requested_at_damascus,
+               u.full_name as user_name, u.phone, u.is_verified, 
+               admin_user.full_name as processed_by_name,
+               datetime(vr.processed_at, '+3 hours') as processed_at_damascus
+        FROM verification_requests vr
+        LEFT JOIN users u ON vr.user_id = u.id
+        LEFT JOIN users admin_user ON vr.processed_by = admin_user.id
+        ORDER BY vr.requested_at DESC
+    ''')
+    verification_requests_raw = cursor.fetchall()
+
+    # تحويل النتائج لتكون متوافقة مع القالب مع إضافة التوقيت المحدث
+    verification_requests = []
+    for row in verification_requests_raw:
+        # إعادة ترتيب البيانات لتتطابق مع القالب
+        verification_requests.append((
+            row[0],  # id
+            row[1],  # user_id
+            row[2],  # full_name (الاسم المطلوب)
+            row[3],  # status
+            row[4],  # admin_notes
+            row[5],  # requested_at_damascus
+            row[6],  # user_name
+            row[7],  # phone
+            row[8],  # is_verified
+            row[9],  # processed_by_name
+            row[10] # processed_at_damascus
+        ))
+
+    # إحصائيات
+    cursor.execute('SELECT COUNT(*) FROM verification_requests WHERE status = "pending"')
+    pending_requests = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM verification_requests WHERE status = "approved"')
+    approved_requests = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM verification_requests WHERE status = "rejected"')
+    rejected_requests = cursor.fetchone()[0]
+
+    conn.close()
+
+    stats = {
+        'pending_requests': pending_requests,
+        'approved_requests': approved_requests,
+        'rejected_requests': rejected_requests
+    }
+
+    return render_template('admin_verification_requests.html', 
+                         verification_requests=verification_requests,
+                         stats=stats)
+
+# الموافقة على طلب التحقق
+@app.route('/admin/approve-verification/<int:request_id>')
+def approve_verification_request(request_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على معلومات الطلب
+    cursor.execute('SELECT user_id, full_name FROM verification_requests WHERE id = ? AND status = "pending"', (request_id,))
+    request_data = cursor.fetchone()
+    
+    if not request_data:
+        flash('الطلب غير موجود أو تم معالجته مسبقاً', 'error')
+        conn.close()
+        return redirect(url_for('admin_verification_requests'))
+
+    user_id, full_name = request_data
+
+    # تحديث حالة الطلب
+    cursor.execute('''
+        UPDATE verification_requests 
+        SET status = 'approved', processed_at = CURRENT_TIMESTAMP, processed_by = ?
+        WHERE id = ?
+    ''', (session['user_id'], request_id))
+
+    # تحديث حالة المستخدم
+    cursor.execute('''
+        UPDATE users 
+        SET is_verified = 1, can_edit_name = 0
+        WHERE id = ?
+    ''', (user_id,))
+
+    conn.commit()
+
+    # الحصول على معلومات المستخدم للإشعار
+    cursor.execute('SELECT full_name, phone FROM users WHERE id = ?', (user_id,))
+    user_info = cursor.fetchone()
+
+    conn.close()
+
+    # إرسال إشعار للمستخدم
+    try:
+        if telegram_bot:
+            asyncio.run(send_verification_status_notification(user_id, user_info[0], 'approved'))
+    except Exception as e:
+        print(f"خطأ في إرسال إشعار الموافقة: {e}")
+
+    flash('تم الموافقة على طلب التحقق بنجاح', 'success')
+    return redirect(url_for('admin_verification_requests'))
+
+# صفحة رفض طلب التحقق
+@app.route('/admin/reject-verification-page/<int:request_id>')
+def reject_verification_page(request_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على معلومات الطلب مع تحويل التوقيت
+    cursor.execute('''
+        SELECT vr.id, vr.user_id, vr.full_name, vr.status, vr.admin_notes, 
+               datetime(vr.requested_at, '+3 hours') as requested_at_damascus,
+               datetime(vr.processed_at, '+3 hours') as processed_at_damascus,
+               vr.processed_by,
+               u.full_name as user_name, u.phone, u.is_verified
+        FROM verification_requests vr
+        LEFT JOIN users u ON vr.user_id = u.id
+        WHERE vr.id = ? AND vr.status = "pending"
+    ''', (request_id,))
+    request_data_raw = cursor.fetchone()
+    
+    if not request_data_raw:
+        flash('الطلب غير موجود أو تم معالجته مسبقاً', 'error')
+        conn.close()
+        return redirect(url_for('admin_verification_requests'))
+
+    # تحويل البيانات لتكون متوافقة مع القالب
+    request_data = (
+        request_data_raw[0],  # id
+        request_data_raw[1],  # user_id
+        request_data_raw[2],  # full_name
+        request_data_raw[3],  # status
+        request_data_raw[4],  # admin_notes
+        request_data_raw[5],  # requested_at_damascus
+        request_data_raw[6],  # processed_at_damascus
+        request_data_raw[7],  # processed_by
+        request_data_raw[8],  # user_name
+        request_data_raw[9],  # phone
+        request_data_raw[10]  # is_verified
+    )
+
+    conn.close()
+    return render_template('admin_reject_verification.html', request_data=request_data)
+
+# رفض طلب التحقق
+@app.route('/admin/reject-verification/<int:request_id>', methods=['POST'])
+def reject_verification_request(request_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    # الحصول على السبب
+    reason = request.form.get('reason', '')
+    custom_reason = request.form.get('custom_reason', '')
+    
+    # إذا كان السبب مخصص، استخدم النص المخصص
+    if reason == 'custom' and custom_reason:
+        final_reason = custom_reason
+    elif reason and reason != 'custom':
+        final_reason = reason
+    else:
+        final_reason = 'لم يتم توضيح السبب'
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على معلومات الطلب
+    cursor.execute('SELECT user_id, full_name FROM verification_requests WHERE id = ? AND status = "pending"', (request_id,))
+    request_data = cursor.fetchone()
+    
+    if not request_data:
+        flash('الطلب غير موجود أو تم معالجته مسبقاً', 'error')
+        conn.close()
+        return redirect(url_for('admin_verification_requests'))
+
+    user_id, full_name = request_data
+
+    # تحديث حالة الطلب
+    cursor.execute('''
+        UPDATE verification_requests 
+        SET status = 'rejected', admin_notes = ?, processed_at = CURRENT_TIMESTAMP, processed_by = ?
+        WHERE id = ?
+    ''', (final_reason, session['user_id'], request_id))
+
+    conn.commit()
+
+    # الحصول على معلومات المستخدم للإشعار
+    cursor.execute('SELECT full_name, phone FROM users WHERE id = ?', (user_id,))
+    user_info = cursor.fetchone()
+
+    conn.close()
+
+    # إرسال إشعار للمستخدم
+    try:
+        if telegram_bot:
+            asyncio.run(send_verification_status_notification(user_id, user_info[0], 'rejected', final_reason))
+    except Exception as e:
+        print(f"خطأ في إرسال إشعار الرفض: {e}")
+
+    flash(f'تم رفض طلب التحقق بسبب: {final_reason}', 'success')
+    return redirect(url_for('admin_verification_requests'))
 
 # إدارة النقاط والهدايا
 @app.route('/admin/points')
@@ -3773,6 +4300,83 @@ async def send_redemption_notification(user_id, gift_name, points_spent):
     except Exception as e:
         print(f"خطأ في إرسال إشعارات استبدال الهدايا: {e}")
 
+async def send_verification_request_notification(user_id, user_name, user_phone):
+    """إرسال إشعار للمديرين عند طلب التحقق"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        message = f"✅ طلب تحقق جديد!\n\n"
+        message += f"👤 المستخدم: {user_name}\n"
+        message += f"📞 الهاتف: {user_phone}\n"
+        message += f"🆔 معرف المستخدم: {user_id}\n\n"
+        message += "يرجى مراجعة الطلب من لوحة الإدارة"
+        
+        keyboard = [[InlineKeyboardButton("مراجعة طلبات التحقق", url=f"https://{os.getenv('REPL_SLUG', 'localhost')}-{os.getenv('REPL_OWNER', 'user')}.replit.dev/admin/verification-requests")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message,
+                    reply_markup=reply_markup
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال إشعار التحقق للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات طلبات التحقق: {e}")
+
+async def send_verification_status_notification(user_id, user_name, status, reason=None):
+    """إرسال إشعار للمستخدم بحالة طلب التحقق"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # البحث عن معرف التليجرام للمستخدم (إذا كان متوفراً)
+        # يمكن إضافة جدول لربط المستخدمين بمعرفات التليجرام الخاصة بهم
+        # حالياً سنرسل الإشعار للمديرين فقط ليقوموا بإبلاغ المستخدم
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        if status == 'approved':
+            message = f"✅ تم الموافقة على طلب التحقق\n\n"
+            message += f"👤 المستخدم: {user_name}\n"
+            message += f"🆔 معرف المستخدم: {user_id}\n\n"
+            message += "تم منح شارة التحقق للمستخدم"
+        else:
+            message = f"❌ تم رفض طلب التحقق\n\n"
+            message += f"👤 المستخدم: {user_name}\n"
+            message += f"🆔 معرف المستخدم: {user_id}\n"
+            if reason:
+                message += f"📝 السبب: {reason}\n\n"
+            message += "يرجى إبلاغ المستخدم بالقرار"
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال إشعار حالة التحقق للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات حالة التحقق: {e}")
+
 async def send_new_store_notification(store_name, owner_name, category_name):
     """إرسال إشعار للمديرين عند إضافة محل جديد"""
     if not telegram_bot:
@@ -3993,18 +4597,16 @@ def delete_notification(notification_id):
 # إضافة محل من قبل المستخدم
 @app.route('/add-user-store', methods=['POST'])
 def add_user_store():
-    if 'user_id' not in session:
-        flash('يجب تسجيل الدخول أولاً', 'error')
-        return redirect(url_for('login'))
+    # التحقق من التحقق المطلوب
+    verification_check = check_verification_required()
+    if verification_check:
+        return verification_check
 
     name = request.form['name']
     category_id = request.form['category_id']
     address = request.form['address']
     phone = request.form.get('phone', '')
     description = request.form.get('description', '')
-
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
 
     cursor.execute('''
         INSERT INTO stores (name, category_id, address, phone, description, user_id, is_approved) 
@@ -4117,17 +4719,47 @@ def update_profile():
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
 
+    # التحقق من إمكانية تعديل الاسم
+    cursor.execute('SELECT can_edit_name, is_verified FROM users WHERE id = ?', (session['user_id'],))
+    user_perms = cursor.fetchone()
+    
+    can_edit_name = user_perms[0] if user_perms else 1
+    is_verified = user_perms[1] if user_perms else 0
+
     if new_password:
         password_hash = generate_password_hash(new_password)
-        cursor.execute('UPDATE users SET full_name = ?, password_hash = ? WHERE id = ?', 
-                      (full_name, password_hash, session['user_id']))
-        flash('تم تحديث الملف الشخصي وكلمة المرور بنجاح', 'success')
+        if can_edit_name:
+            # التحقق من صحة الاسم العربي إذا تم تعديله
+            name_valid, name_error = validate_arabic_name(full_name)
+            if not name_valid:
+                flash(name_error, 'error')
+                conn.close()
+                return redirect(url_for('dashboard'))
+            
+            cursor.execute('UPDATE users SET full_name = ?, password_hash = ? WHERE id = ?', 
+                          (full_name, password_hash, session['user_id']))
+            session['user_name'] = full_name
+            flash('تم تحديث الملف الشخصي وكلمة المرور بنجاح', 'success')
+        else:
+            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', 
+                          (password_hash, session['user_id']))
+            flash('تم تحديث كلمة المرور بنجاح. لا يمكن تعديل الاسم للمستخدمين المحققين', 'success')
     else:
-        cursor.execute('UPDATE users SET full_name = ? WHERE id = ?', 
-                      (full_name, session['user_id']))
-        flash('تم تحديث الملف الشخصي بنجاح', 'success')
+        if can_edit_name:
+            # التحقق من صحة الاسم العربي
+            name_valid, name_error = validate_arabic_name(full_name)
+            if not name_valid:
+                flash(name_error, 'error')
+                conn.close()
+                return redirect(url_for('dashboard'))
+            
+            cursor.execute('UPDATE users SET full_name = ? WHERE id = ?', 
+                          (full_name, session['user_id']))
+            session['user_name'] = full_name
+            flash('تم تحديث الملف الشخصي بنجاح', 'success')
+        else:
+            flash('لا يمكن تعديل الاسم للمستخدمين المحققين', 'warning')
 
-    session['user_name'] = full_name
     conn.commit()
     conn.close()
 
@@ -4722,19 +5354,28 @@ def mark_all_notifications_read():
 @app.route('/rate-store/<int:store_id>', methods=['POST'])
 def rate_store(store_id):
     if 'user_id' not in session:
-        return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً', 'redirect': '/login'}), 401
+
+    # التحقق من أن المستخدم محقق
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user[0]:
+        conn.close()
+        return jsonify({'error': 'يجب التحقق من حسابك لإجراء التقييمات. سيتم توجيهك إلى صفحة التحقق.', 'redirect': '/verification'}), 403
 
     rating = int(request.json.get('rating', 0))
     comment = request.json.get('comment', '').strip()
     
     if rating < 1 or rating > 5:
+        conn.close()
         return jsonify({'error': 'التقييم يجب أن يكون بين 1 و 5'}), 400
     
     if not comment:
+        conn.close()
         return jsonify({'error': 'يجب كتابة تعليق مع التقييم'}), 400
-
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
 
     # التحقق من وجود تقييم سابق
     cursor.execute('SELECT id FROM ratings WHERE store_id = ? AND user_id = ?', 
@@ -4816,7 +5457,7 @@ def store_ratings(store_id):
     # التحقق من وجود عمود updated_at
     try:
         cursor.execute('''
-            SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at, u.full_name, r.user_id
+            SELECT r.id, r.rating, r.comment, r.created_at, r.updated_at, u.full_name, r.user_id, u.is_verified
             FROM ratings r 
             LEFT JOIN users u ON r.user_id = u.id 
             WHERE r.store_id = ? 
@@ -4825,7 +5466,7 @@ def store_ratings(store_id):
     except sqlite3.OperationalError:
         # إذا لم يكن عمود updated_at موجوداً، استخدم created_at كبديل
         cursor.execute('''
-            SELECT r.id, r.rating, r.comment, r.created_at, r.created_at as updated_at, u.full_name, r.user_id
+            SELECT r.id, r.rating, r.comment, r.created_at, r.created_at as updated_at, u.full_name, r.user_id, u.is_verified
             FROM ratings r 
             LEFT JOIN users u ON r.user_id = u.id 
             WHERE r.store_id = ? 
@@ -4893,19 +5534,28 @@ def admin_delete_rating(rating_id):
 @app.route('/update-rating/<int:rating_id>', methods=['POST'])
 def update_rating(rating_id):
     if 'user_id' not in session:
-        return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً', 'redirect': '/login'}), 401
+
+    # التحقق من أن المستخدم محقق
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user or not user[0]:
+        conn.close()
+        return jsonify({'error': 'يجب أن يكون حسابك محققاً لتعديل التقييمات', 'redirect': '/verification'}), 403
 
     new_comment = request.json.get('comment', '').strip()
     new_rating = int(request.json.get('rating', 0))
     
     if new_rating < 1 or new_rating > 5:
+        conn.close()
         return jsonify({'error': 'التقييم يجب أن يكون بين 1 و 5'}), 400
     
     if not new_comment:
+        conn.close()
         return jsonify({'error': 'يجب كتابة تعليق مع التقييم'}), 400
-
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
 
     # التحقق من أن التقييم يخص المستخدم الحالي
     cursor.execute('SELECT store_id, user_id FROM ratings WHERE id = ?', (rating_id,))
