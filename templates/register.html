@@ -52,6 +52,31 @@
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
+
+        .is-invalid {
+            border-color: #dc3545;
+        }
+
+        .is-valid {
+            border-color: #28a745;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .verification-info {
+            background: #e3f2fd;
+            border: 1px solid #2196F3;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -68,18 +93,26 @@
         {% endif %}
     {% endwith %}
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-md-6">
+                <div class="welcome-message">
+                    <h5><i class="bi bi-star-fill"></i> مرحباً بك في دليل محلات الحسينية</h5>
+                    <p class="mb-0">أنشئ حسابك الآن واحصل على التحقق التلقائي ✅ للاستفادة من جميع الخدمات وكسب النقاط!</p>
+                </div>
+
                 <div class="card">
                     <div class="card-header bg-primary text-white text-center">
                         <h4><i class="bi bi-person-plus"></i> تسجيل حساب جديد</h4>
                     </div>
                     <div class="card-body">
-                        <form method="POST">
+                        <form method="POST" id="registerForm">
                             <div class="mb-3">
                                 <label for="full_name" class="form-label">الاسم الكامل</label>
-                                <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       placeholder="الاسم الكامل" required>
+                                <div class="invalid-feedback" id="nameError"></div>
+                                <div class="form-text">يجب أن يكون الاسم باللغة العربية ويتكون من اسم وكنية على الأقل (بدون تكرار نفس الكلمة)</div>
                             </div>
 
                             <div class="mb-3">
@@ -103,9 +136,16 @@
                             </div>
                         </form>
 
-                        <div class="alert alert-success" role="alert">
-                            <i class="bi bi-check-circle"></i>
-                            أنشئ حسابك للاستفادة من جميع خدمات دليل محلات الحسينية
+                        
+
+                        <div class="verification-info">
+                            <h6><i class="bi bi-patch-check text-success"></i> مميزات التحقق التلقائي:</h6>
+                            <ul class="mb-0 small">
+                                <li>إضافة وإدارة المحلات فوراً</li>
+                                <li>كتابة التقييمات والتعليقات</li>
+                                <li>استبدال النقاط والحصول على الهدايا</li>
+                                <li>المشاركة الكاملة في المجتمع</li>
+                            </ul>
                         </div>
 
                         <div class="text-center mt-3">
@@ -118,5 +158,66 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const nameInput = document.getElementById('full_name');
+            const nameError = document.getElementById('nameError');
+            const name = nameInput.value.trim();
+            
+            // التحقق من أن الاسم باللغة العربية فقط
+            const arabicPattern = /^[\u0600-\u06FF\s]+$/;
+            
+            // التحقق من أن الاسم يحتوي على اسمين على الأقل
+            const nameParts = name.split(/\s+/).filter(part => part.length > 0);
+            
+            if (!arabicPattern.test(name)) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'يجب أن يكون الاسم باللغة العربية فقط';
+                return;
+            }
+            
+            if (nameParts.length < 2) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'يجب أن يتكون الاسم من اسم وكنية على الأقل';
+                return;
+            }
+            
+            if (nameParts.length > 4) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'الاسم طويل جداً، يجب ألا يزيد عن 4 كلمات';
+                return;
+            }
+            
+            // التحقق من عدم تكرار نفس الكلمة
+            const uniqueParts = [...new Set(nameParts)];
+            if (uniqueParts.length !== nameParts.length) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'لا يجوز تكرار نفس الكلمة في الاسم (مثل محمد محمد)';
+                return;
+            }
+            
+            // التحقق من طول كل جزء من الاسم
+            for (let part of nameParts) {
+                if (part.length < 2) {
+                    e.preventDefault();
+                    nameInput.classList.add('is-invalid');
+                    nameError.textContent = 'كل جزء من الاسم يجب أن يكون على الأقل حرفين';
+                    return;
+                }
+            }
+            
+            nameInput.classList.remove('is-invalid');
+            nameInput.classList.add('is-valid');
+        });
+
+        // التحقق المباشر أثناء الكتابة
+        document.getElementById('full_name').addEventListener('input', function() {
+            this.classList.remove('is-invalid', 'is-valid');
+        });
+    </script>
 </body>
 </html>

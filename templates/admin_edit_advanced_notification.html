@@ -1,0 +1,904 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعديل الإشعار المتقدم - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --danger-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --info-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #11998e;
+            --warning-color: #f093fb;
+            --danger-color: #ff6b6b;
+            --info-color: #3498db;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+            
+            --card-radius: 16px;
+            --button-radius: 12px;
+            --input-radius: 10px;
+            --shadow-light: 0 2px 20px rgba(0,0,0,0.08);
+            --shadow-medium: 0 8px 30px rgba(0,0,0,0.12);
+            --shadow-heavy: 0 15px 35px rgba(0,0,0,0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            direction: rtl;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            background: rgba(0,0,0,0.3);
+            padding: 30px 25px;
+            text-align: center;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .sidebar-header h4 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-header h5 {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e0e6ff;
+        }
+
+        .sidebar-header small {
+            color: #a0a7cc;
+            font-size: 0.85rem;
+        }
+
+        .sidebar-menu {
+            padding: 25px 0;
+        }
+
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 16px 25px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: var(--transition);
+            border: none;
+            border-radius: 0;
+            font-weight: 500;
+            position: relative;
+            margin: 2px 12px;
+            border-radius: 12px;
+        }
+
+        .sidebar-menu .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(8px);
+            border-radius: 12px;
+        }
+
+        .sidebar-menu .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: var(--shadow-light);
+            transform: translateX(8px);
+            border-radius: 12px;
+        }
+
+        .sidebar-menu .nav-link i {
+            margin-left: 12px;
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .admin-content {
+            flex: 1;
+            margin-right: 280px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            min-height: 100vh;
+            padding: 30px;
+            transition: var(--transition);
+        }
+
+        .page-header {
+            background: white;
+            border-radius: var(--card-radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
+        .page-title i {
+            color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+        }
+
+        .btn-back {
+            background: var(--info-gradient);
+            border: none;
+            border-radius: var(--button-radius);
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        .current-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+            border: 2px solid #bbdefb;
+            border-radius: var(--card-radius);
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .current-info h6 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .current-info p {
+            margin-bottom: 8px;
+            color: var(--dark-color);
+        }
+
+        .edit-form {
+            background: white;
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .form-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .form-body {
+            padding: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: var(--input-radius);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+            transition: var(--transition);
+        }
+
+        .form-section:hover {
+            border-color: #dee2e6;
+            box-shadow: var(--shadow-light);
+        }
+
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section-title i {
+            color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: var(--input-radius);
+            padding: 12px 16px;
+            font-family: 'Cairo', sans-serif;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 8px;
+        }
+
+        .editor-container {
+            border: 2px solid #e9ecef;
+            border-radius: var(--input-radius);
+            overflow: hidden;
+        }
+
+        .priority-slider {
+            margin: 20px 0;
+        }
+
+        .priority-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .priority-label {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .priority-low { background: var(--info-gradient); }
+        .priority-medium { background: var(--warning-gradient); }
+        .priority-high { background: var(--danger-gradient); }
+
+        .action-options {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: var(--input-radius);
+        }
+
+        .action-options.show {
+            display: block;
+        }
+
+        .users-selection {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+            border-radius: var(--input-radius);
+            padding: 15px;
+            background: white;
+        }
+
+        .form-check {
+            margin-bottom: 12px;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: var(--button-radius);
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: var(--shadow-light);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        .btn-secondary-custom {
+            background: #6c757d;
+            border: none;
+            border-radius: var(--button-radius);
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .btn-secondary-custom:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            box-shadow: var(--shadow-medium);
+            z-index: 1001;
+            transition: var(--transition);
+        }
+
+        .mobile-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 1200px) {
+            .admin-sidebar {
+                width: 250px;
+            }
+            
+            .admin-content {
+                margin-right: 250px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .mobile-toggle {
+                display: block;
+            }
+
+            .admin-sidebar {
+                transform: translateX(100%);
+                width: 280px;
+            }
+            
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .admin-content {
+                margin-right: 0;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .form-body {
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .admin-content {
+                padding: 15px;
+            }
+
+            .current-info {
+                padding: 20px;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <div class="admin-container">
+        <!-- الشريط الجانبي -->
+        <div class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <h4><i class="bi bi-shield-check"></i></h4>
+                <h5>لوحة الإدارة</h5>
+                <small>{{ session.user_name }}</small>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                    <i class="bi bi-speedometer2"></i>
+                    الرئيسية
+                </a>
+                <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                    <i class="bi bi-shop"></i>
+                    إدارة المحلات
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-link">
+                    <i class="bi bi-people"></i>
+                    إدارة المستخدمين
+                </a>
+                <a href="{{ url_for('admin_notifications') }}" class="nav-link">
+                    <i class="bi bi-bell"></i>
+                    الإشعارات البسيطة
+                </a>
+                <a href="{{ url_for('admin_advanced_notifications') }}" class="nav-link active">
+                    <i class="bi bi-bell-fill"></i>
+                    الإشعارات المتقدمة
+                </a>
+                <a href="{{ url_for('admin_backup') }}" class="nav-link">
+                    <i class="bi bi-shield-check"></i>
+                    النسخ الاحتياطي
+                </a>
+                <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                    <i class="bi bi-gear"></i>
+                    الإعدادات
+                </a>
+                <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                <a href="{{ url_for('index') }}" class="nav-link">
+                    <i class="bi bi-house"></i>
+                    العودة للموقع
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="bi bi-box-arrow-right"></i>
+                    تسجيل خروج
+                </a>
+            </nav>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="admin-content">
+            <!-- رأس الصفحة -->
+            <div class="page-header">
+                <div class="page-title">
+                    <i class="bi bi-pencil-square"></i>
+                    تعديل الإشعار المتقدم
+                </div>
+                <a href="{{ url_for('admin_advanced_notifications') }}" class="btn-back">
+                    <i class="bi bi-arrow-right"></i>
+                    العودة للقائمة
+                </a>
+            </div>
+
+            <!-- معلومات الإشعار الحالي -->
+            <div class="current-info">
+                <h6><i class="bi bi-info-circle"></i> الإشعار الحالي</h6>
+                <p><strong>العنوان:</strong> {{ notification[1] }}</p>
+                <p><strong>الحالة:</strong> {{ 'نشط' if notification[8] else 'معطل' }}</p>
+                <p><strong>الأولوية:</strong> {{ notification[5] }}/10</p>
+                <p class="mb-0"><strong>آخر تحديث:</strong> {{ notification[18][:16] if notification[18] else 'غير محدد' }}</p>
+            </div>
+
+            <!-- نموذج التعديل -->
+            <div class="edit-form">
+                <div class="form-header">
+                    <i class="bi bi-gear"></i>
+                    <h5>تعديل بيانات الإشعار</h5>
+                </div>
+
+                <form method="POST" action="{{ url_for('edit_advanced_notification', notification_id=notification[0]) }}" id="editForm">
+                    <div class="form-body">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-section">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-info-circle"></i>
+                                        المعلومات الأساسية
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">العنوان <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="title" value="{{ notification[1] }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">الرسالة <span class="text-danger">*</span></label>
+                                        <input type="hidden" id="messageInput" name="message">
+                                        <div class="editor-container">
+                                            <div id="messageEditor" style="height: 200px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">النوع</label>
+                                        <select class="form-select" name="type" required>
+                                            <option value="info" {{ 'selected' if notification[3] == 'info' else '' }}>معلومات</option>
+                                            <option value="success" {{ 'selected' if notification[3] == 'success' else '' }}>نجاح</option>
+                                            <option value="warning" {{ 'selected' if notification[3] == 'warning' else '' }}>تحذير</option>
+                                            <option value="danger" {{ 'selected' if notification[3] == 'danger' else '' }}>خطر</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-section">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-gear"></i>
+                                        الإعدادات المتقدمة
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">الأولوية</label>
+                                        <div class="priority-slider">
+                                            <input type="range" class="form-range" name="priority" 
+                                                   value="{{ notification[5] }}" min="1" max="10" id="priorityRange">
+                                            <div class="priority-display">
+                                                <small>منخفض</small>
+                                                <span id="priorityLabel" class="priority-label">متوسط ({{ notification[5] }})</span>
+                                                <small>عالي</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="is_popup" id="isPopup" 
+                                                   {{ 'checked' if notification[6] else '' }}>
+                                            <label class="form-check-label" for="isPopup">
+                                                إشعار منبثق (popup)
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" 
+                                                   {{ 'checked' if notification[8] else '' }}>
+                                            <label class="form-check-label" for="isActive">
+                                                الإشعار نشط
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="requires_action" id="requiresAction" 
+                                                   {{ 'checked' if notification[17] else '' }}>
+                                            <label class="form-check-label" for="requiresAction">
+                                                يتطلب إجراء من المستخدم
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">تاريخ الانتهاء (اختياري)</label>
+                                        <input type="datetime-local" class="form-control" name="expires_at" 
+                                               value="{% if notification[19] and notification[19]|string|length >= 16 %}{{ notification[19]|string|slice(0, 16) }}{% endif %}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-people"></i>
+                                المستهدفون
+                            </div>
+                            <div class="mb-3">
+                                <select class="form-select" name="target_users" required id="targetUsersSelect">
+                                    <option value="all" {{ 'selected' if notification[4] == 'all' else '' }}>جميع المستخدمين</option>
+                                    <option value="admins" {{ 'selected' if notification[4] == 'admins' else '' }}>المديرين فقط</option>
+                                    <option value="users" {{ 'selected' if notification[4] == 'users' else '' }}>المستخدمين العاديين فقط</option>
+                                    <option value="specific" {{ 'selected' if notification[4] not in ['all', 'admins', 'users'] else '' }}>مستخدمين محددين</option>
+                                </select>
+                            </div>
+                            <div class="mb-3" id="specificUsersDiv" style="display: {{ 'block' if notification[4] not in ['all', 'admins', 'users'] else 'none' }};">
+                                <label class="form-label">اختر المستخدمين</label>
+                                <div class="users-selection">
+                                    {% set selected_user_ids = notification[4].split(',') if notification[4] not in ['all', 'admins', 'users'] else [] %}
+                                    {% for user in users %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="selected_users" value="{{ user[0] }}" 
+                                               id="user{{ user[0] }}" {{ 'checked' if user[0]|string in selected_user_ids else '' }}>
+                                        <label class="form-check-label" for="user{{ user[0] }}">
+                                            {{ user[1] }} ({{ user[2] }})
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-cursor"></i>
+                                الإجراءات
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">نوع الإجراء عند النقر</label>
+                                <select class="form-select" name="action_type" id="actionTypeSelect">
+                                    <option value="none" {{ 'selected' if notification[9] == 'none' else '' }}>لا يوجد إجراء</option>
+                                    <option value="url" {{ 'selected' if notification[9] == 'url' else '' }}>توجيه لرابط</option>
+                                    <option value="page" {{ 'selected' if notification[9] == 'page' else '' }}>صفحة مخصصة</option>
+                                    <option value="notifications" {{ 'selected' if notification[9] == 'notifications' else '' }}>صفحة الإشعارات</option>
+                                </select>
+                            </div>
+                            <div id="urlActionOptions" class="action-options {{ 'show' if notification[9] == 'url' else '' }}">
+                                <label class="form-label">الرابط</label>
+                                <input type="url" class="form-control" name="action_url" 
+                                       value="{{ notification[10] or '' }}" placeholder="https://example.com">
+                            </div>
+                            <div id="pageActionOptions" class="action-options {{ 'show' if notification[9] == 'page' else '' }}">
+                                <label class="form-label">محتوى الصفحة المخصصة</label>
+                                <textarea class="form-control" name="action_page_content" rows="6" 
+                                          placeholder="محتوى HTML للصفحة المخصصة">{{ notification[11] or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-sliders"></i>
+                                إعدادات إضافية
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">الإخفاء التلقائي (ثانية)</label>
+                                    <input type="number" class="form-control" name="auto_dismiss" 
+                                           value="{{ notification[16] or 0 }}" min="0">
+                                    <small class="text-muted">0 = لا يتم الإخفاء تلقائياً</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">الحد الأقصى للعرض</label>
+                                    <input type="number" class="form-control" name="max_shows" 
+                                           value="{{ notification[15] or -1 }}" min="-1">
+                                    <small class="text-muted">-1 = بلا حدود</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="bi bi-code"></i>
+                                تخصيص متقدم (اختياري)
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">CSS مخصص</label>
+                                    <textarea class="form-control" name="custom_css" rows="6" 
+                                              placeholder=".custom-notification { background: #f0f0f0; }">{{ notification[12] or '' }}</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">JavaScript مخصص</label>
+                                    <textarea class="form-control" name="custom_js" rows="6" 
+                                              placeholder="console.log('إشعار مخصص');">{{ notification[13] or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{{ url_for('admin_advanced_notifications') }}" class="btn-secondary-custom">
+                            <i class="bi bi-x"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="btn-primary-custom">
+                            <i class="bi bi-check"></i>
+                            حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        let quill;
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEditor();
+            initializeEventListeners();
+            initializeMobileMenu();
+            updatePriorityLabel();
+        });
+
+        // تهيئة القائمة المحمولة
+        function initializeMobileMenu() {
+            const mobileToggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            
+            mobileToggle?.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+
+            // إغلاق القائمة عند النقر خارجها
+            document.addEventListener('click', function(e) {
+                if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        }
+
+        // تهيئة المحرر الغني
+        function initializeEditor() {
+            quill = new Quill('#messageEditor', {
+                theme: 'snow',
+                placeholder: 'اكتب محتوى الإشعار هنا...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'align': [] }],
+                        ['link', 'blockquote'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            // تحميل المحتوى الحالي
+            quill.root.innerHTML = `{{ notification[2]|safe }}`;
+
+            // تحديث الحقل المخفي عند تغيير المحتوى
+            quill.on('text-change', function() {
+                document.getElementById('messageInput').value = quill.root.innerHTML;
+            });
+        }
+
+        // تهيئة مستمعي الأحداث
+        function initializeEventListeners() {
+            document.getElementById('priorityRange')?.addEventListener('input', updatePriorityLabel);
+            document.getElementById('targetUsersSelect')?.addEventListener('change', toggleSpecificUsers);
+            document.getElementById('actionTypeSelect')?.addEventListener('change', toggleActionOptions);
+            document.getElementById('editForm')?.addEventListener('submit', validateForm);
+        }
+
+        // تحديث تسمية الأولوية
+        function updatePriorityLabel() {
+            const value = document.getElementById('priorityRange')?.value;
+            const label = document.getElementById('priorityLabel');
+            if (!value || !label) return;
+
+            const priority = value <= 3 ? 'منخفض' : (value <= 7 ? 'متوسط' : 'عالي');
+            label.textContent = `${priority} (${value})`;
+            label.className = `priority-label priority-${value <= 3 ? 'low' : (value <= 7 ? 'medium' : 'high')}`;
+        }
+
+        // إظهار/إخفاء خيارات المستخدمين المحددين
+        function toggleSpecificUsers() {
+            const select = document.getElementById('targetUsersSelect');
+            const div = document.getElementById('specificUsersDiv');
+            if (select && div) {
+                div.style.display = select.value === 'specific' ? 'block' : 'none';
+            }
+        }
+
+        // إظهار/إخفاء خيارات الإجراءات
+        function toggleActionOptions() {
+            const select = document.getElementById('actionTypeSelect');
+            const allOptions = document.querySelectorAll('.action-options');
+
+            allOptions.forEach(option => option.classList.remove('show'));
+
+            if (select?.value === 'url') {
+                document.getElementById('urlActionOptions')?.classList.add('show');
+            } else if (select?.value === 'page') {
+                document.getElementById('pageActionOptions')?.classList.add('show');
+            }
+        }
+
+        // التحقق من صحة النموذج
+        function validateForm(e) {
+            const messageContent = quill.root.innerHTML.trim();
+            if (messageContent === '<p><br></p>' || messageContent === '') {
+                e.preventDefault();
+                alert('يرجى كتابة محتوى الإشعار');
+                return false;
+            }
+            document.getElementById('messageInput').value = messageContent;
+        }
+    </script>
+</body>
+</html>

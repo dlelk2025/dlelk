@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رفض طلب التحقق - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 15px 20px;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-menu .nav-link:hover,
+        .sidebar-menu .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu .nav-link i {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            border-radius: 15px 15px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="row g-0">
+        <!-- الشريط الجانبي -->
+        <div class="col-md-2">
+            <div class="admin-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="bi bi-shield-check"></i></h4>
+                    <h5>لوحة الإدارة</h5>
+                    <small>{{ session.user_name }}</small>
+                </div>
+
+                <nav class="sidebar-menu">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i>
+                        الرئيسية
+                    </a>
+                    <a href="{{ url_for('admin_duty_pharmacies') }}" class="nav-link">
+                        <i class="bi bi-clipboard2-pulse"></i>
+                        الصيدليات المناوبة
+                    </a>
+                    <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                        <i class="bi bi-shop"></i>
+                        إدارة المحلات
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        إدارة المستخدمين
+                    </a>
+                    <a href="{{ url_for('admin_verification_requests') }}" class="nav-link active">
+                        <i class="bi bi-patch-check"></i>
+                        طلبات التحقق
+                    </a>
+                    <a href="{{ url_for('admin_categories') }}" class="nav-link">
+                        <i class="bi bi-tags"></i>
+                        إدارة التصنيفات
+                    </a>
+                    <a href="{{ url_for('admin_services') }}" class="nav-link">
+                        <i class="bi bi-telephone"></i>
+                        الخدمات الهامة
+                    </a>
+                    <a href="{{ url_for('admin_notifications') }}" class="nav-link">
+                        <i class="bi bi-bell"></i>
+                        الإشعارات
+                    </a>
+                    <a href="{{ url_for('admin_ticker') }}" class="nav-link">
+                        <i class="bi bi-text-paragraph"></i>
+                        الشريط المتحرك
+                    </a>
+                    <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        الإعدادات
+                    </a>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{{ url_for('index') }}" class="nav-link">
+                        <i class="bi bi-house"></i>
+                        العودة للموقع
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        تسجيل خروج
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="col-md-10">
+            <div class="admin-content p-4">
+                <!-- الرأس -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-x-circle text-danger"></i> رفض طلب التحقق</h2>
+                    <a href="{{ url_for('admin_verification_requests') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> العودة
+                    </a>
+                </div>
+
+                <div class="row">
+                    <!-- معلومات الطلب -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5><i class="bi bi-info-circle"></i> معلومات الطلب</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>رقم الطلب:</strong></div>
+                                    <div class="col-8">#{{ request_data[0] }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>المستخدم:</strong></div>
+                                    <div class="col-8">{{ request_data[8] }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>رقم الهاتف:</strong></div>
+                                    <div class="col-8">{{ request_data[9] }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>الاسم المطلوب:</strong></div>
+                                    <div class="col-8"><strong>{{ request_data[2] }}</strong></div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>تاريخ الطلب:</strong></div>
+                                    <div class="col-8">{{ request_data[5][:16].replace('T', ' ') if request_data[5] else 'غير محدد' }}</div>
+                                </div>
+                                {% if request_data[10] %}
+                                <hr>
+                                <div class="row">
+                                    <div class="col-4"><strong>الحالة الحالية:</strong></div>
+                                    <div class="col-8">
+                                        <span class="badge bg-primary">محقق</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نموذج الرفض -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <h5><i class="bi bi-exclamation-triangle"></i> سبب الرفض</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('reject_verification_request', request_id=request_data[0]) }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">اختر سبب الرفض:</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reason" value="الاسم غير صحيح أو غير كامل" id="reason1">
+                                            <label class="form-check-label" for="reason1">
+                                                الاسم غير صحيح أو غير كامل
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reason" value="الاسم ليس باللغة العربية" id="reason2">
+                                            <label class="form-check-label" for="reason2">
+                                                الاسم ليس باللغة العربية
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reason" value="الاسم لا يحتوي على اسم وكنية" id="reason3">
+                                            <label class="form-check-label" for="reason3">
+                                                الاسم لا يحتوي على اسم وكنية
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reason" value="بيانات غير صحيحة" id="reason4">
+                                            <label class="form-check-label" for="reason4">
+                                                بيانات غير صحيحة
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reason" value="custom" id="reasonCustom">
+                                            <label class="form-check-label" for="reasonCustom">
+                                                سبب آخر (حدد أدناه)
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3" id="customReasonDiv" style="display: none;">
+                                        <label for="custom_reason" class="form-label">السبب المخصص:</label>
+                                        <textarea class="form-control" name="custom_reason" rows="3" 
+                                                placeholder="اكتب سبب رفض طلب التحقق..."></textarea>
+                                    </div>
+
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <strong>تحذير:</strong> سيتم إرسال إشعار للمستخدم بسبب الرفض.
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-danger flex-fill">
+                                            <i class="bi bi-x-circle"></i> رفض الطلب
+                                        </button>
+                                        <a href="{{ url_for('admin_verification_requests') }}" class="btn btn-secondary">
+                                            <i class="bi bi-arrow-left"></i> إلغاء
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // إظهار/إخفاء حقل السبب المخصص
+        document.querySelectorAll('input[name="reason"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                const customDiv = document.getElementById('customReasonDiv');
+                if (this.value === 'custom') {
+                    customDiv.style.display = 'block';
+                } else {
+                    customDiv.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

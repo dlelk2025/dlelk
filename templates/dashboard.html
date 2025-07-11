@@ -18,7 +18,7 @@
                         <i class="bi bi-shop"></i> محلاتي
                         <span class="badge bg-primary rounded-pill">{{ user_stores|length }}</span>
                     </a>
-                    <a href="#add-store" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#addStoreModal">
+                    <a href="{{ url_for('add_store_page') }}" class="list-group-item list-group-item-action">
                         <i class="bi bi-plus-circle"></i> إضافة محل جديد
                     </a>
                     <a href="#profile" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#profileModal">
@@ -30,6 +30,14 @@
                     </a>
                     <a href="{{ url_for('user_points') }}" class="list-group-item list-group-item-action">
                         <i class="bi bi-star-fill"></i> النقاط والهدايا
+                    </a>
+                    {% if not user_verification_status %}
+                    <a href="#verification" class="list-group-item list-group-item-action" onclick="checkVerificationStatus()">
+                        <i class="bi bi-patch-check"></i> طلب التحقق
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('user_notifications') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-bell-fill"></i> الإشعارات
                     </a>
                 </div>
             </div>
@@ -43,7 +51,12 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                     </div>
-                    <h6 class="card-title">{{ session.user_name }}</h6>
+                    <h6 class="card-title">
+                        {{ session.user_name }}
+                        {% if user_verification_status %}
+                            <i class="bi bi-patch-check-fill text-primary" title="مستخدم محقق"></i>
+                        {% endif %}
+                    </h6>
                     <p class="card-text text-muted small">عضو منذ {{ join_year }}</p>
                     <div class="row text-center">
                         <div class="col-3">
@@ -131,9 +144,9 @@
                     <h5 class="mb-0">
                         <i class="bi bi-shop"></i> محلاتي
                     </h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStoreModal">
+                    <a href="{{ url_for('add_store_page') }}" class="btn btn-primary">
                         <i class="bi bi-plus-circle"></i> إضافة محل جديد
-                    </button>
+                    </a>
                 </div>
                 <div class="card-body">
                     {% if user_stores %}
@@ -228,7 +241,9 @@
                         </div>
                         <h4 class="text-muted">لا توجد محلات بعد</h4>
                         <p class="text-muted mb-4">ابدأ رحلتك التجارية بإضافة محلك الأول</p>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStoreModal">
+                        <a href="{{ url_for('add_store') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> إضافة محل جديد
+                        </a>ta-bs-toggle="modal" data-bs-target="#addStoreModal">
                             <i class="bi bi-plus-circle"></i> إضافة محل جديد
                         </button>
                     </div>
@@ -240,55 +255,6 @@
 </div>
 
 <!-- نافذة إضافة محل جديد -->
-<div class="modal fade" id="addStoreModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">إضافة محل جديد</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('add_user_store') }}">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">اسم المحل</label>
-                                <input type="text" class="form-control" name="name" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">التصنيف</label>
-                                <select class="form-select" name="category_id" required>
-                                    <option value="">اختر التصنيف</option>
-                                    {% for category in categories %}
-                                    <option value="{{ category[0] }}">{{ category[1] }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">العنوان</label>
-                        <input type="text" class="form-control" name="address" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">رقم الهاتف</label>
-                        <input type="tel" class="form-control" name="phone">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">وصف المحل</label>
-                        <textarea class="form-control" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-primary">إضافة المحل</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- نافذة تعديل الملف الشخصي -->
 <div class="modal fade" id="profileModal" tabindex="-1">
@@ -302,7 +268,14 @@
                 <form method="POST" action="{{ url_for('update_profile') }}">
                     <div class="mb-3">
                         <label class="form-label">الاسم الكامل</label>
-                        <input type="text" class="form-control" name="full_name" value="{{ session.user_name }}">
+                        <input type="text" class="form-control" name="full_name" value="{{ session.user_name }}" id="profileFullName"
+                               {% if not user_can_edit_name %}readonly{% endif %}>
+                        {% if not user_can_edit_name %}
+                            <div class="form-text text-warning">
+                                <i class="bi bi-lock"></i> لا يمكن تعديل الاسم للمستخدمين المحققين
+                            </div>
+                        {% endif %}
+                        <div id="profileNameError" class="invalid-feedback"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">رقم الهاتف</label>
@@ -391,12 +364,46 @@
                         <i class="bi bi-star" data-rating="4"></i>
                         <i class="bi bi-star" data-rating="5"></i>
                     </div>
+                    <div class="mb-3">
+                        <label for="ratingComment" class="form-label">تعليقك</label>
+                        <textarea class="form-control" id="ratingComment" rows="3"></textarea>
+                    </div>
                     <p>اختر تقييمك للمحل</p>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
                 <button type="button" class="btn btn-primary" onclick="submitRating()">تقييم</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة طلب التحقق -->
+<div class="modal fade" id="verificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-patch-check"></i> طلب التحقق
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="verificationContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                        <p class="mt-2">جاري فحص حالة طلب التحقق...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="verificationFooter" style="display: none;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" id="requestVerificationBtn" onclick="requestVerification()">
+                    طلب التحقق
+                </button>
             </div>
         </div>
     </div>
@@ -523,22 +530,42 @@ function submitRating() {
         return;
     }
 
+    const comment = document.getElementById('ratingComment').value.trim();
+    if (!comment) {
+        alert('يرجى كتابة تعليق مع التقييم');
+        return;
+    }
+
     fetch(`/rate-store/${currentStoreId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({rating: selectedRating})
+        body: JSON.stringify({
+            rating: selectedRating,
+            comment: comment
+        })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('تم إضافة التقييم بنجاح');
-            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
-            location.reload();
+            alert(data.message || 'تم حفظ التقييم بنجاح');
+            $('#ratingModal').modal('hide');
+            // تحديث التقييم في الواجهة
+            document.querySelector(`[data-store-id="${currentStoreId}"] .store-rating`).innerHTML = 
+                `<span class="text-warning">★★★★★</span> ${data.new_average.toFixed(1)}`;
         } else {
-            alert('خطأ في إضافة التقييم');
+            alert(data.error);
+            // إذا كان هناك رابط للتوجيه، توجه المستخدم إليه
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000);
+            }
         }
+    })
+    .catch(error => {
+        alert('حدث خطأ أثناء حفظ التقييم');
     });
 }
 
@@ -552,6 +579,117 @@ function showStatistics() {
 function showPoints() {
     window.location.href = '{{ url_for("user_points") }}';
 }
+
+// وظائف طلب التحقق
+function checkVerificationStatus() {
+    const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+    modal.show();
+
+    fetch('/api/verification-status')
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('verificationContent');
+            const footer = document.getElementById('verificationFooter');
+
+            if (data.status === 'verified') {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="bi bi-patch-check-fill text-success" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-success">حسابك محقق بالفعل</h5>
+                        <p class="text-muted">تهانينا! حصلت على شارة التحقق</p>
+                    </div>
+                `;
+                footer.style.display = 'block';
+                document.getElementById('requestVerificationBtn').style.display = 'none';
+            } else if (data.status === 'pending') {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="bi bi-clock-history text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-warning">طلبك قيد المراجعة</h5>
+                        <p class="text-muted">تم إرسال طلب التحقق وهو قيد المراجعة من قبل الإدارة</p>
+                        <small class="text-muted">تاريخ الطلب: ${new Date(data.requested_at).toLocaleDateString('ar-SA')}</small>
+                    </div>
+                `;
+                footer.style.display = 'block';
+                document.getElementById('requestVerificationBtn').style.display = 'none';
+            } else if (data.status === 'rejected') {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-danger">تم رفض طلبك</h5>
+                        <p class="text-muted">تم رفض طلب التحقق من قبل الإدارة</p>
+                        ${data.reason ? `<div class="alert alert-warning"><strong>السبب:</strong> ${data.reason}</div>` : ''}
+                        <p class="small">يمكنك تعديل بياناتك وإعادة الطلب</p>
+                    </div>
+                `;
+                footer.style.display = 'block';
+                document.getElementById('requestVerificationBtn').textContent = 'إعادة طلب التحقق';
+            } else {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <i class="bi bi-patch-check text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">طلب شارة التحقق</h5>
+                        <div class="alert alert-info text-start">
+                            <h6><i class="bi bi-info-circle"></i> شروط الحصول على شارة التحقق:</h6>
+                            <ul class="mb-0">
+                                <li>يجب أن يكون الاسم باللغة العربية</li>
+                                <li>يجب أن يحتوي على اسم وكنية على الأقل</li>
+                                <li>يجب ألا يزيد عن 4 كلمات</li>
+                            </ul>
+                        </div>
+                        <p class="text-muted">اسمك الحالي: <strong>{{ session.user_name }}</strong></p>
+                    </div>
+                `;
+                footer.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('verificationContent').innerHTML = `
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-danger">خطأ</h5>
+                    <p class="text-muted">حدث خطأ في تحميل حالة التحقق</p>
+                </div>
+            `;
+        });
+}
+
+function requestVerification() {
+    const btn = document.getElementById('requestVerificationBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جاري الإرسال...';
+
+    fetch('/request-verification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('verificationContent').innerHTML = `
+                <div class="text-center">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-success">تم إرسال الطلب بنجاح</h5>
+                    <p class="text-muted">تم إرسال طلب التحقق إلى الإدارة وسيتم مراجعته قريباً</p>
+                </div>
+            `;
+            btn.style.display = 'none';
+        } else {
+            alert(data.error || 'حدث خطأ في إرسال الطلب');
+            btn.disabled = false;
+            btn.innerHTML = 'طلب التحقق';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('حدث خطأ في إرسال الطلب');
+        btn.disabled = false;
+        btn.innerHTML = 'طلب التحقق';
+    });
+}
 </script>
 
 <style>
@@ -564,11 +702,110 @@ function showPoints() {
 }
 
 .rating-stars i:hover {
-    color: #ffc107;
-}
+    color: #ffc107;}
 
 .rating-stars i.bi-star-fill {
     color: #ffc107;
 }
 </style>
+    <script>
+        // دالة لحذف المحل
+        function deleteStore(storeId) {
+            if (confirm('هل أنت متأكد من حذف هذا المحل؟')) {
+                fetch(`/delete-user-store/${storeId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.error || 'حدث خطأ أثناء الحذف');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('حدث خطأ أثناء الحذف');
+                });
+            }
+        }
+
+        // التحقق من صحة الاسم العربي في نموذج تعديل الملف الشخصي
+        {% if user_can_edit_name %}
+        document.querySelector('#profileModal form').addEventListener('submit', function(e) {
+            const nameInput = document.getElementById('profileFullName');
+            const nameError = document.getElementById('profileNameError');
+            const name = nameInput.value.trim();
+
+            // التحقق من أن الاسم باللغة العربية فقط
+            const arabicPattern = /^[\u0600-\u06FF\s]+$/;
+
+            // التحقق من أن الاسم يحتوي على اسمين على الأقل
+            const nameParts = name.split(/\s+/).filter(part => part.length > 0);
+
+            if (!name) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'يجب إدخال الاسم';
+                return;
+            }
+
+            if (!arabicPattern.test(name)) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'يجب أن يكون الاسم باللغة العربية فقط';
+                return;
+            }
+
+            if (nameParts.length < 2) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'يجب أن يتكون الاسم من اسم وكنية على الأقل';
+                                return;
+            }
+
+            if (nameParts.length > 4) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'الاسم طويل جداً، يجب ألا يزيد عن 4 كلمات';
+                return;
+            }
+
+            // التحقق من عدم تكرار نفس الكلمة
+            const uniqueParts = [...new Set(nameParts)];
+            if (uniqueParts.length !== nameParts.length) {
+                e.preventDefault();
+                nameInput.classList.add('is-invalid');
+                nameError.textContent = 'لا يجوز تكرار نفس الكلمة في الاسم (مثل محمد محمد)';
+                return;
+            }
+
+            // التحقق من طول كل جزء من الاسم
+            for (let part of nameParts) {
+                if (part.length < 2) {
+                    e.preventDefault();
+                    nameInput.classList.add('is-invalid');
+                    nameError.textContent = 'كل جزء من الاسم يجب أن يكون على الأقل حرفين';
+                    return;
+                }
+                if (part.length > 15) {
+                    e.preventDefault();
+                    nameInput.classList.add('is-invalid');
+                    nameError.textContent = 'كل جزء من الاسم يجب ألا يزيد عن 15 حرف';
+                    return;
+                }
+            }
+
+            nameInput.classList.remove('is-invalid');
+            nameInput.classList.add('is-valid');
+        });
+
+        // التحقق المباشر أثناء الكتابة
+        document.getElementById('profileFullName').addEventListener('input', function() {
+            this.classList.remove('is-invalid', 'is-valid');
+            const nameError = document.getElementById('profileNameError');
+            nameError.textContent = '';
+        });
+        {% endif %}
+    </script>
 {% endblock %}

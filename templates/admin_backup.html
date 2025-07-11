@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -197,7 +196,7 @@
                 margin: 10px;
                 padding: 20px;
             }
-            
+
             .backup-stats {
                 grid-template-columns: 1fr;
             }
@@ -240,6 +239,44 @@
                 <div class="stat-card">
                     <div class="stat-number text-info" id="totalSize">-</div>
                     <div class="text-muted">الحجم الإجمالي</div>
+                </div>
+            </div>
+
+            <!-- النسخ التلقائي عبر التليجرام -->
+            <div class="backup-card" style="border-left-color: #ffc107;">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);">
+                    <i class="bi bi-telegram"></i>
+                </div>
+                <h4><i class="bi bi-robot"></i> النسخ التلقائي عبر التليجرام</h4>
+                <p class="text-muted">إنشاء نسخة احتياطية تلقائياً وإرسالها عبر بوت التليجرام عند أي تعديل أو إضافة أو حذف في قاعدة البيانات</p>
+                
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div id="autoBackupStatus" class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">جارٍ التحميل...</span>
+                            </div>
+                            <span>جارٍ التحقق من الحالة...</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button id="toggleAutoBackup" class="btn btn-warning" style="display: none;">
+                            <i class="bi bi-toggle-off"></i> <span id="toggleText">تفعيل</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>معلومات:</strong> عند التفعيل، سيتم إرسال نسخة احتياطية تلقائياً لبوت التليجرام عند:
+                        <ul class="mt-2 mb-0">
+                            <li>إضافة أو تعديل أو حذف المحلات</li>
+                            <li>إضافة أو تعديل أو حذف المستخدمين</li>
+                            <li>تعديل التصنيفات والخدمات</li>
+                            <li>تغيير الإعدادات والتحقق من الطلبات</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -289,68 +326,172 @@
                 </div>
                 <h4><i class="bi bi-upload"></i> استعادة نسخة احتياطية</h4>
                 <p class="text-muted">رفع نسخة احتياطية واستعادة البيانات منها</p>
-                
+
                 <!-- استعادة قاعدة البيانات -->
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>استعادة قاعدة البيانات (.db)</h6>
-                        <form action="{{ url_for('restore_backup') }}" method="post" enctype="multipart/form-data" id="restoreDbForm">
-                            <div class="upload-area" id="uploadAreaDb">
-                                <i class="bi bi-database-up display-4 text-muted"></i>
-                                <h6 class="mt-3">قاعدة البيانات فقط</h6>
-                                <p class="text-muted">اسحب ملف .db هنا</p>
-                                <input type="file" name="backup_file" id="backupFileDb" accept=".db" style="display: none;">
-                                <button type="button" class="btn btn-outline-success" onclick="document.getElementById('backupFileDb').click()">
-                                    <i class="bi bi-folder-open"></i> اختيار ملف .db
-                                </button>
-                            </div>
-                            
-                            <div class="mt-3" id="selectedFileDb" style="display: none;">
-                                <div class="alert alert-info">
-                                    <i class="bi bi-file-earmark-check"></i>
-                                    <span id="fileNameDb"></span>
-                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Db')">إلغاء</button>
+                        <h6>إدارة قاعدة البيانات (.db)</h6>
+                        
+                        <!-- حفظ النسخة المرفوعة -->
+                        <div class="mb-4">
+                            <h7 class="text-primary">حفظ نسخة مرفوعة</h7>
+                            <form action="{{ url_for('save_uploaded_backup') }}" method="post" enctype="multipart/form-data" id="saveDbForm">
+                                <div class="upload-area" id="uploadAreaSaveDb" style="border-color: #28a745;">
+                                    <i class="bi bi-cloud-upload display-4 text-success"></i>
+                                    <h6 class="mt-3 text-success">حفظ في قائمة النسخ</h6>
+                                    <p class="text-muted">اسحب ملف .db هنا لحفظه</p>
+                                    <input type="file" name="backup_file" id="backupFileSaveDb" accept=".db" style="display: none;">
+                                    <button type="button" class="btn btn-outline-success" onclick="document.getElementById('backupFileSaveDb').click()">
+                                        <i class="bi bi-folder-open"></i> اختيار ملف .db للحفظ
+                                    </button>
                                 </div>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <button type="submit" class="btn btn-success-admin" onclick="return confirm('هل أنت متأكد من استعادة قاعدة البيانات؟')">
-                                    <i class="bi bi-database-up"></i> استعادة قاعدة البيانات
-                                </button>
-                            </div>
-                        </form>
+
+                                <div class="mt-3" id="selectedFileSaveDb" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        <span id="fileNameSaveDb"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('SaveDb')">إلغاء</button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3" id="saveOptionsDb">
+                                    <button type="submit" class="btn btn-success" style="display: none;" id="saveButtonDb">
+                                        <i class="bi bi-cloud-upload"></i> حفظ في قائمة النسخ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- استعادة مباشرة -->
+                        <div>
+                            <h7 class="text-warning">استعادة مباشرة</h7>
+                            <form action="{{ url_for('restore_backup') }}" method="post" enctype="multipart/form-data" id="restoreDbForm">
+                                <div class="upload-area" id="uploadAreaDb" style="border-color: #ffc107;">
+                                    <i class="bi bi-database-up display-4 text-warning"></i>
+                                    <h6 class="mt-3 text-warning">استعادة فورية</h6>
+                                    <p class="text-muted">اسحب ملف .db هنا للاستعادة المباشرة</p>
+                                    <input type="file" name="backup_file" id="backupFileDb" accept=".db" style="display: none;">
+                                    <button type="button" class="btn btn-outline-warning" onclick="document.getElementById('backupFileDb').click()">
+                                        <i class="bi bi-folder-open"></i> اختيار ملف .db للاستعادة
+                                    </button>
+                                </div>
+
+                                <div class="mt-3" id="selectedFileDb" style="display: none;">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        <span id="fileNameDb"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Db')">إلغاء</button>
+                                    </div>
+                                </div>
+
+                                <!-- خيارات الاستعادة -->
+                                <div class="mt-3" id="restoreOptionsDb" style="display: none;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" name="merge_data" id="mergeDataDb" checked>
+                                        <label class="form-check-label" for="mergeDataDb">
+                                            <strong>دمج البيانات (موصى به)</strong><br>
+                                            <small class="text-muted">الحفاظ على البيانات الحالية وإضافة البيانات الجديدة من النسخة الاحتياطية فقط</small>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button type="submit" class="btn btn-warning" onclick="return confirm('هل أنت متأكد من استعادة قاعدة البيانات؟')">
+                                        <i class="bi bi-database-up"></i> استعادة قاعدة البيانات
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    
+
                     <div class="col-md-6">
-                        <h6>استعادة النسخة الشاملة (.zip)</h6>
-                        <form action="{{ url_for('restore_full_backup') }}" method="post" enctype="multipart/form-data" id="restoreFullForm">
-                            <div class="upload-area" id="uploadAreaFull">
-                                <i class="bi bi-archive-up display-4 text-muted"></i>
-                                <h6 class="mt-3">النسخة الشاملة</h6>
-                                <p class="text-muted">اسحب ملف .zip هنا</p>
-                                <input type="file" name="backup_file" id="backupFileFull" accept=".zip" style="display: none;">
-                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('backupFileFull').click()">
-                                    <i class="bi bi-folder-open"></i> اختيار ملف .zip
-                                </button>
-                            </div>
-                            
-                            <div class="mt-3" id="selectedFileFull" style="display: none;">
-                                <div class="alert alert-info">
-                                    <i class="bi bi-file-earmark-check"></i>
-                                    <span id="fileNameFull"></span>
-                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Full')">إلغاء</button>
+                        <h6>إدارة النسخة الشاملة (.zip)</h6>
+                        
+                        <!-- حفظ النسخة الشاملة المرفوعة -->
+                        <div class="mb-4">
+                            <h7 class="text-primary">حفظ نسخة شاملة مرفوعة</h7>
+                            <form action="{{ url_for('save_uploaded_full_backup') }}" method="post" enctype="multipart/form-data" id="saveFullForm">
+                                <div class="upload-area" id="uploadAreaSaveFull" style="border-color: #007bff;">
+                                    <i class="bi bi-cloud-upload display-4 text-primary"></i>
+                                    <h6 class="mt-3 text-primary">حفظ في قائمة النسخ</h6>
+                                    <p class="text-muted">اسحب ملف .zip هنا لحفظه</p>
+                                    <input type="file" name="backup_file" id="backupFileSaveFull" accept=".zip" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('backupFileSaveFull').click()">
+                                        <i class="bi bi-folder-open"></i> اختيار ملف .zip للحفظ
+                                    </button>
                                 </div>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <button type="submit" class="btn btn-info-admin" onclick="return confirm('هل أنت متأكد من استعادة النسخة الشاملة؟ سيتم استبدال جميع الملفات!')">
-                                    <i class="bi bi-archive-up"></i> استعادة النسخة الشاملة
-                                </button>
-                            </div>
-                        </form>
+
+                                <div class="mt-3" id="selectedFileSaveFull" style="display: none;">
+                                    <div class="alert alert-primary">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        <span id="fileNameSaveFull"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('SaveFull')">إلغاء</button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3" id="saveOptionsFull">
+                                    <button type="submit" class="btn btn-primary" style="display: none;" id="saveButtonFull">
+                                        <i class="bi bi-cloud-upload"></i> حفظ في قائمة النسخ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- استعادة مباشرة -->
+                        <div>
+                            <h7 class="text-info">استعادة مباشرة</h7>
+                            <form action="{{ url_for('restore_full_backup') }}" method="post" enctype="multipart/form-data" id="restoreFullForm">
+                                <div class="upload-area" id="uploadAreaFull" style="border-color: #17a2b8;">
+                                    <i class="bi bi-file-zip display-4 text-info"></i>
+                                    <h6 class="mt-3 text-info">استعادة فورية</h6>
+                                    <p class="text-muted">اسحب ملف .zip هنا للاستعادة المباشرة</p>
+                                    <input type="file" name="backup_file" id="backupFileFull" accept=".zip" style="display: none;">
+                                    <button type="button" class="btn btn-outline-info" onclick="document.getElementById('backupFileFull').click()">
+                                        <i class="bi bi-folder-open"></i> اختيار ملف .zip للاستعادة
+                                    </button>
+                                </div>
+
+                                <div class="mt-3" id="selectedFileFull" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        <span id="fileNameFull"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile('Full')">إلغاء</button>
+                                    </div>
+                                </div>
+
+                                <!-- خيارات الاستعادة للنسخة الشاملة -->
+                                <div class="mt-3" id="restoreOptionsFull" style="display: none;">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" value="1" name="structure_only" id="structureOnlyFull">
+                                        <label class="form-check-label" for="structureOnlyFull">
+                                            <strong>🏗️ استعادة البنية والتصميم فقط (جديد!)</strong><br>
+                                            <small class="text-muted">استعادة الكود والقوالب وبنية قاعدة البيانات مع الحفاظ على جميع البيانات الحالية - مثالي للتحديثات</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" name="merge_data" id="mergeDataFull" checked>
+                                        <label class="form-check-label" for="mergeDataFull">
+                                            <strong>دمج البيانات (موصى به)</strong><br>
+                                            <small class="text-muted">الحفاظ على جميع البيانات الحالية بدون حذف وإضافة البيانات الجديدة من النسخة الاحتياطية فقط</small>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="alert alert-info mt-3" id="structureOnlyInfo" style="display: none;">
+                                        <i class="bi bi-info-circle"></i>
+                                        <strong>استعادة البنية فقط:</strong> سيتم تحديث الكود والقوالب وبنية قاعدة البيانات مع الحفاظ على جميع البيانات الموجودة. مثالي عند تطبيق تحديثات جديدة على النظام.
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button type="submit" class="btn btn-info" onclick="return confirm('هل أنت متأكد من استعادة النسخة الشاملة؟')">
+                                        <i class="bi bi-file-zip"></i> استعادة النسخة الشاملة
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="mt-3">
                     <div class="alert alert-warning">
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -363,6 +504,106 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // تحميل حالة النسخ التلقائي
+        function loadAutoBackupStatus() {
+            fetch('/api/auto-backup-status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('autoBackupStatus');
+                    const toggleBtn = document.getElementById('toggleAutoBackup');
+                    const toggleText = document.getElementById('toggleText');
+                    
+                    if (data.enabled) {
+                        statusDiv.innerHTML = `
+                            <span class="badge bg-success me-2">
+                                <i class="bi bi-check-circle"></i> مفعل
+                            </span>
+                            ${data.bot_available ? 
+                                '<span class="text-success"><i class="bi bi-telegram"></i> البوت متصل</span>' : 
+                                '<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> البوت غير متصل</span>'
+                            }
+                        `;
+                        toggleBtn.className = 'btn btn-danger';
+                        toggleBtn.innerHTML = '<i class="bi bi-toggle-on"></i> <span id="toggleText">تعطيل</span>';
+                        toggleText.textContent = 'تعطيل';
+                    } else {
+                        statusDiv.innerHTML = `
+                            <span class="badge bg-secondary me-2">
+                                <i class="bi bi-x-circle"></i> معطل
+                            </span>
+                            <span class="text-muted">النسخ التلقائي متوقف</span>
+                        `;
+                        toggleBtn.className = 'btn btn-success';
+                        toggleBtn.innerHTML = '<i class="bi bi-toggle-off"></i> <span id="toggleText">تفعيل</span>';
+                        toggleText.textContent = 'تفعيل';
+                    }
+                    
+                    toggleBtn.style.display = 'inline-block';
+                })
+                .catch(error => {
+                    console.error('Error loading auto backup status:', error);
+                    document.getElementById('autoBackupStatus').innerHTML = `
+                        <span class="text-danger">
+                            <i class="bi bi-exclamation-triangle"></i> خطأ في تحميل الحالة
+                        </span>
+                    `;
+                });
+        }
+
+        // تبديل حالة النسخ التلقائي
+        function toggleAutoBackup() {
+            const toggleBtn = document.getElementById('toggleAutoBackup');
+            toggleBtn.disabled = true;
+            toggleBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div> جارٍ التحديث...';
+            
+            fetch('/admin/toggle-auto-backup')
+                .then(response => {
+                    if (response.ok) {
+                        loadAutoBackupStatus();
+                    } else {
+                        throw new Error('فشل في تغيير الحالة');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error toggling auto backup:', error);
+                    alert('خطأ في تغيير حالة النسخ التلقائي');
+                })
+                .finally(() => {
+                    toggleBtn.disabled = false;
+                });
+        }
+
+        // ربط الأحداث
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAutoBackupStatus();
+            
+            const toggleBtn = document.getElementById('toggleAutoBackup');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleAutoBackup);
+            }
+        });
+
+        // دالة إدارة خيار استعادة البنية فقط
+        function setupStructureOnlyOption(restoreOptionsDiv) {
+            const structureOnlyCheckbox = restoreOptionsDiv.querySelector('#structureOnlyFull');
+            const mergeDataCheckbox = restoreOptionsDiv.querySelector('#mergeDataFull');
+            const structureOnlyInfo = restoreOptionsDiv.querySelector('#structureOnlyInfo');
+
+            if (structureOnlyCheckbox && mergeDataCheckbox && structureOnlyInfo) {
+                structureOnlyCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        // إخفاء خيار الدمج عند تفعيل استعادة البنية فقط
+                        mergeDataCheckbox.parentElement.style.display = 'none';
+                        structureOnlyInfo.style.display = 'block';
+                    } else {
+                        // إظهار خيار الدمج عند إلغاء تفعيل استعادة البنية فقط
+                        mergeDataCheckbox.parentElement.style.display = 'block';
+                        structureOnlyInfo.style.display = 'none';
+                    }
+                });
+            }
+        }
+
         // تحميل قائمة النسخ الاحتياطية
         function loadBackups() {
             fetch('/admin/list-backups')
@@ -370,23 +611,45 @@
                 .then(data => {
                     const backupsList = document.getElementById('backupsList');
                     let dbCount = 0, fullCount = 0, totalSize = 0;
-                    
+
                     if (data.backups && data.backups.length > 0) {
                         let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>النوع</th><th>اسم الملف</th><th>الحجم</th><th>التاريخ</th><th>الإجراءات</th></tr></thead><tbody>';
-                        
+
                         data.backups.forEach(backup => {
-                            const isFullBackup = backup.filename.includes('full_backup');
-                            const badgeClass = isFullBackup ? 'bg-primary' : 'bg-success';
-                            const badgeText = isFullBackup ? 'شامل' : 'قاعدة بيانات';
-                            const iconClass = isFullBackup ? 'bi-archive-fill' : 'bi-database-fill';
+                            const isFullBackup = backup.filename.includes('full_backup') || backup.filename.includes('uploaded_full_');
+                            const isUploaded = backup.filename.includes('uploaded_');
                             
+                            let badgeClass, badgeText, iconClass;
+                            
+                            if (isUploaded) {
+                                if (isFullBackup) {
+                                    badgeClass = 'bg-info';
+                                    badgeText = 'شامل مرفوع';
+                                    iconClass = 'bi-cloud-upload';
+                                } else {
+                                    badgeClass = 'bg-warning text-dark';
+                                    badgeText = 'قاعدة بيانات مرفوعة';
+                                    iconClass = 'bi-cloud-upload';
+                                }
+                            } else {
+                                if (isFullBackup) {
+                                    badgeClass = 'bg-primary';
+                                    badgeText = 'شامل';
+                                    iconClass = 'bi-archive-fill';
+                                } else {
+                                    badgeClass = 'bg-success';
+                                    badgeText = 'قاعدة بيانات';
+                                    iconClass = 'bi-database-fill';
+                                }
+                            }
+
                             if (isFullBackup) fullCount++;
                             else dbCount++;
-                            
+
                             // حساب الحجم الإجمالي (تحويل من KB إلى MB)
                             const sizeInKB = parseFloat(backup.size.replace(' KB', ''));
                             totalSize += sizeInKB;
-                            
+
                             html += `
                                 <tr>
                                     <td><span class="badge ${badgeClass}"><i class="${iconClass}"></i> ${badgeText}</span></td>
@@ -394,6 +657,9 @@
                                     <td>${backup.size}</td>
                                     <td>${backup.date}</td>
                                     <td>
+                                        <button type="button" class="btn btn-sm btn-success me-2" onclick="restoreBackup('${backup.filename}', ${isFullBackup})">
+                                            <i class="bi bi-arrow-clockwise"></i> استعادة
+                                        </button>
                                         <a href="/admin/download-backup/${backup.filename}" class="btn btn-sm btn-outline-primary me-2">
                                             <i class="bi bi-download"></i> تحميل
                                         </a>
@@ -405,16 +671,16 @@
                                 </tr>
                             `;
                         });
-                        
+
                         html += '</tbody></table></div>';
                         backupsList.innerHTML = html;
-                        
+
                         // تحديث الإحصائيات
                         document.getElementById('dbBackupCount').textContent = dbCount;
                         document.getElementById('fullBackupCount').textContent = fullCount;
                         document.getElementById('totalSize').textContent = totalSize > 1024 ? 
                             (totalSize / 1024).toFixed(1) + ' MB' : totalSize.toFixed(1) + ' KB';
-                        
+
                     } else {
                         backupsList.innerHTML = `
                             <div class="text-center py-4">
@@ -423,7 +689,7 @@
                                 <p class="text-muted">قم بإنشاء نسخة احتياطية أولاً</p>
                             </div>
                         `;
-                        
+
                         // تعيين الإحصائيات إلى صفر
                         document.getElementById('dbBackupCount').textContent = '0';
                         document.getElementById('fullBackupCount').textContent = '0';
@@ -445,65 +711,277 @@
         document.addEventListener('DOMContentLoaded', loadBackups);
 
         // التعامل مع رفع الملفات لقاعدة البيانات
-        setupFileUpload('Db', '.db');
-        
+        setupFileUpload('Db');
+        setupFileUpload('SaveDb');
+
         // التعامل مع رفع الملفات للنسخة الشاملة
-        setupFileUpload('Full', '.zip');
+        setupFileUpload('Full');
+        setupFileUpload('SaveFull');
 
-        function setupFileUpload(type, allowedExtension) {
-            const uploadArea = document.getElementById(`uploadArea${type}`);
+        // إدارة رفع الملفات
+        function setupFileUpload(type) {
             const fileInput = document.getElementById(`backupFile${type}`);
-            const selectedFile = document.getElementById(`selectedFile${type}`);
-            const fileName = document.getElementById(`fileName${type}`);
+            const uploadArea = document.getElementById(`uploadArea${type}`);
+            const selectedFileDiv = document.getElementById(`selectedFile${type}`);
+            const fileNameSpan = document.getElementById(`fileName${type}`);
+            const restoreOptionsDiv = document.getElementById(`restoreOptions${type}`);
+            const saveOptionsDiv = document.getElementById(`saveOptions${type}`);
 
-            uploadArea.addEventListener('click', () => fileInput.click());
+            if (!fileInput) return;
 
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    fileNameSpan.textContent = file.name;
+                    selectedFileDiv.style.display = 'block';
+                    uploadArea.style.display = 'none';
 
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('dragover');
-            });
-
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    if (file.name.endsWith(allowedExtension)) {
-                        fileInput.files = files;
-                        showSelectedFile(file.name, type);
+                    // عرض خيارات الاستعادة أو الحفظ حسب النوع
+                    if (type.includes('Save')) {
+                        // للحفظ - إظهار زر الحفظ
+                        const saveButton = document.getElementById(`saveButton${type.replace('Save', '')}`);
+                        if (saveButton) {
+                            saveButton.style.display = 'inline-block';
+                        }
                     } else {
-                        alert(`يرجى اختيار ملف بامتداد ${allowedExtension}`);
+                        // للاستعادة
+                        if (restoreOptionsDiv) {
+                            restoreOptionsDiv.style.display = 'block';
+                            
+                            // إضافة إدارة خيارات استعادة البنية للنسخة الشاملة
+                            if (type === 'Full') {
+                                setupStructureOnlyOption(restoreOptionsDiv);
+                            }
+                        }
                     }
                 }
             });
 
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    if (file.name.endsWith(allowedExtension)) {
-                        showSelectedFile(file.name, type);
-                    } else {
-                        alert(`يرجى اختيار ملف بامتداد ${allowedExtension}`);
-                        e.target.value = '';
-                    }
-                }
-            });
-        }
+            // السحب والإفلات
+            if (uploadArea) {
+                uploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('dragover');
+                });
 
-        function showSelectedFile(name, type) {
-            document.getElementById(`fileName${type}`).textContent = name;
-            document.getElementById(`selectedFile${type}`).style.display = 'block';
+                uploadArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                });
+
+                uploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        let expectedExt;
+                        
+                        if (type.includes('Db') || type.includes('SaveDb')) {
+                            expectedExt = '.db';
+                        } else if (type.includes('Full') || type.includes('SaveFull')) {
+                            expectedExt = '.zip';
+                        }
+
+                        if (file.name.endsWith(expectedExt)) {
+                            fileInput.files = files;
+                            fileNameSpan.textContent = file.name;
+                            selectedFileDiv.style.display = 'block';
+                            uploadArea.style.display = 'none';
+
+                            // عرض خيارات مناسبة حسب النوع
+                            if (type.includes('Save')) {
+                                const saveButton = document.getElementById(`saveButton${type.replace('Save', '')}`);
+                                if (saveButton) {
+                                    saveButton.style.display = 'inline-block';
+                                }
+                            } else {
+                                if (restoreOptionsDiv) {
+                                    restoreOptionsDiv.style.display = 'block';
+                                }
+                            }
+                        } else {
+                            alert(`يجب أن يكون الملف من نوع ${expectedExt}`);
+                        }
+                    }
+                });
+            }
         }
 
         function clearFile(type) {
-            document.getElementById(`backupFile${type}`).value = '';
-            document.getElementById(`selectedFile${type}`).style.display = 'none';
+            const fileInput = document.getElementById(`backupFile${type}`);
+            const uploadArea = document.getElementById(`uploadArea${type}`);
+            const selectedFileDiv = document.getElementById(`selectedFile${type}`);
+            const restoreOptionsDiv = document.getElementById(`restoreOptions${type}`);
+            const saveOptionsDiv = document.getElementById(`saveOptions${type}`);
+
+            if (fileInput) fileInput.value = '';
+            if (selectedFileDiv) selectedFileDiv.style.display = 'none';
+            if (uploadArea) uploadArea.style.display = 'block';
+
+            // إخفاء خيارات الاستعادة والحفظ
+            if (restoreOptionsDiv) {
+                restoreOptionsDiv.style.display = 'none';
+            }
+            
+            // إخفاء أزرار الحفظ
+            if (type.includes('Save')) {
+                const saveButton = document.getElementById(`saveButton${type.replace('Save', '')}`);
+                if (saveButton) {
+                    saveButton.style.display = 'none';
+                }
+            }
+        }
+
+        // وظيفة استعادة النسخة الاحتياطية مع خيار الدمج
+        function restoreBackup(filename, isFullBackup) {
+            const backupType = isFullBackup ? 'الشاملة' : 'قاعدة البيانات';
+
+            // إنشاء نافذة حوار مخصصة
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">استعادة النسخة ${backupType}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                سيتم استعادة النسخة الاحتياطية: <strong>${filename}</strong>
+                            </div>
+
+                            ${isFullBackup ? `
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="structureOnlyOption">
+                                <label class="form-check-label" for="structureOnlyOption">
+                                    <strong>🏗️ استعادة البنية والتصميم فقط (جديد!)</strong><br>
+                                    <small class="text-muted">استعادة الكود والقوالب وبنية قاعدة البيانات مع الحفاظ على جميع البيانات - مثالي للتحديثات</small>
+                                </label>
+                            </div>
+                            ` : ''}
+
+                            <div class="form-check mb-3" id="mergeDataContainer">
+                                <input class="form-check-input" type="checkbox" id="mergeDataOption" ${!isFullBackup ? 'checked' : ''}>
+                                <label class="form-check-label" for="mergeDataOption">
+                                    <strong>دمج البيانات (موصى به)</strong><br>
+                                    <small class="text-muted">الحفاظ على البيانات الحالية وإضافة البيانات الجديدة من النسخة الاحتياطية فقط، لن يتم حذف أي بيانات موجودة</small>
+                                </label>
+                            </div>
+
+                            <div class="alert alert-warning" id="warningAlert">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>تحذير:</strong> 
+                                <span id="warningText">سيتم استبدال جميع البيانات الحالية بالنسخة الاحتياطية. سيتم إنشاء نسخة احتياطية من البيانات الحالية قبل الاستعادة.</span>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                            <button type="button" class="btn btn-success" onclick="confirmRestore('${filename}', ${isFullBackup})">
+                                <i class="bi bi-arrow-clockwise"></i> تأكيد الاستعادة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+
+            // متغيرات العناصر
+            const structureOnlyCheckbox = modal.querySelector('#structureOnlyOption');
+            const mergeCheckbox = modal.querySelector('#mergeDataOption');
+            const mergeContainer = modal.querySelector('#mergeDataContainer');
+            const warningText = modal.querySelector('#warningText');
+            const warningAlert = modal.querySelector('#warningAlert');
+
+            // دالة تحديث النص والتحذير
+            function updateWarningText() {
+                if (structureOnlyCheckbox && structureOnlyCheckbox.checked) {
+                    warningText.textContent = 'سيتم استعادة البنية والتصميم والكود فقط مع الحفاظ على جميع البيانات الحالية. هذا الخيار آمن تماماً ومثالي للتحديثات.';
+                    warningAlert.className = 'alert alert-success';
+                    mergeContainer.style.display = 'none';
+                } else if (mergeCheckbox && mergeCheckbox.checked) {
+                    warningText.textContent = 'سيتم دمج البيانات: الحفاظ على جميع البيانات الحالية وإضافة البيانات الجديدة من النسخة الاحتياطية فقط، لن يتم حذف أي بيانات موجودة.';
+                    warningAlert.className = 'alert alert-info';
+                    if (mergeContainer) mergeContainer.style.display = 'block';
+                } else {
+                    warningText.textContent = 'سيتم استبدال جميع البيانات الحالية بالنسخة الاحتياطية. سيتم إنشاء نسخة احتياطية من البيانات الحالية قبل الاستعادة.';
+                    warningAlert.className = 'alert alert-warning';
+                    if (mergeContainer) mergeContainer.style.display = 'block';
+                }
+            }
+
+            // تعيين الحالة الافتراضية
+            if (isFullBackup && mergeCheckbox) {
+                mergeCheckbox.checked = true;
+            }
+            updateWarningText();
+
+            // ربط الأحداث
+            if (structureOnlyCheckbox) {
+                structureOnlyCheckbox.addEventListener('change', updateWarningText);
+            }
+            if (mergeCheckbox) {
+                mergeCheckbox.addEventListener('change', updateWarningText);
+            }
+
+            // إزالة المودال عند الإغلاق
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        // تأكيد الاستعادة
+        function confirmRestore(filename, isFullBackup) {
+            const modal = document.querySelector('.modal.show');
+            const mergeData = modal.querySelector('#mergeDataOption') ? modal.querySelector('#mergeDataOption').checked : false;
+            const structureOnly = modal.querySelector('#structureOnlyOption') ? modal.querySelector('#structureOnlyOption').checked : false;
+
+            // إنشاء نموذج خفي لإرسال البيانات
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = isFullBackup ? '/admin/restore-full-backup' : '/admin/restore-backup';
+            form.style.display = 'none';
+            form.enctype = 'multipart/form-data';
+
+            // إضافة اسم الملف
+            const fileInput = document.createElement('input');
+            fileInput.type = 'hidden';
+            fileInput.name = 'backup_filename';
+            fileInput.value = filename;
+            form.appendChild(fileInput);
+
+            // إضافة خيار استعادة البنية فقط
+            if (structureOnly) {
+                const structureInput = document.createElement('input');
+                structureInput.type = 'hidden';
+                structureInput.name = 'structure_only';
+                structureInput.value = 'on';
+                form.appendChild(structureInput);
+            }
+
+            // إضافة خيار الدمج (إذا لم يكن استعادة البنية فقط)
+            if (mergeData && !structureOnly) {
+                const mergeInput = document.createElement('input');
+                mergeInput.type = 'hidden';
+                mergeInput.name = 'merge_data';
+                mergeInput.value = 'on';
+                form.appendChild(mergeInput);
+            }
+
+            // إغلاق المودال قبل الإرسال
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+
+            document.body.appendChild(form);
+            form.submit();
         }
     </script>
 </body>

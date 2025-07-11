@@ -146,6 +146,10 @@
                         <i class="bi bi-people"></i>
                         إدارة المستخدمين
                     </a>
+                    <a href="{{ url_for('admin_verification_requests') }}" class="nav-link">
+                        <i class="bi bi-patch-check"></i>
+                        طلبات التحقق
+                    </a>
                     <a href="{{ url_for('admin_categories') }}" class="nav-link">
                         <i class="bi bi-tags"></i>
                         إدارة التصنيفات
@@ -220,6 +224,7 @@
                                         <th>الاسم الكامل</th>
                                         <th>رقم الهاتف</th>
                                         <th>الحالة</th>
+                                        <th>شارة التحقق</th>
                                         <th>نوع الحساب</th>
                                         <th>تاريخ التسجيل</th>
                                         <th>الإجراءات</th>
@@ -239,13 +244,20 @@
                                             {% endif %}
                                         </td>
                                         <td>
+                                            {% if user[6] %}
+                                                <span class="badge bg-primary"><i class="bi bi-patch-check-fill"></i> محقق</span>
+                                            {% else %}
+                                                <span class="text-muted">غير محقق</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
                                             {% if user[5] %}
                                                 <span class="admin-badge">مدير</span>
                                             {% else %}
                                                 <span class="text-muted">مستخدم عادي</span>
                                             {% endif %}
                                         </td>
-                                        <td>{{ user[6][:10] if user[6] else 'غير محدد' }}</td>
+                                        <td>{{ user[8][:10] if user[8] else 'غير محدد' }}</td>
                                         <td>
                                         <div class="btn-group">
                                             <a href="{{ url_for('admin_user_details', user_id=user[0]) }}" class="btn btn-primary btn-sm">
@@ -253,6 +265,12 @@
                                             </a>
                                             <a href="{{ url_for('admin_manage_user_points', user_id=user[0]) }}" class="btn btn-success btn-sm" title="إدارة النقاط">
                                                 <i class="bi bi-star"></i>
+                                            </a>
+                                            <a href="{{ url_for('toggle_user_verification', user_id=user[0]) }}" 
+                                               class="btn btn-{{ 'secondary' if user[6] else 'warning' }} btn-sm" 
+                                               title="{{ 'إلغاء التحقق' if user[6] else 'منح شارة التحقق' }}"
+                                               onclick="return confirm('{{ 'هل تريد إلغاء شارة التحقق من هذا المستخدم؟' if user[6] else 'هل تريد منح شارة التحقق لهذا المستخدم؟' }}')">
+                                                <i class="bi bi-{{ 'patch-check-fill' if user[6] else 'patch-check' }}"></i>
                                             </a>
                                             <button class="btn btn-info btn-sm" data-bs-toggle="modal" 
                                                     data-bs-target="#editUserModal{{ user[0] }}">
@@ -295,6 +313,16 @@
                                                             <input class="form-check-input" type="checkbox" name="is_active" 
                                                                    {{ 'checked' if user[4] else '' }}>
                                                             <label class="form-check-label">حساب مفعل</label>
+                                                        </div>
+                                                        <div class="form-check mb-3">
+                                                            <input class="form-check-input" type="checkbox" name="is_verified" 
+                                                                   {{ 'checked' if user[6] else '' }}>
+                                                            <label class="form-check-label">شارة التحقق</label>
+                                                        </div>
+                                                        <div class="form-check mb-3">
+                                                            <input class="form-check-input" type="checkbox" name="can_edit_name" 
+                                                                   {{ 'checked' if user[7] else '' }}>
+                                                            <label class="form-check-label">السماح بتعديل الاسم</label>
                                                         </div>
                                                         {% if user[0] != session.user_id %}
                                                         <div class="form-check">

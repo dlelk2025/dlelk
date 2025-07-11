@@ -1,0 +1,300 @@
+{% extends "admin_dashboard.html" %}
+
+{% block title %}تفاصيل الكوبون - {{ coupon[1] }} - لوحة الإدارة{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- العنوان والإجراءات -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_dashboard') }}">لوحة الإدارة</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_coupons') }}">الكوبونات</a></li>
+                    <li class="breadcrumb-item active">{{ coupon[1] }}</li>
+                </ol>
+            </nav>
+            <h2><i class="bi bi-ticket-perforated"></i> تفاصيل الكوبون</h2>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_coupons') }}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left"></i> العودة
+            </a>
+            <a href="{{ url_for('toggle_coupon', coupon_id=coupon[0]) }}" 
+               class="btn btn-{{ 'warning' if coupon[7] else 'success' }} me-2">
+                <i class="bi bi-{{ 'pause' if coupon[7] else 'play' }}"></i> 
+                {{ 'تعطيل' if coupon[7] else 'تفعيل' }}
+            </a>
+            <button class="btn btn-danger" onclick="deleteCoupon()">
+                <i class="bi bi-trash"></i> حذف
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- معلومات الكوبون -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> معلومات الكوبون</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_coupon', coupon_id=coupon[0]) }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">اسم الكوبون <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="name" value="{{ coupon[1] }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">كود الكوبون <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="code" value="{{ coupon[2] }}" required style="text-transform: uppercase;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">عدد النقاط <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="points" value="{{ coupon[3] }}" min="1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">عدد الاستخدامات المسموحة <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="max_uses" value="{{ coupon[4] }}" min="1" required>
+                                    <div class="form-text">المستخدم حالياً: {{ coupon[5] }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">تاريخ الانتهاء <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control" name="expires_at" 
+                                           value="{{ coupon[6][:16] if coupon[6] else '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الوصف</label>
+                            <textarea class="form-control" name="description" rows="3">{{ coupon[10] or '' }}</textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" 
+                                   {{ 'checked' if coupon[7] else '' }}>
+                            <label class="form-check-label" for="is_active">
+                                كوبون نشط
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> حفظ التغييرات
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- سجل الاستخدامات -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> سجل الاستخدامات</h5>
+                </div>
+                <div class="card-body">
+                    {% if usage_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>رقم الهاتف</th>
+                                    <th>النقاط الممنوحة</th>
+                                    <th>تاريخ الاستخدام</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in usage_history %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px; color: white; font-size: 0.8rem;">
+                                                {{ usage[5][:2] if usage[5] else 'غ' }}
+                                            </div>
+                                            {{ usage[5] or 'غير محدد' }}
+                                        </div>
+                                    </td>
+                                    <td>{{ usage[6] or 'غير محدد' }}</td>
+                                    <td>
+                                        <span class="badge bg-success">+{{ usage[3] }} نقطة</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ usage[4] }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">لم يتم استخدام هذا الكوبون بعد</h5>
+                        <p class="text-muted">عندما يستخدم المستخدمون هذا الكوبون، ستظهر السجلات هنا</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- الشريط الجانبي -->
+        <div class="col-md-4">
+            <!-- حالة الكوبون -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i class="bi bi-speedometer2"></i> حالة الكوبون</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="p-3">
+                                <h4 class="text-{{ 'success' if coupon[7] else 'danger' }}">
+                                    <i class="bi bi-{{ 'check-circle-fill' if coupon[7] else 'x-circle-fill' }}"></i>
+                                </h4>
+                                <small class="text-muted">{{ 'نشط' if coupon[7] else 'معطل' }}</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 coupon-expiry-status" data-expires="{{ coupon[6] }}">
+                                <h4 class="text-success"><i class="bi bi-clock"></i></h4>
+                                <small class="text-muted">ساري المفعول</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إحصائيات سريعة -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i class="bi bi-bar-chart"></i> إحصائيات سريعة</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h5 class="text-primary">{{ usage_count }}</h5>
+                            <small class="text-muted">مرة استخدام</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h5 class="text-success">{{ total_points }}</h5>
+                            <small class="text-muted">نقطة ممنوحة</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-info">{{ coupon[4] - coupon[5] }}</h5>
+                            <small class="text-muted">استخدام متبقي</small>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-warning">{{ "%.1f"|format((coupon[5] / coupon[4] * 100) if coupon[4] > 0 else 0) }}%</h5>
+                            <small class="text-muted">نسبة الإكمال</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- معلومات إضافية -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-info-circle"></i> معلومات إضافية</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>منشئ الكوبون:</strong><br>
+                        <small class="text-muted">{{ coupon[11] or 'غير محدد' }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <strong>تاريخ الإنشاء:</strong><br>
+                        <small class="text-muted">{{ coupon[9] }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <strong>آخر تحديث:</strong><br>
+                        <small class="text-muted">{{ coupon[10] }}</small>
+                    </div>
+                    <div class="mb-0">
+                        <strong>كود المشاركة:</strong><br>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" value="{{ coupon[2] }}" readonly id="couponCode">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyCouponCode()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteCoupon() {
+    if (confirm('هل تريد حذف هذا الكوبون؟\n\nتحذير: سيتم حذف جميع سجلات الاستخدام المرتبطة به.\nهذا الإجراء لا يمكن التراجع عنه.')) {
+        window.location.href = `{{ url_for("delete_coupon", coupon_id=coupon[0]) }}`;
+    }
+}
+
+function copyCouponCode() {
+    const codeInput = document.getElementById('couponCode');
+    codeInput.select();
+    document.execCommand('copy');
+    
+    // تغيير أيقونة الزر مؤقتاً
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
+    icon.className = 'bi bi-check';
+    
+    setTimeout(() => {
+        icon.className = 'bi bi-clipboard';
+    }, 2000);
+}
+
+// تحويل كود الكوبون إلى أحرف كبيرة تلقائياً
+document.querySelector('input[name="code"]').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+
+// التحقق من انتهاء صلاحية الكوبون
+document.addEventListener('DOMContentLoaded', function() {
+    const expiryStatus = document.querySelector('.coupon-expiry-status');
+    if (expiryStatus) {
+        const expiresAt = expiryStatus.getAttribute('data-expires');
+        if (expiresAt) {
+            const now = new Date();
+            // إضافة 3 ساعات لتوقيت دمشق
+            now.setHours(now.getHours() + 3);
+            const currentTime = now.toISOString().slice(0, 19).replace('T', ' ');
+            
+            if (expiresAt <= currentTime) {
+                const icon = expiryStatus.querySelector('i');
+                const text = expiryStatus.querySelector('small');
+                icon.className = 'bi bi-clock-fill';
+                icon.parentElement.className = 'text-danger';
+                text.textContent = 'منتهي الصلاحية';
+            }
+        }
+    }
+});
+</script>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.input-group-sm .form-control {
+    font-family: monospace;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

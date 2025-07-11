@@ -42,6 +42,19 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
         .form-control {
             border-radius: 15px;
             border: 2px solid #e9ecef;
@@ -51,6 +64,40 @@
         .form-control:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .register-prompt {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .features-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .features-list ul {
+            margin: 0;
+            padding-right: 20px;
+        }
+
+        .features-list li {
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -68,44 +115,53 @@
         {% endif %}
     {% endwith %}
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white text-center">
-                        <h4><i class="bi bi-box-arrow-in-right"></i> تسجيل الدخول</h4>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST">
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">رقم الهاتف</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" 
-                                       placeholder="09xxxxxxxx" required>
+            <div class="col-md-8">
+                <div class="welcome-section">
+                    <h3><i class="bi bi-house-heart-fill"></i> أهلاً وسهلاً بك في دليل محلات الحسينية</h3>
+                    <p class="mb-0">الدليل الشامل لجميع المحلات والخدمات في منطقة الحسينية</p>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h4><i class="bi bi-box-arrow-in-right"></i> تسجيل الدخول</h4>
                             </div>
+                            <div class="card-body">
+                                <form method="POST">
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">رقم الهاتف</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" 
+                                               placeholder="09xxxxxxxx" required>
+                                    </div>
 
-                            <div class="mb-3">
-                                <label for="password" class="form-label">كلمة المرور</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">كلمة المرور</label>
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-box-arrow-in-right"></i> دخول
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div class="text-center mt-4">
+                                    <p>لا تملك حساب؟ <a href="{{ url_for('register') }}" class="btn btn-success btn-sm">
+                                        <i class="bi bi-person-plus"></i> أنشئ حساباً جديداً الآن
+                                    </a></p>
+                                </div>
+
+                                <div class="text-center mt-3">
+                                    <a href="https://wa.me/963938074766?text=نسيت%20كلمة%20مرور%20تطبيق%20دليلك%20في%20الحسينية%20يرجى%20المساعدة" 
+                                       target="_blank" class="text-muted">
+                                       <i class="bi bi-whatsapp"></i> نسيت كلمة المرور؟
+                                    </a>
+                                </div>
                             </div>
-
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-box-arrow-in-right"></i> دخول
-                                </button>
-                            </div>
-                        </form>
-
-                        <div class="alert alert-info" role="alert">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>تنبيه:</strong> يجب تسجيل الدخول لمشاهدة محتوى الموقع والاستفادة من جميع الخدمات
-                        </div>
-
-                        <div class="text-center mt-3">
-                            <p>ليس لديك حساب؟ <a href="{{ url_for('register') }}">سجل هنا</a></p>
-                            <a href="https://wa.me/963938074766?text=نسيت%20كلمة%20مرور%20تطبيق%20دليلك%20في%20الحسينية%20يرجى%20المساعدة" 
-                               target="_blank" class="text-muted">
-                               <i class="bi bi-whatsapp"></i> نسيت كلمة المرور؟
-                            </a>
                         </div>
                     </div>
                 </div>

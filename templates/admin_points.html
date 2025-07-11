@@ -187,22 +187,32 @@
                     {% if redemptions %}
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
+                            <thead class="table-dark">
                                 <tr>
-                                    <th>المستخدم</th>
-                                    <th>الهدية</th>
-                                    <th>النقاط</th>
-                                    <th>الحالة</th>
-                                    <th>تاريخ الطلب</th>
-                                    <th>الإجراءات</th>
+                                    <th><i class="bi bi-person"></i> المستخدم</th>
+                                    <th><i class="bi bi-gift"></i> الهدية المطلوبة</th>
+                                    <th><i class="bi bi-star"></i> النقاط المستخدمة</th>
+                                    <th><i class="bi bi-check-circle"></i> حالة الطلب</th>
+                                    <th><i class="bi bi-calendar"></i> التوقيت</th>
+                                    <th><i class="bi bi-gear"></i> الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for redemption in redemptions %}
                                 <tr>
-                                    <td>{{ redemption[7] or 'غير محدد' }}</td>
-                                    <td>{{ redemption[8] or 'غير محدد' }}</td>
-                                    <td>{{ redemption[3] }} نقطة</td>
+                                    <td>
+                                        <strong>{{ redemption[9] or 'غير محدد' }}</strong>
+                                        {% if redemption[10] %}
+                                        <br><small class="text-muted">{{ redemption[10] }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ redemption[11] or 'غير محدد' }}</strong>
+                                        {% if redemption[12] %}
+                                        <br><small class="text-muted">{{ redemption[12] }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ redemption[3] }} نقطة</span></td>
                                     <td>
                                         {% if redemption[4] == 'pending' %}
                                             <span class="badge bg-warning">في الانتظار</span>
@@ -212,19 +222,31 @@
                                             <span class="badge bg-danger">مرفوض</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ redemption[6] }}</td>
+                                    <td>
+                                        {{ redemption[6][:19] if redemption[6] else 'غير محدد' }}
+                                        {% if redemption[7] %}
+                                        <br><small class="text-success">معالج: {{ redemption[7][:19] }}</small>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if redemption[4] == 'pending' %}
-                                        <button class="btn btn-sm btn-success me-1" 
-                                                onclick="approveRedemption({{ redemption[0] }})">
-                                            <i class="bi bi-check"></i> موافقة
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" 
-                                                onclick="rejectRedemption({{ redemption[0] }})">
-                                            <i class="bi bi-x"></i> رفض
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-success" 
+                                                    onclick="approveRedemption({{ redemption[0] }})"
+                                                    title="موافقة على الطلب">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" 
+                                                    onclick="rejectRedemption({{ redemption[0] }})"
+                                                    title="رفض الطلب">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
                                         {% else %}
-                                        <span class="text-muted">تم المعالجة</span>
+                                        <span class="badge bg-secondary">تم المعالجة</span>
+                                        {% if redemption[5] %}
+                                        <br><small class="text-muted">{{ redemption[5] }}</small>
+                                        {% endif %}
                                         {% endif %}
                                     </td>
                                 </tr>

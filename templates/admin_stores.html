@@ -209,9 +209,9 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2><i class="bi bi-shop"></i> إدارة المحلات</h2>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addStoreModal">
+                        <a href="{{ url_for('admin_add_store_page') }}" class="btn btn-admin">
                             <i class="bi bi-plus"></i> إضافة محل جديد
-                        </button>
+                        </a>
                         <span class="badge bg-primary">إجمالي: {{ stores|length }}</span>
                         <span class="badge bg-warning">معلق: {{ stores|selectattr('8', 'equalto', 0)|list|length }}</span>
                         <span class="badge bg-success">مفعل: {{ stores|selectattr('8', 'equalto', 1)|list|length }}</span>
@@ -289,7 +289,7 @@
                                         </td>
                                     </tr>
 
-                                    
+
 
                                     <!-- Modal للتعديل السريع (الأصلي) -->
                                     <div class="modal fade" id="editStoreModal{{ store[0] }}" tabindex="-1">

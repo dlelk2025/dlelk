@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ store[1] }} - دليل محلات الحسينية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --warning-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-heavy: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+        }
+
+        .store-header {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--primary-gradient);
+        }
+
+        .store-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .store-icon {
+            background: var(--primary-gradient);
+            color: white;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 20px;
+            font-size: 2rem;
+        }
+
+        .store-category {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .store-info {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .store-info i {
+            margin-left: 15px;
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            width: 25px;
+        }
+
+        .rating-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .rating-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+
+        .rating-stars {
+            font-size: 1.5rem;
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+
+        .rating-count {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-light);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: var(--shadow-light);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f2f6;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-left: 10px;
+            color: var(--primary-color);
+        }
+
+        .rating-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rating-user {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .rating-date {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .rating-stars-small {
+            color: #ffc107;
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+
+        .rating-comment {
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .similar-stores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .similar-store-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .similar-store-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+            color: inherit;
+        }
+
+        .similar-store-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-call {
+            background: #25d366;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-call:hover {
+            background: #128c7e;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        .btn-rate {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-rate:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-back {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        .no-ratings {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .no-ratings i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .store-header {
+                padding: 25px;
+                margin: 15px;
+            }
+
+            .store-title {
+                font-size: 2rem;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .store-icon {
+                margin: 15px 0;
+            }
+
+            .content-card {
+                padding: 20px;
+                margin: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .similar-stores {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- رأس المحل -->
+        <div class="store-header">
+            <div class="store-title">
+                <div class="store-icon">
+                    <i class="bi bi-shop-window"></i>
+                </div>
+                {{ store[1] }}
+            </div>
+
+            {% if store[13] %}
+            <div class="store-category">
+                <i class="bi bi-tag-fill"></i> {{ store[13] }}
+            </div>
+            {% endif %}
+
+            <div class="store-info">
+                <i class="bi bi-geo-alt-fill"></i>
+                {{ store[3] }}
+            </div>
+
+            {% if store[4] %}
+            <div class="store-info">
+                <i class="bi bi-telephone-fill"></i>
+                {{ store[4] }}
+            </div>
+            {% endif %}
+
+            {% if store[5] %}
+            <div class="store-info">
+                <i class="bi bi-info-circle-fill"></i>
+                {{ store[5] }}
+            </div>
+            {% endif %}
+
+            {% if store[14] %}
+            <div class="store-info">
+                <i class="bi bi-person-fill"></i>
+                مالك المحل: {{ store[14] }}
+            </div>
+            {% endif %}
+
+            <!-- التقييم والإحصائيات -->
+            <div class="rating-section">
+                <div class="rating-display">
+                    {{ "%.1f"|format(avg_rating) }}
+                </div>
+                <div class="rating-stars">
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg_rating %}
+                            <i class="bi bi-star-fill"></i>
+                        {% else %}
+                            <i class="bi bi-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="rating-count">
+                    {{ total_ratings }} تقييم
+                </div>
+            </div>
+
+            <!-- الإحصائيات -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ store[9] or 0 }}</div>
+                    <div class="stat-label">زيارة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_ratings }}</div>
+                    <div class="stat-label">تقييم</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ store[11] or 0 }}</div>
+                    <div class="stat-label">بحث</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ (store[12]|string)[:10] if store[12] else 'جديد' }}</div>
+                    <div class="stat-label">تاريخ الإضافة</div>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div class="action-buttons">
+                {% if store[4] %}
+                <a href="tel:{{ store[4] }}" class="btn-call">
+                    <i class="bi bi-telephone-outbound me-2"></i>
+                    اتصال مباشر
+                </a>
+                {% endif %}
+
+                {% if session.user_id %}
+                    {% if user_verification_status %}
+                    <button class="btn-rate" onclick="openRatingModal({{ store[0] }}, '{{ store[1] }}')">
+                        <i class="bi bi-star me-2"></i>
+                        قيم المحل
+                    </button>
+                    {% else %}
+                    <button class="btn-rate" onclick="window.location.href='/verification'">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        تحقق للتقييم
+                    </button>
+                    {% endif %}
+                {% else %}
+                <button class="btn-rate" onclick="window.location.href='/login'">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    سجل دخول للتقييم
+                </button>
+                {% endif %}
+
+                <a href="{{ url_for('index') }}" class="btn-back">
+                    <i class="bi bi-arrow-right me-2"></i>
+                    العودة للرئيسية
+                </a>
+            </div>
+        </div>
+
+        <!-- التقييمات -->
+        {% if ratings %}
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="bi bi-star-fill"></i>
+                التقييمات والآراء
+            </h2>
+
+            {% for rating in ratings %}
+            <div class="rating-card">
+                <div class="rating-header">
+                    <div class="rating-user">
+                        {{ rating[5] or 'مستخدم مجهول' }}
+                        {% if rating[6] %}
+                            <i class="bi bi-patch-check-fill text-primary" title="مستخدم محقق"></i>
+                        {% endif %}
+                    </div>
+                    <div class="rating-date">
+                        {{ (rating[3]|string)[:10] if rating[3] else '' }}
+                    </div>
+                </div>
+                <div class="rating-stars-small">
+                    {% for i in range(rating[1]) %}
+                        <i class="bi bi-star-fill"></i>
+                    {% endfor %}
+                    {% for i in range(5 - rating[1]) %}
+                        <i class="bi bi-star"></i>
+                    {% endfor %}
+                </div>
+                <div class="rating-comment">
+                    {{ rating[2] or 'لا يوجد تعليق' }}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('store_ratings', store_id=store[0]) }}" class="btn btn-outline-primary">
+                    <i class="bi bi-eye me-2"></i>
+                    عرض جميع التقييمات
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="content-card">
+            <div class="no-ratings">
+                <i class="bi bi-star"></i>
+                <h4>لا توجد تقييمات بعد</h4>
+                <p>كن أول من يقيم هذا المحل</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- المحلات المشابهة -->
+        {% if similar_stores %}
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="bi bi-shop"></i>
+                محلات مشابهة
+            </h2>
+
+            <div class="similar-stores">
+                {% for similar_store in similar_stores %}
+                <a href="{{ url_for('store_details', store_id=similar_store[0]) }}" class="similar-store-card">
+                    <div class="similar-store-name">{{ similar_store[1] }}</div>
+                    {% if similar_store[13] %}
+                    <div class="store-category" style="margin-bottom: 10px;">
+                        <i class="bi bi-tag-fill"></i> {{ similar_store[13] }}
+                    </div>
+                    {% endif %}
+                    <div class="store-info">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        {{ similar_store[3] }}
+                    </div>
+                    {% if similar_store[10] and similar_store[10] > 0 %}
+                    <div class="rating-stars-small">
+                        {% for i in range(1, 6) %}
+                            {% if i <= similar_store[10] %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <small>({{ "%.1f"|format(similar_store[10]) }})</small>
+                    </div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- نافذة التقييم -->
+    <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="ratingModalLabel">
+                        <i class="bi bi-star-fill me-2"></i>تقييم المحل
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <h6 id="storeNameForRating" class="fw-bold text-primary mb-3"></h6>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">اختر تقييمك من 1 إلى 5 نجوم:</label>
+                        <div class="rating-input text-center py-3">
+                            <button type="button" class="star-btn me-1" data-rating="1" 
+                                    style="background: none; border: none; font-size: 2.5rem; color: #ddd; cursor: pointer; transition: all 0.2s ease;">★</button>
+                            <button type="button" class="star-btn me-1" data-rating="2" 
+                                    style="background: none; border: none; font-size: 2.5rem; color: #ddd; cursor: pointer; transition: all 0.2s ease;">★</button>
+                            <button type="button" class="star-btn me-1" data-rating="3" 
+                                    style="background: none; border: none; font-size: 2.5rem; color: #ddd; cursor: pointer; transition: all 0.2s ease;">★</button>
+                            <button type="button" class="star-btn me-1" data-rating="4" 
+                                    style="background: none; border: none; font-size: 2.5rem; color: #ddd; cursor: pointer; transition: all 0.2s ease;">★</button>
+                            <button type="button" class="star-btn" data-rating="5" 
+                                    style="background: none; border: none; font-size: 2.5rem; color: #ddd; cursor: pointer; transition: all 0.2s ease;">★</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            اكتب تعليقك: <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="ratingComment" rows="4" 
+                                  placeholder="شاركنا تجربتك مع هذا المحل..." 
+                                  required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>إلغاء
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitRating">
+                        <i class="bi bi-send me-1"></i>إرسال التقييم
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // متغيرات التقييم
+        let currentStoreId = {{ store[0] }};
+        let selectedRating = 0;
+
+        // تهيئة أحداث التقييم
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRatingEvents();
+        });
+
+        function openRatingModal(storeId, storeName) {
+            currentStoreId = storeId;
+            document.getElementById('storeNameForRating').textContent = storeName;
+            document.getElementById('ratingComment').value = '';
+            selectedRating = 0;
+            updateStarDisplay();
+            
+            const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+            modal.show();
+        }
+
+        function initializeRatingEvents() {
+            const starButtons = document.querySelectorAll('.star-btn');
+            const ratingInput = document.querySelector('.rating-input');
+            
+            starButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStarDisplay();
+                });
+
+                btn.addEventListener('mouseover', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    highlightStars(rating);
+                });
+            });
+
+            if (ratingInput) {
+                ratingInput.addEventListener('mouseleave', function() {
+                    updateStarDisplay();
+                });
+            }
+
+            const submitButton = document.getElementById('submitRating');
+            if (submitButton) {
+                submitButton.addEventListener('click', function() {
+                    if (selectedRating === 0) {
+                        alert('يرجى اختيار تقييم');
+                        return;
+                    }
+
+                    const comment = document.getElementById('ratingComment').value.trim();
+                    if (!comment) {
+                        alert('يرجى كتابة تعليق');
+                        return;
+                    }
+
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'جار الإرسال...';
+
+                    fetch(`/rate-store/${currentStoreId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            rating: selectedRating,
+                            comment: comment
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message || 'تم حفظ التقييم بنجاح');
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('ratingModal'));
+                            modal.hide();
+                            location.reload();
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('حدث خطأ أثناء حفظ التقييم');
+                        console.error('Error:', error);
+                    })
+                    .finally(() => {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'إرسال التقييم';
+                    });
+                });
+            }
+        }
+
+        function highlightStars(rating) {
+            document.querySelectorAll('.star-btn').forEach((btn, index) => {
+                if (index < rating) {
+                    btn.style.color = '#ffc107';
+                } else {
+                    btn.style.color = '#ddd';
+                }
+            });
+        }
+
+        function updateStarDisplay() {
+            highlightStars(selectedRating);
+        }
+
+        // تأثيرات التحميل
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.store-header, .content-card');
+            elements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(30px)';
+                element.style.transition = 'all 0.6s ease-out';
+                
+                setTimeout(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

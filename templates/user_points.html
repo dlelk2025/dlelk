@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}النقاط والهدايا - دليل محلات الحسينية{% endblock %}
@@ -66,6 +65,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="gifts-tab" data-bs-toggle="tab" data-bs-target="#gifts" type="button" role="tab">
                         <i class="bi bi-gift"></i> الهدايا المتاحة
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="coupon-tab" data-bs-toggle="tab" data-bs-target="#coupon" type="button" role="tab">
+                        <i class="bi bi-ticket-perforated"></i> استخدام كوبون
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -139,6 +143,71 @@
                                 <i class="bi bi-gift display-1 text-muted mb-3"></i>
                                 <h4 class="text-muted">لا توجد هدايا متاحة حالياً</h4>
                                 <p class="text-muted">تابع الموقع للحصول على هدايا جديدة</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- استخدام كوبون -->
+                <div class="tab-pane fade" id="coupon" role="tabpanel">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-ticket-perforated"></i> استخدام كوبون للحصول على نقاط
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if user_verification_status %}
+                            <div class="row justify-content-center">
+                                <div class="col-md-8">
+                                    <div class="text-center mb-4">
+                                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                             style="width: 80px; height: 80px; color: white; font-size: 2.5rem;">
+                                            <i class="bi bi-ticket-perforated"></i>
+                                        </div>
+                                        <h4>هل لديك كوبون؟</h4>
+                                        <p class="text-muted">أدخل كود الكوبون للحصول على نقاط إضافية</p>
+                                    </div>
+
+                                    <form id="couponForm">
+                                        <div class="mb-3">
+                                            <label class="form-label">كود الكوبون</label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text">
+                                                    <i class="bi bi-ticket-perforated"></i>
+                                                </span>
+                                                <input type="text" class="form-control" id="couponCode" 
+                                                       placeholder="أدخل كود الكوبون" style="text-transform: uppercase;" required>
+                                                <button type="submit" class="btn btn-primary" id="useCouponBtn">
+                                                    <i class="bi bi-check-circle"></i> استخدام
+                                                </button>
+                                            </div>
+                                            <div class="form-text">مثال: WELCOME2024</div>
+                                        </div>
+                                    </form>
+
+                                    <div id="couponResult" class="mt-3"></div>
+
+                                    <div class="alert alert-info">
+                                        <h6><i class="bi bi-info-circle"></i> معلومات مهمة:</h6>
+                                        <ul class="mb-0">
+                                            <li>كل كوبون يمكن استخدامه مرة واحدة فقط</li>
+                                            <li>تأكد من إدخال الكود بشكل صحيح</li>
+                                            <li>الكوبونات لها تاريخ انتهاء صلاحية</li>
+                                            <li>ستحصل على النقاط فوراً عند استخدام الكوبون</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-shield-exclamation display-1 text-warning mb-3"></i>
+                                <h4 class="text-muted">يجب التحقق من حسابك</h4>
+                                <p class="text-muted">لاستخدام الكوبونات، يجب أن يكون حسابك محققاً من قبل الإدارة</p>
+                                <a href="{{ url_for('verification_page') }}" class="btn btn-warning">
+                                    <i class="bi bi-shield-check"></i> طلب التحقق
+                                </a>
                             </div>
                             {% endif %}
                         </div>
@@ -342,9 +411,78 @@ document.getElementById('confirmRedeem').addEventListener('click', function() {
         .catch(error => {
             alert('حدث خطأ في العملية');
         });
-        
+
         bootstrap.Modal.getInstance(document.getElementById('redeemModal')).hide();
     }
+});
+
+// معالج استخدام الكوبونات
+document.getElementById('couponForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const couponCode = document.getElementById('couponCode').value.trim();
+    const resultDiv = document.getElementById('couponResult');
+    const submitBtn = document.getElementById('useCouponBtn');
+
+    if (!couponCode) {
+        showCouponResult('يرجى إدخال كود الكوبون', 'danger');
+        return;
+    }
+
+    // تعطيل الزر أثناء العملية
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> جاري التحقق...';
+
+    fetch('/use-coupon', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: couponCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showCouponResult(data.message, 'success');
+            document.getElementById('couponCode').value = '';
+
+            // تحديث النقاط في الصفحة
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showCouponResult(data.error, 'danger');
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000);
+            }
+        }
+    })
+    .catch(error => {
+        showCouponResult('حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى', 'danger');
+    })
+    .finally(() => {
+        // إعادة تفعيل الزر
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> استخدام';
+    });
+});
+
+function showCouponResult(message, type) {
+    const resultDiv = document.getElementById('couponResult');
+    resultDiv.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+}
+
+// تحويل كود الكوبون إلى أحرف كبيرة تلقائياً
+document.getElementById('couponCode').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
 });
 </script>
 
@@ -365,11 +503,95 @@ document.getElementById('confirmRedeem').addEventListener('click', function() {
 
 .nav-tabs .nav-link {
     border-radius: 0.375rem 0.375rem 0 0;
+    color: #495057 !important;
+    font-weight: 600;
+    border: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0d6efd !important;
+    background-color: #e9ecef;
+    border-color: #c3c8cc;
 }
 
 .nav-tabs .nav-link.active {
-    background: white;
-    border-bottom-color: white;
+    background: white !important;
+    border-bottom-color: white !important;
+    color: #0d6efd !important;
+    border-color: #dee2e6 #dee2e6 white #dee2e6;
+    font-weight: 700;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 0;
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // معالجة استخدام الكوبون
+        document.getElementById('couponForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const couponCode = document.getElementById('couponCode').value.trim();
+            const messageDiv = document.getElementById('couponMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (!couponCode) {
+                showMessage('يجب إدخال كود الكوبون', 'danger');
+                return;
+            }
+
+            // تعطيل الزر أثناء المعالجة
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>جاري التحقق...';
+
+            try {
+                const response = await fetch('/use-coupon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: couponCode })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    document.getElementById('couponCode').value = '';
+                    // إعادة تحميل الصفحة لتحديث النقاط
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showMessage(data.error, 'danger');
+                }
+            } catch (error) {
+                showMessage('حدث خطأ في الاتصال', 'danger');
+            } finally {
+                // إعادة تفعيل الزر
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> استخدام الكوبون';
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('couponMessage');
+            messageDiv.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // تحويل كود الكوبون إلى أحرف كبيرة تلقائياً
+        document.getElementById('couponCode').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    </script>
 {% endblock %}

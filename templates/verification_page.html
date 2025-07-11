@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طلب التحقق من الحساب - {{ site_settings.site_title or 'دليل محلات الحسينية' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .verification-header {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+
+        .verification-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .status-pending {
+            border-left: 5px solid #ffc107;
+        }
+
+        .status-rejected {
+            border-left: 5px solid #dc3545;
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .info-list {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .contact-section {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{{ 'exclamation-triangle' if category == 'warning' else 'check-circle' if category == 'success' else 'x-circle' }}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="verification-header">
+                        <div class="verification-icon">
+                            <i class="bi bi-patch-check"></i>
+                        </div>
+                        <h3>طلب التحقق من الحساب</h3>
+                        <p class="mb-0">للوصول إلى جميع المميزات، يرجى التحقق من حسابك</p>
+                    </div>
+
+                    <div class="card-body p-4">
+                        {% if last_request %}
+                            {% if last_request[0] == 'pending' %}
+                            <div class="status-card status-pending">
+                                <h5><i class="bi bi-clock text-warning"></i> طلبك قيد المراجعة</h5>
+                                <p>تم إرسال طلب التحقق في: {{ last_request[2][:19].replace('T', ' ') if last_request[2] else 'غير محدد' }}</p>
+                                <p class="mb-0">سيتم مراجعة طلبك من قبل الإدارة وستصلك إشعار بالنتيجة قريباً.</p>
+                            </div>
+                            {% elif last_request[0] == 'rejected' %}
+                            <div class="status-card status-rejected">
+                                <h5><i class="bi bi-x-circle text-danger"></i> تم رفض طلب التحقق</h5>
+                                {% if last_request[1] %}
+                                <p><strong>السبب:</strong> {{ last_request[1] }}</p>
+                                {% endif %}
+                                <p class="mb-0">يمكنك إرسال طلب جديد بعد تصحيح المعلومات المطلوبة.</p>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button class="btn btn-verify btn-lg" onclick="requestVerification()">
+                                    <i class="bi bi-send"></i> إرسال طلب جديد
+                                </button>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                        <div class="info-list">
+                            <h5><i class="bi bi-info-circle text-primary"></i> لماذا التحقق مطلوب؟</h5>
+                            <ul class="mb-0">
+                                <li>إضافة وإدارة المحلات الخاصة بك</li>
+                                <li>كتابة التقييمات والتعليقات</li>
+                                <li>استبدال النقاط والحصول على الهدايا</li>
+                                <li>المشاركة الكاملة في المجتمع</li>
+                                <li>ضمان مصداقية المحتوى</li>
+                            </ul>
+                        </div>
+
+                        <div class="text-center">
+                            <button class="btn btn-verify btn-lg" onclick="requestVerification()">
+                                <i class="bi bi-send"></i> طلب التحقق من الحساب
+                            </button>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-list mt-4">
+                            <h6><i class="bi bi-clipboard-check text-success"></i> متطلبات التحقق:</h6>
+                            <ul class="small mb-0">
+                                <li>الاسم الكامل باللغة العربية (اسم وكنية على الأقل)</li>
+                                <li>رقم هاتف سوري صحيح</li>
+                                <li>استخدام اسم حقيقي وليس مستعار</li>
+                                <li>عدم وجود مخالفات سابقة</li>
+                            </ul>
+                        </div>
+
+                        <div class="contact-section">
+                            <h6><i class="bi bi-headset"></i> تحتاج مساعدة؟</h6>
+                            <p class="mb-2">تواصل معنا عبر الواتساب للمساعدة في عملية التحقق</p>
+                            <a href="https://wa.me/963938074766?text=أحتاج%20مساعدة%20في%20التحقق%20من%20حسابي%20في%20دليل%20محلات%20الحسينية" 
+                               target="_blank" class="btn btn-light btn-sm">
+                                <i class="bi bi-whatsapp"></i> تواصل عبر الواتساب
+                            </a>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> العودة للوحة التحكم
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function requestVerification() {
+            fetch('/request-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ أثناء إرسال الطلب');
+            });
+        }
+
+        // التحقق من حالة طلب التحقق عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/verification-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'verified') {
+                    // إذا كان المستخدم محقق، توجيهه للوحة التحكم
+                    window.location.href = '/dashboard';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking verification status:', error);
+            });
+        });
+    </script>
+</body>
+</html>
