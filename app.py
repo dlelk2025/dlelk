@@ -76,29 +76,390 @@ def check_maintenance_mode():
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>الموقع تحت الصيانة</title>
+                    <title>المنصة تحت الصيانة</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
                     <style>
-                        body { font-family: 'Cairo', sans-serif; 
-                               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                               min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
-                        .container { background: white; padding: 50px; border-radius: 20px; text-align: center; 
-                                   box-shadow: 0 20px 40px rgba(0,0,0,0.1); max-width: 500px; }
-                        h1 { color: #333; margin-bottom: 20px; font-size: 2.5em; }
-                        p { color: #666; font-size: 1.2em; line-height: 1.6; }
-                        .icon { font-size: 4em; color: #ffc107; margin-bottom: 20px; }
-                        .admin-link { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                    color: white; padding: 12px 25px; border-radius: 25px; 
-                                    text-decoration: none; font-weight: bold; display: inline-block; margin-top: 20px; }
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        
+                        body { 
+                            font-family: 'Cairo', sans-serif; 
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            min-height: 100vh; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center;
+                            overflow: hidden;
+                            position: relative;
+                        }
+                        
+                        /* خلفية متحركة */
+                        .bg-animation {
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            overflow: hidden;
+                            z-index: 1;
+                        }
+                        
+                        .bg-animation span {
+                            position: absolute;
+                            display: block;
+                            width: 20px;
+                            height: 20px;
+                            background: rgba(255, 255, 255, 0.1);
+                            animation: animate 10s linear infinite;
+                            bottom: -150px;
+                        }
+                        
+                        @keyframes animate {
+                            0% { transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+                            100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+                        }
+                        
+                        .container { 
+                            background: rgba(255, 255, 255, 0.95); 
+                            padding: 60px 40px; 
+                            border-radius: 25px; 
+                            text-align: center; 
+                            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+                            max-width: 600px;
+                            backdrop-filter: blur(10px);
+                            border: 1px solid rgba(255, 255, 255, 0.3);
+                            position: relative;
+                            z-index: 2;
+                            animation: fadeIn 1s ease-out;
+                        }
+                        
+                        @keyframes fadeIn {
+                            from { opacity: 0; transform: translateY(30px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                        
+                        .icon-container {
+                            position: relative;
+                            display: inline-block;
+                            margin-bottom: 30px;
+                        }
+                        
+                        .icon { 
+                            font-size: 5em; 
+                            background: linear-gradient(135deg, #ffc107, #ff8f00);
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            background-clip: text;
+                            animation: pulse 2s infinite;
+                        }
+                        
+                        @keyframes pulse {
+                            0%, 100% { transform: scale(1); }
+                            50% { transform: scale(1.1); }
+                        }
+                        
+                        h1 { 
+                            color: #2c3e50; 
+                            margin-bottom: 25px; 
+                            font-size: 2.8em; 
+                            font-weight: 700;
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            background-clip: text;
+                        }
+                        
+                        .subtitle {
+                            color: #7f8c8d;
+                            font-size: 1.1em;
+                            margin-bottom: 15px;
+                            font-weight: 600;
+                        }
+                        
+                        .description { 
+                            color: #95a5a6; 
+                            font-size: 1.1em; 
+                            line-height: 1.8;
+                            margin-bottom: 35px;
+                        }
+                        
+                        
+                        
+                        .progress-bar {
+                            width: 100%;
+                            height: 6px;
+                            background: rgba(102, 126, 234, 0.2);
+                            border-radius: 3px;
+                            overflow: hidden;
+                            margin: 30px 0 20px;
+                        }
+                        
+                        .progress {
+                            height: 100%;
+                            background: linear-gradient(90deg, #667eea, #764ba2);
+                            width: 0%;
+                            animation: loading 3s ease-in-out infinite;
+                            border-radius: 3px;
+                        }
+                        
+                        @keyframes loading {
+                            0% { width: 0%; }
+                            50% { width: 70%; }
+                            100% { width: 100%; }
+                        }
+                        
+                        .status-text {
+                            color: #667eea;
+                            font-size: 0.95em;
+                            font-weight: 600;
+                            margin-bottom: 20px;
+                        }
+                        
+                        .footer {
+                            margin-top: 40px;
+                            padding-top: 25px;
+                            border-top: 1px solid rgba(102, 126, 234, 0.2);
+                            color: #95a5a6;
+                            font-size: 0.9em;
+                        }
+                        
+                        /* عنصر مخفي للوصول لصفحة الإدارة */
+                        .hidden-admin {
+                            position: absolute;
+                            bottom: 10px;
+                            right: 10px;
+                            width: 10px;
+                            height: 10px;
+                            background: transparent;
+                            cursor: pointer;
+                            border: none;
+                            opacity: 0;
+                        }
+                        
+                        .hidden-admin:hover {
+                            opacity: 0.1;
+                            background: rgba(102, 126, 234, 0.1);
+                        }
+                        
+                        @media (max-width: 768px) {
+                            .container { 
+                                margin: 15px; 
+                                padding: 30px 20px; 
+                                max-width: 95%;
+                            }
+                            h1 { 
+                                font-size: 2rem; 
+                                margin-bottom: 20px;
+                            }
+                            .icon { 
+                                font-size: 3.5em; 
+                            }
+                            .subtitle {
+                                font-size: 1rem;
+                                margin-bottom: 12px;
+                            }
+                            .description {
+                                font-size: 1rem;
+                                line-height: 1.6;
+                                margin-bottom: 25px;
+                            }
+                            .progress-bar {
+                                margin: 25px 0 15px;
+                            }
+                            .status-text {
+                                font-size: 0.9rem;
+                                margin-bottom: 15px;
+                            }
+                            .footer {
+                                margin-top: 30px;
+                                padding-top: 20px;
+                                font-size: 0.85rem;
+                            }
+                        }
+                        
+                        @media (max-width: 480px) {
+                            .container {
+                                margin: 10px;
+                                padding: 25px 15px;
+                                max-width: 98%;
+                            }
+                            h1 {
+                                font-size: 1.8rem;
+                            }
+                            .icon {
+                                font-size: 3rem;
+                            }
+                            .subtitle {
+                                font-size: 0.95rem;
+                            }
+                            .description {
+                                font-size: 0.95rem;
+                            }
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="container">
-                        <div class="icon">🔧</div>
-                        <h1>الموقع تحت الصيانة</h1>
-                        <p>نعتذر عن الإزعاج، الموقع حالياً تحت الصيانة للتحسين والتطوير.</p>
-                        <p>سنعود قريباً بشكل أفضل!</p>
-                        <a href="/login" class="admin-link">تسجيل دخول الإدارة</a>
+                    <div class="bg-animation">
+                        <span style="left: 10%; animation-delay: 0s;"></span>
+                        <span style="left: 20%; animation-delay: 2s;"></span>
+                        <span style="left: 30%; animation-delay: 4s;"></span>
+                        <span style="left: 40%; animation-delay: 6s;"></span>
+                        <span style="left: 50%; animation-delay: 8s;"></span>
+                        <span style="left: 60%; animation-delay: 10s;"></span>
+                        <span style="left: 70%; animation-delay: 12s;"></span>
+                        <span style="left: 80%; animation-delay: 14s;"></span>
+                        <span style="left: 90%; animation-delay: 16s;"></span>
                     </div>
+                    
+                    <div class="container">
+                        <div class="icon-container">
+                            <div class="icon">⚙️</div>
+                        </div>
+                        
+                        <h1>المنصة تحت الصيانة</h1>
+                        <div class="subtitle">جاري العمل على تحسين الخدمات</div>
+                        <div class="description">
+                            نعتذر عن الإزعاج، نقوم حالياً بأعمال صيانة وتطوير لتحسين تجربتك وإضافة ميزات جديدة.<br>
+                            سنعود قريباً بخدمات محسّنة وأداء أفضل!
+                        </div>
+                        
+                        
+                        
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <div class="status-text">جاري إتمام أعمال الصيانة...</div>
+                        
+                        <div class="footer">
+                            <strong>شكراً لصبركم</strong><br>
+                            فريق دليلك في الحسينية
+                        </div>
+                        
+                        <!-- عنصر مخفي للوصول لصفحة الإدارة -->
+                        <button class="hidden-admin" onclick="showAdminLogin()" title=""></button>
+                        
+                        <!-- نافذة تسجيل دخول المدير المخفية -->
+                        <div id="adminLoginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; backdrop-filter: blur(5px);">
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); min-width: 300px;">
+                                <h4 style="text-align: center; color: #667eea; margin-bottom: 20px; font-family: 'Cairo', sans-serif;">🔐 دخول الإدارة</h4>
+                                <form id="adminLoginForm" onsubmit="submitAdminLogin(event)">
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 600;">رقم الهاتف:</label>
+                                        <input type="tel" id="adminPhone" placeholder="09xxxxxxxx" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+                                    </div>
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display: block; margin-bottom: 5px; color: #555; font-weight: 600;">كلمة المرور:</label>
+                                        <input type="password" id="adminPassword" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" required>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="submit" style="flex: 1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">دخول</button>
+                                        <button type="button" onclick="hideAdminLogin()" style="flex: 1; background: #dc3545; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">إلغاء</button>
+                                    </div>
+                                </form>
+                                <div id="adminLoginError" style="color: #dc3545; text-align: center; margin-top: 10px; display: none; font-size: 14px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // تأثير إضافي لجعل الصفحة أكثر تفاعلية
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // تحديث النص بشكل دوري
+                            const statusTexts = [
+                                'جاري إتمام أعمال الصيانة...',
+                                'تحديث قاعدة البيانات...',
+                                'تحسين الأداء...',
+                                'اختبار الميزات الجديدة...',
+                                'التحقق من الأنظمة...'
+                            ];
+                            
+                            let currentIndex = 0;
+                            const statusElement = document.querySelector('.status-text');
+                            
+                            setInterval(() => {
+                                currentIndex = (currentIndex + 1) % statusTexts.length;
+                                statusElement.style.opacity = '0';
+                                setTimeout(() => {
+                                    statusElement.textContent = statusTexts[currentIndex];
+                                    statusElement.style.opacity = '1';
+                                }, 300);
+                            }, 4000);
+                        });
+                        
+                        // وظائف إدارة نافذة تسجيل دخول المدير
+                        function showAdminLogin() {
+                            document.getElementById('adminLoginModal').style.display = 'block';
+                            document.getElementById('adminPhone').focus();
+                        }
+                        
+                        function hideAdminLogin() {
+                            document.getElementById('adminLoginModal').style.display = 'none';
+                            document.getElementById('adminLoginForm').reset();
+                            document.getElementById('adminLoginError').style.display = 'none';
+                        }
+                        
+                        function submitAdminLogin(event) {
+                            event.preventDefault();
+                            
+                            const phone = document.getElementById('adminPhone').value;
+                            const password = document.getElementById('adminPassword').value;
+                            const errorDiv = document.getElementById('adminLoginError');
+                            
+                            // إخفاء أي رسائل خطأ سابقة
+                            errorDiv.style.display = 'none';
+                            
+                            // إرسال بيانات تسجيل الدخول
+                            fetch('/login', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `phone=${encodeURIComponent(phone)}&password=${encodeURIComponent(password)}`
+                            })
+                            .then(response => {
+                                // التحقق من نوع الاستجابة
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    return response.json();
+                                } else {
+                                    return response.text();
+                                }
+                            })
+                            .then(data => {
+                                if (typeof data === 'object' && data.success) {
+                                    // نجح تسجيل الدخول، توجيه إلى لوحة الإدارة
+                                    window.location.href = '/admin';
+                                } else if (typeof data === 'object' && !data.success) {
+                                    // فشل تسجيل الدخول مع رسالة محددة
+                                    errorDiv.textContent = data.message;
+                                    errorDiv.style.display = 'block';
+                                } else {
+                                    // استجابة HTML (ربما صفحة تسجيل الدخول مع خطأ)
+                                    errorDiv.textContent = 'رقم الهاتف أو كلمة المرور غير صحيحة أو ليس لديك صلاحيات إدارية';
+                                    errorDiv.style.display = 'block';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                errorDiv.textContent = 'حدث خطأ أثناء تسجيل الدخول';
+                                errorDiv.style.display = 'block';
+                            });
+                        }
+                        
+                        // إغلاق النافذة عند الضغط خارجها
+                        document.addEventListener('click', function(event) {
+                            const modal = document.getElementById('adminLoginModal');
+                            if (event.target === modal) {
+                                hideAdminLogin();
+                            }
+                        });
+                        
+                        // إغلاق النافذة عند الضغط على Escape
+                        document.addEventListener('keydown', function(event) {
+                            if (event.key === 'Escape') {
+                                hideAdminLogin();
+                            }
+                        });
+                    </script>
                 </body>
                 </html>
             ''', 503
@@ -266,6 +627,7 @@ def init_db():
     # إضافة عمود updated_at إذا لم يكن موجوداً
     try:
         cursor.execute('ALTER TABLE ratings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+        conn.commit()
     except:
         pass
     
@@ -321,6 +683,85 @@ def init_db():
             is_active BOOLEAN DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             expires_at TIMESTAMP
+        )
+    ''')
+
+    # جدول الإشعارات المتقدمة
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS advanced_notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            type TEXT DEFAULT 'info',
+            target_users TEXT DEFAULT 'all',
+            target_roles TEXT DEFAULT 'all',
+            priority INTEGER DEFAULT 1,
+            is_popup BOOLEAN DEFAULT 0,
+            is_active BOOLEAN DEFAULT 1,
+            action_type TEXT DEFAULT 'none',
+            action_url TEXT,
+            action_page_content TEXT,
+            custom_css TEXT,
+            custom_js TEXT,
+            show_count INTEGER DEFAULT 0,
+            max_shows INTEGER DEFAULT -1,
+            auto_dismiss INTEGER DEFAULT 0,
+            requires_action BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP,
+            read_by TEXT DEFAULT '',
+            created_by INTEGER,
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+    ''')
+
+    # إضافة الأعمدة المفقودة للجداول الموجودة
+    columns_to_add = [
+        ('advanced_notifications', 'created_by', 'INTEGER'),
+        ('advanced_notifications', 'read_by', 'TEXT DEFAULT ""'),
+        ('advanced_notifications', 'target_roles', 'TEXT DEFAULT "all"'),
+        ('advanced_notifications', 'action_type', 'TEXT DEFAULT "none"'),
+        ('advanced_notifications', 'action_url', 'TEXT'),
+        ('advanced_notifications', 'action_page_content', 'TEXT'),
+        ('advanced_notifications', 'custom_css', 'TEXT'),
+        ('advanced_notifications', 'custom_js', 'TEXT'),
+        ('advanced_notifications', 'show_count', 'INTEGER DEFAULT 0'),
+        ('advanced_notifications', 'max_shows', 'INTEGER DEFAULT -1'),
+        ('advanced_notifications', 'auto_dismiss', 'INTEGER DEFAULT 0'),
+        ('advanced_notifications', 'requires_action', 'BOOLEAN DEFAULT 0')
+    ]
+
+    for table_name, column_name, column_def in columns_to_add:
+        try:
+            cursor.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_def}')
+        except sqlite3.OperationalError:
+            pass  # العمود موجود بالفعل
+
+    # جدول قراءة الإشعارات
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notification_reads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            notification_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            action_taken TEXT,
+            FOREIGN KEY (notification_id) REFERENCES advanced_notifications (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE(notification_id, user_id)
+        )
+    ''')
+
+    # جدول إحصائيات الإشعارات
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notification_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            notification_id INTEGER NOT NULL,
+            total_sent INTEGER DEFAULT 0,
+            total_read INTEGER DEFAULT 0,
+            total_clicked INTEGER DEFAULT 0,
+            total_dismissed INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (notification_id) REFERENCES advanced_notifications (id) ON DELETE CASCADE
         )
     ''')
 
@@ -606,20 +1047,32 @@ def inject_notifications_and_ticker():
 
     # تعطيل الإشعارات المتقدمة المنتهية أيضاً
     try:
-        # إنشاء جدول الإشعارات المتقدمة إذا لم يكن موجوداً
+        # إنشاء جدول الإشعارات المتقدمة إذا لم يكن موجوداً مع جميع الأعمدة
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS advanced_notifications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 message TEXT NOT NULL,
-                type TEXT,
+                type TEXT DEFAULT 'info',
                 target_users TEXT DEFAULT 'all',
+                target_roles TEXT DEFAULT 'all',
                 priority INTEGER DEFAULT 1,
                 is_popup BOOLEAN DEFAULT 0,
                 is_active BOOLEAN DEFAULT 1,
+                action_type TEXT DEFAULT 'none',
+                action_url TEXT,
+                action_page_content TEXT,
+                custom_css TEXT,
+                custom_js TEXT,
+                show_count INTEGER DEFAULT 0,
+                max_shows INTEGER DEFAULT -1,
+                auto_dismiss INTEGER DEFAULT 0,
+                requires_action BOOLEAN DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP,
-                read_by TEXT DEFAULT ''
+                read_by TEXT DEFAULT '',
+                created_by INTEGER,
+                FOREIGN KEY (created_by) REFERENCES users (id)
             )
         ''')
         
@@ -644,6 +1097,20 @@ def inject_notifications_and_ticker():
 
     # حفظ التغييرات
     conn.commit()
+
+    # التأكد من وجود جدول إحصائيات الإشعارات
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notification_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            notification_id INTEGER NOT NULL,
+            total_sent INTEGER DEFAULT 0,
+            total_read INTEGER DEFAULT 0,
+            total_clicked INTEGER DEFAULT 0,
+            total_dismissed INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (notification_id) REFERENCES advanced_notifications (id) ON DELETE CASCADE
+        )
+    ''')
 
     # الإشعارات النشطة (فقط التي لم تنته بعد أو بدون تاريخ انتهاء)
     cursor.execute('''
@@ -690,7 +1157,7 @@ def search():
     query = request.args.get('q', '')
     category_id = request.args.get('category', '')
     service_category = request.args.get('service_category', '')
-    search_type = request.args.get('type', 'all')  # all, stores, services
+    search_type = request.args.get('type', 'stores')  # stores, all, services
 
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
@@ -928,7 +1395,53 @@ def validate_arabic_name(name):
         if len(part) > 15:
             return False, 'كل جزء من الاسم يجب ألا يزيد عن 15 حرف'
     
+    # التحقق من عدم تكرار نفس الكلمة
+    if len(set(name_parts)) != len(name_parts):
+        return False, 'لا يجوز تكرار نفس الكلمة في الاسم (مثل محمد محمد)'
+    
     return True, 'الاسم صحيح'
+
+def check_name_exists(name):
+    """التحقق من وجود اسم مماثل في قاعدة البيانات وإعطاء اقتراحات"""
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # البحث عن الاسم الكامل
+    cursor.execute('SELECT full_name FROM users WHERE full_name = ?', (name,))
+    exact_match = cursor.fetchone()
+    
+    if exact_match:
+        conn.close()
+        name_parts = name.split()
+        if len(name_parts) == 2:
+            return True, 'هذا الاسم مسجل مسبقاً. يرجى إدخال الاسم الثلاثي (الاسم + اسم الأب + الكنية) للتمييز'
+        elif len(name_parts) == 3:
+            return True, 'هذا الاسم مسجل مسبقاً. يرجى إدخال الاسم والكنية فقط أو إضافة اسم الجد للتمييز'
+        else:
+            return True, 'هذا الاسم مسجل مسبقاً. يرجى التأكد من صحة الاسم أو كتابته بصيغة أخرى'
+    
+    # البحث عن أسماء مشابهة (نفس الاسم الأول والأخير)
+    name_parts = name.split()
+    if len(name_parts) >= 2:
+        first_name = name_parts[0]
+        last_name = name_parts[-1]
+        
+        cursor.execute('''
+            SELECT full_name FROM users 
+            WHERE full_name LIKE ? AND full_name LIKE ?
+        ''', (f'{first_name}%', f'%{last_name}'))
+        
+        similar_names = cursor.fetchall()
+        
+        if similar_names:
+            conn.close()
+            if len(name_parts) == 2:
+                return True, f'يوجد اسم مشابه مسجل مسبقاً. يرجى إدخال الاسم الثلاثي (الاسم + اسم الأب + الكنية) للتمييز'
+            else:
+                return True, f'يوجد اسم مشابه مسجل مسبقاً. يرجى التأكد من صحة الاسم أو إضافة المزيد من التفاصيل للتمييز'
+    
+    conn.close()
+    return False, ''
 
 # تسجيل مستخدم جديد
 @app.route('/register', methods=['GET', 'POST'])
@@ -944,12 +1457,18 @@ def register():
             flash(name_error, 'error')
             return render_template('register.html')
 
+        # التحقق من عدم وجود الاسم مسبقاً
+        name_exists, name_exists_error = check_name_exists(full_name)
+        if name_exists:
+            flash(name_exists_error, 'error')
+            return render_template('register.html')
+
         # التحقق من صحة رقم الهاتف
         if not validate_syrian_phone(phone):
             flash('رقم الهاتف يجب أن يكون سوري ويبدأ بـ 09 ويتكون من 10 أرقام', 'error')
             return render_template('register.html')
 
-        # التحقق من عدم وجود المستخدم مسبقاً
+        # التحقق من عدم وجود رقم الهاتف مسبقاً
         conn = sqlite3.connect('hussainiya_stores.db')
         cursor = conn.cursor()
         cursor.execute('SELECT id FROM users WHERE phone = ?', (phone,))
@@ -958,9 +1477,9 @@ def register():
             conn.close()
             return render_template('register.html')
 
-        # إنشاء المستخدم الجديد - بدون تحقق تلقائي
+        # إنشاء المستخدم الجديد - مع التحقق التلقائي ومنع تعديل الاسم
         password_hash = generate_password_hash(password)
-        cursor.execute('INSERT INTO users (full_name, phone, password_hash, is_verified, can_edit_name) VALUES (?, ?, ?, 0, 1)',
+        cursor.execute('INSERT INTO users (full_name, phone, password_hash, is_verified, can_edit_name) VALUES (?, ?, ?, 1, 0)',
                       (full_name, phone, password_hash))
         
         user_id = cursor.lastrowid
@@ -975,7 +1494,7 @@ def register():
         # منح نقاط الدخول اليومي
         award_daily_login_points(user_id)
 
-        flash('مرحباً بك! تم إنشاء حسابك بنجاح ودخولك تلقائياً', 'success')
+        flash('مرحباً بك! تم إنشاء حسابك بنجاح مع التحقق التلقائي ودخولك تلقائياً ✅', 'success')
         return redirect(url_for('dashboard'))
 
     return render_template('register.html')
@@ -1008,16 +1527,34 @@ def login():
                 session['user_name'] = user[1]
                 session['is_admin'] = user[4]
                 
+                # التحقق من طلب Ajax للمدير من صفحة الصيانة فقط
+                ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+                if ajax_request and user[4]:
+                    # تسجيل دخول مدير عبر Ajax من صفحة الصيانة
+                    return jsonify({'success': True, 'is_admin': True, 'message': 'تم تسجيل الدخول بنجاح'})
+                elif ajax_request and not user[4]:
+                    # محاولة دخول من غير مدير عبر Ajax
+                    return jsonify({'success': False, 'message': 'ليس لديك صلاحيات إدارية'})
+                
                 # منح نقاط الدخول اليومي
                 if award_daily_login_points(user[0]):
                     flash('مرحباً بك! تم منحك نقاط الدخول اليومي', 'success')
                 else:
                     flash('مرحباً بك!', 'success')
                 
-                return redirect(url_for('dashboard'))
+                # التوجيه إلى لوحة الإدارة للمديرين أو لوحة التحكم للمستخدمين العاديين
+                if user[4]:  # is_admin
+                    return redirect(url_for('admin_dashboard'))
+                else:
+                    return redirect(url_for('dashboard'))
             else:
+                if ajax_request:
+                    return jsonify({'success': False, 'message': 'حسابك معطل، تواصل مع الإدارة'})
                 flash('حسابك معطل، تواصل مع الإدارة', 'error')
         else:
+            ajax_request = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+            if ajax_request:
+                return jsonify({'success': False, 'message': 'رقم الهاتف أو كلمة المرور غير صحيحة'})
             flash('رقم الهاتف أو كلمة المرور غير صحيحة', 'error')
 
     return render_template('login.html')
@@ -1028,6 +1565,47 @@ def logout():
     session.clear()
     flash('تم تسجيل الخروج بنجاح', 'success')
     return redirect(url_for('index'))
+
+# صفحة إشعارات المستخدم
+@app.route('/notifications')
+def user_notifications():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض الإشعارات', 'error')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    user_id = session['user_id']
+    is_admin = session.get('is_admin', False)
+    
+    # الحصول على جميع الإشعارات المناسبة للمستخدم
+    cursor.execute('''
+        SELECT an.id, an.title, an.message, an.type, an.priority, an.is_popup,
+               an.action_type, an.action_url, an.created_at, an.expires_at,
+               CASE WHEN nr.id IS NOT NULL THEN 1 ELSE 0 END as is_read
+        FROM advanced_notifications an
+        LEFT JOIN notification_reads nr ON an.id = nr.notification_id AND nr.user_id = ?
+        WHERE an.is_active = 1 
+            AND (an.target_users = 'all' 
+                 OR (an.target_users = 'admins' AND ?)
+                 OR (an.target_users = 'users' AND NOT ?)
+                 OR an.target_users LIKE '%'||?||'%')
+        ORDER BY an.created_at DESC
+    ''', (user_id, is_admin, is_admin, str(user_id)))
+    
+    all_notifications = cursor.fetchall()
+    
+    # فصل الإشعارات المقروءة وغير المقروءة
+    unread_notifications = [notif for notif in all_notifications if notif[10] == 0]
+    read_notifications = [notif for notif in all_notifications if notif[10] == 1]
+    
+    conn.close()
+    
+    return render_template('user_notifications.html',
+                         unread_notifications=unread_notifications,
+                         read_notifications=read_notifications,
+                         total_unread=len(unread_notifications))
 
 # عرض تفاصيل الهدية للمستخدمين
 @app.route('/gift-details/<int:gift_id>')
@@ -1725,7 +2303,80 @@ def admin_stores():
     conn.close()
     return render_template('admin_stores.html', stores=stores, categories=categories, users=users)
 
-# إضافة محل جديد
+# صفحة إضافة محل جديد للمديرين
+@app.route('/admin/add-store', methods=['GET'])
+def admin_add_store_page():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # التصنيفات للإضافة
+    cursor.execute('SELECT * FROM categories ORDER BY name')
+    categories = cursor.fetchall()
+
+    # المستخدمين للإضافة
+    cursor.execute('SELECT id, full_name FROM users WHERE is_active = 1 ORDER BY full_name')
+    users = cursor.fetchall()
+
+    conn.close()
+    return render_template('admin_add_store.html', categories=categories, users=users)
+
+# صفحة إضافة محل جديد للمستخدمين العاديين
+@app.route('/add-store', methods=['GET'])
+def add_store_page():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لإضافة محل', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM categories ORDER BY name')
+    categories = cursor.fetchall()
+    conn.close()
+    
+    return render_template('add_store.html', categories=categories)
+
+# إضافة محل جديد للمستخدمين العاديين
+@app.route('/add-store', methods=['POST'])
+def add_store_user():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لإضافة محل', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    name = request.form['name']
+    category_id = request.form['category_id']
+    address = request.form['address']
+    phone = request.form.get('phone', '')
+    description = request.form.get('description', '')
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO stores (name, category_id, address, phone, description, user_id, is_approved) 
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+    ''', (name, category_id, address, phone, description, session['user_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم إضافة المحل بنجاح وسيتم مراجعته من قبل الإدارة', 'success')
+    return redirect(url_for('dashboard'))
+
+# إضافة محل جديد للإدارة
 @app.route('/admin/add-store', methods=['POST'])
 def add_store():
     if 'user_id' not in session or not session.get('is_admin'):
@@ -1739,19 +2390,24 @@ def add_store():
     user_id = request.form.get('user_id')
     is_approved = 1 if request.form.get('is_approved') else 0
 
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
+    def add_store_operation():
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO stores (name, category_id, address, phone, description, user_id, is_approved) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (name, category_id, address, phone, description, user_id, is_approved))
+        conn.commit()
+        conn.close()
 
-    cursor.execute('''
-        INSERT INTO stores (name, category_id, address, phone, description, user_id, is_approved) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (name, category_id, address, phone, description, user_id, is_approved))
-
-    conn.commit()
-    conn.close()
-
-    # إنشاء نسخة احتياطية تلقائية
-    create_auto_backup('add', 'store', name)
+    # تنفيذ العملية مع النسخ الاحتياطي التلقائي
+    execute_db_operation_with_backup(
+        add_store_operation, 
+        'add', 
+        'store', 
+        name, 
+        session.get('user_name', 'مدير')
+    )
 
     flash('تم إضافة المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
@@ -1770,19 +2426,24 @@ def edit_store(store_id):
     user_id = request.form.get('user_id')
     is_approved = 1 if request.form.get('is_approved') else 0
 
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
+    def edit_store_operation():
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE stores SET name = ?, category_id = ?, address = ?, phone = ?, 
+            description = ?, user_id = ?, is_approved = ? WHERE id = ?
+        ''', (name, category_id, address, phone, description, user_id, is_approved, store_id))
+        conn.commit()
+        conn.close()
 
-    cursor.execute('''
-        UPDATE stores SET name = ?, category_id = ?, address = ?, phone = ?, 
-        description = ?, user_id = ?, is_approved = ? WHERE id = ?
-    ''', (name, category_id, address, phone, description, user_id, is_approved, store_id))
-
-    conn.commit()
-    conn.close()
-
-    # إنشاء نسخة احتياطية تلقائية
-    create_auto_backup('edit', 'store', name)
+    # تنفيذ العملية مع النسخ الاحتياطي التلقائي
+    execute_db_operation_with_backup(
+        edit_store_operation, 
+        'edit', 
+        'store', 
+        name, 
+        session.get('user_name', 'مدير')
+    )
 
     flash('تم تحديث المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
@@ -1793,12 +2454,29 @@ def delete_store(store_id):
     if 'user_id' not in session or not session.get('is_admin'):
         return redirect(url_for('index'))
 
+    # الحصول على اسم المحل قبل الحذف
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
-
-    cursor.execute('DELETE FROM stores WHERE id = ?', (store_id,))
-    conn.commit()
+    cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+    store = cursor.fetchone()
+    store_name = store[0] if store else f'محل #{store_id}'
     conn.close()
+
+    def delete_store_operation():
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM stores WHERE id = ?', (store_id,))
+        conn.commit()
+        conn.close()
+
+    # تنفيذ العملية مع النسخ الاحتياطي التلقائي
+    execute_db_operation_with_backup(
+        delete_store_operation, 
+        'delete', 
+        'store', 
+        store_name, 
+        session.get('user_name', 'مدير')
+    )
 
     flash('تم حذف المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
@@ -1897,6 +2575,99 @@ def admin_user_details(user_id):
                          user_stores=user_stores,
                          approved_stores_count=approved_stores_count,
                          pending_stores_count=pending_stores_count)
+
+# عرض تفاصيل المحل في صفحة مستقلة
+@app.route('/store/<int:store_id>')
+def store_details(store_id):
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب تفاصيل المحل
+    cursor.execute('''
+        SELECT s.id, s.name, s.category_id, s.address, s.phone, s.description, 
+               s.image_url, s.user_id, s.is_approved, s.visits_count, s.rating_avg, 
+               s.search_count, COALESCE(s.created_at, '') as created_at, 
+               c.name as category_name, u.full_name as owner_name
+        FROM stores s 
+        LEFT JOIN categories c ON s.category_id = c.id
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.id = ? AND s.is_approved = 1
+    ''', (store_id,))
+    store = cursor.fetchone()
+
+    if not store:
+        flash('المحل غير موجود أو غير معتمد', 'error')
+        conn.close()
+        return redirect(url_for('index'))
+
+    # تحديث عداد الزيارات
+    cursor.execute('''
+        UPDATE stores 
+        SET visits_count = COALESCE(visits_count, 0) + 1 
+        WHERE id = ?
+    ''', (store_id,))
+    conn.commit()
+
+    # جلب التقييمات
+    cursor.execute('''
+        SELECT r.id, r.rating, r.comment, r.created_at, r.created_at, u.full_name, u.is_verified
+        FROM ratings r
+        LEFT JOIN users u ON r.user_id = u.id
+        WHERE r.store_id = ?
+        ORDER BY r.created_at DESC
+        LIMIT 10
+    ''', (store_id,))
+    ratings = cursor.fetchall()
+
+    # حساب متوسط التقييم
+    cursor.execute('''
+        SELECT AVG(CAST(rating AS REAL)), COUNT(*) 
+        FROM ratings 
+        WHERE store_id = ?
+    ''', (store_id,))
+    rating_stats = cursor.fetchone()
+    avg_rating = rating_stats[0] if rating_stats[0] else 0
+    total_ratings = rating_stats[1] if rating_stats[1] else 0
+
+    # توزيع النجوم
+    star_distribution = {}
+    for i in range(1, 6):
+        cursor.execute('SELECT COUNT(*) FROM ratings WHERE store_id = ? AND rating = ?', (store_id, i))
+        star_distribution[i] = cursor.fetchone()[0]
+
+    # المحلات المشابهة من نفس التصنيف
+    similar_stores = []
+    if store[2]:  # category_id
+        cursor.execute('''
+            SELECT s.*, c.name as category_name
+            FROM stores s
+            LEFT JOIN categories c ON s.category_id = c.id
+            WHERE s.category_id = ? AND s.id != ? AND s.is_approved = 1
+            ORDER BY s.rating_avg DESC, s.visits_count DESC
+            LIMIT 5
+        ''', (store[2], store_id))
+        similar_stores = cursor.fetchall()
+
+    conn.close()
+
+    # التحقق من حالة التحقق للمستخدم
+    user_verification_status = False
+    if 'user_id' in session:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT is_verified FROM users WHERE id = ?', (session['user_id'],))
+        user_result = cursor.fetchone()
+        user_verification_status = user_result[0] if user_result else False
+        conn.close()
+
+    return render_template('store_details.html', 
+                         store=store, 
+                         ratings=ratings,
+                         avg_rating=avg_rating,
+                         total_ratings=total_ratings,
+                         star_distribution=star_distribution,
+                         similar_stores=similar_stores,
+                         user_verification_status=user_verification_status)
 
 # عرض تفاصيل التصنيف في صفحة منفصلة
 @app.route('/admin/category-details/<int:category_id>')
@@ -2038,6 +2809,97 @@ def admin_notification_details(notification_id):
     conn.close()
     return render_template('admin_notification_details.html', notification=notification)
 
+# عرض قراء الإشعار المتقدم
+@app.route('/admin/notification-readers/<int:notification_id>')
+def admin_notification_readers(notification_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب تفاصيل الإشعار المتقدم
+    cursor.execute('SELECT * FROM advanced_notifications WHERE id = ?', (notification_id,))
+    notification = cursor.fetchone()
+
+    if not notification:
+        flash('الإشعار غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('admin_advanced_notifications'))
+
+    # جلب قائمة المستخدمين الذين قرأوا الإشعار
+    read_by_data = notification[20] if len(notification) > 20 and notification[20] else ''  # read_by column
+    readers = []
+    clickers = []
+    dismissers = []
+    
+    if read_by_data:
+        import json
+        try:
+            read_data = json.loads(read_by_data)
+            
+            # جلب معلومات المستخدمين
+            for user_action in read_data:
+                if isinstance(user_action, dict):
+                    user_id = user_action.get('user_id')
+                    action = user_action.get('action', 'read')
+                    timestamp = user_action.get('timestamp', '')
+                    
+                    cursor.execute('SELECT id, full_name, phone FROM users WHERE id = ?', (user_id,))
+                    user = cursor.fetchone()
+                    
+                    if user:
+                        user_info = {
+                            'id': user[0],
+                            'name': user[1],
+                            'phone': user[2],
+                            'timestamp': timestamp,
+                            'action': action
+                        }
+                        
+                        if action == 'read':
+                            readers.append(user_info)
+                        elif action == 'clicked':
+                            clickers.append(user_info)
+                        elif action == 'dismissed':
+                            dismissers.append(user_info)
+        except json.JSONDecodeError:
+            pass
+
+    # إحصائيات سريعة للوحة الإدارة
+    cursor.execute('SELECT COUNT(*) FROM stores')
+    total_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+    pending_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM categories')
+    total_categories = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM important_services')
+    total_services = cursor.fetchone()[0]
+
+    stats = {
+        'total_stores': total_stores,
+        'total_users': total_users,
+        'pending_stores': pending_stores,
+        'total_categories': total_categories,
+        'total_services': total_services
+    }
+
+    conn.close()
+    
+    return render_template('admin_notification_readers.html', 
+                         notification=notification,
+                         readers=readers,
+                         clickers=clickers,
+                         dismissers=dismissers,
+                         stats=stats)
+
 # عرض تفاصيل تصنيف الخدمة الهامة في صفحة منفصلة
 @app.route('/admin/service-category-details/<int:category_id>')
 def admin_service_category_details(category_id):
@@ -2139,6 +3001,118 @@ def get_verification_status():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# API للحصول على الإشعارات غير المقروءة للمستخدم
+@app.route('/api/unread-notifications')
+def get_unread_notifications():
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول'}), 401
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        user_id = session['user_id']
+        is_admin = session.get('is_admin', False)
+        
+        # الحصول على الإشعارات غير المقروءة
+        cursor.execute('''
+            SELECT an.id, an.title, an.message, an.type, an.priority, an.is_popup,
+                   an.action_type, an.action_url, an.action_page_content,
+                   an.custom_css, an.custom_js, an.auto_dismiss, an.requires_action,
+                   an.created_at, an.show_count, an.max_shows
+            FROM advanced_notifications an
+            LEFT JOIN notification_reads nr ON an.id = nr.notification_id AND nr.user_id = ?
+            WHERE an.is_active = 1 
+                AND (an.expires_at IS NULL OR an.expires_at > datetime('now', '+3 hours'))
+                AND nr.id IS NULL
+                AND (an.target_users = 'all' 
+                     OR (an.target_users = 'admins' AND ?)
+                     OR (an.target_users = 'users' AND NOT ?)
+                     OR an.target_users LIKE '%'||?||'%')
+                AND (an.max_shows = -1 OR an.show_count < an.max_shows)
+            ORDER BY an.priority DESC, an.created_at DESC
+        ''', (user_id, is_admin, is_admin, str(user_id)))
+        
+        notifications_data = cursor.fetchall()
+        
+        notifications = []
+        for notif in notifications_data:
+            notifications.append({
+                'id': notif[0],
+                'title': notif[1],
+                'message': notif[2],
+                'type': notif[3],
+                'priority': notif[4],
+                'is_popup': bool(notif[5]),
+                'action_type': notif[6],
+                'action_url': notif[7],
+                'action_page_content': notif[8],
+                'custom_css': notif[9],
+                'custom_js': notif[10],
+                'auto_dismiss': notif[11],
+                'requires_action': bool(notif[12]),
+                'created_at': notif[13],
+                'show_count': notif[14],
+                'max_shows': notif[15]
+            })
+        
+        # تحديث عداد العرض
+        if notifications:
+            notification_ids = [str(n['id']) for n in notifications]
+            cursor.execute(f'''
+                UPDATE advanced_notifications 
+                SET show_count = show_count + 1 
+                WHERE id IN ({','.join(['?' for _ in notification_ids])})
+            ''', notification_ids)
+            conn.commit()
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'count': len(notifications)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+# API للحصول على عدد الإشعارات غير المقروءة
+@app.route('/api/unread-count')
+def get_unread_count():
+    if 'user_id' not in session:
+        return jsonify({'count': 0})
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        user_id = session['user_id']
+        is_admin = session.get('is_admin', False)
+        
+        cursor.execute('''
+            SELECT COUNT(*)
+            FROM advanced_notifications an
+            LEFT JOIN notification_reads nr ON an.id = nr.notification_id AND nr.user_id = ?
+            WHERE an.is_active = 1 
+                AND (an.expires_at IS NULL OR an.expires_at > datetime('now', '+3 hours'))
+                AND nr.id IS NULL
+                AND (an.target_users = 'all' 
+                     OR (an.target_users = 'admins' AND ?)
+                     OR (an.target_users = 'users' AND NOT ?)
+                     OR an.target_users LIKE '%'||?||'%')
+        ''', (user_id, is_admin, is_admin, str(user_id)))
+        
+        count = cursor.fetchone()[0]
+        conn.close()
+        
+        return jsonify({'count': count})
+        
+    except Exception as e:
+        return jsonify({'count': 0})
+
 # API للحصول على جميع المستخدمين
 @app.route('/api/get-all-users')
 def get_all_users():
@@ -2173,6 +3147,85 @@ def get_all_users():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# API للتحقق من انتهاء صلاحية الإشعارات المتقدمة
+@app.route('/api/check-expired-advanced-notifications')
+def check_expired_advanced_notifications():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # التوقيت الحالي بدمشق
+        from datetime import timezone, timedelta
+        damascus_tz = timezone(timedelta(hours=3))
+        damascus_time = datetime.now(damascus_tz)
+        current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # البحث عن الإشعارات المنتهية الصلاحية والنشطة
+        cursor.execute('''
+            SELECT id, title, type, expires_at, is_active 
+            FROM advanced_notifications 
+            WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at <= ?
+        ''', (current_time_str,))
+        expired_notifications = cursor.fetchall()
+        
+        disabled_count = 0
+        expired_details = []
+        
+        if expired_notifications:
+            # تعطيل الإشعارات المنتهية الصلاحية
+            cursor.execute('''
+                UPDATE advanced_notifications 
+                SET is_active = 0 
+                WHERE is_active = 1 AND expires_at IS NOT NULL AND expires_at <= ?
+            ''', (current_time_str,))
+            disabled_count = cursor.rowcount
+            conn.commit()
+            
+            # تجميع التفاصيل
+            for notification in expired_notifications:
+                expired_details.append({
+                    'id': notification[0],
+                    'title': notification[1],
+                    'type': notification[2],
+                    'expires_at': notification[3],
+                    'was_active': bool(notification[4])
+                })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'total_found': len(expired_notifications),
+            'disabled_count': disabled_count,
+            'expired_details': expired_details,
+            'current_time': current_time_str
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# API لتعطيل إشعار متقدم منتهي الصلاحية
+@app.route('/api/disable-expired-advanced-notification/<int:notification_id>', methods=['POST'])
+def disable_expired_advanced_notification(notification_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('UPDATE advanced_notifications SET is_active = 0 WHERE id = ?', (notification_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # API للحصول على التوقيت الحالي بتوقيت دمشق
 @app.route('/api/current-time')
@@ -2323,29 +3376,37 @@ def add_user():
         flash('رقم الهاتف يجب أن يكون سوري ويبدأ بـ 09 ويتكون من 10 أرقام', 'error')
         return redirect(url_for('admin_users'))
 
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
+    def add_user_operation():
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
 
-    # التحقق من عدم وجود المستخدم
-    cursor.execute('SELECT id FROM users WHERE phone = ?', (phone,))
-    if cursor.fetchone():
-        flash('رقم الهاتف مسجل مسبقاً', 'error')
+        # التحقق من عدم وجود المستخدم
+        cursor.execute('SELECT id FROM users WHERE phone = ?', (phone,))
+        if cursor.fetchone():
+            conn.close()
+            raise Exception('رقم الهاتف مسجل مسبقاً')
+
+        password_hash = generate_password_hash(password)
+        cursor.execute('''
+            INSERT INTO users (full_name, phone, password_hash, is_admin, is_active) 
+            VALUES (?, ?, ?, ?, ?)
+        ''', (full_name, phone, password_hash, is_admin, is_active))
+        conn.commit()
         conn.close()
-        return redirect(url_for('admin_users'))
 
-    password_hash = generate_password_hash(password)
-    cursor.execute('''
-        INSERT INTO users (full_name, phone, password_hash, is_admin, is_active) 
-        VALUES (?, ?, ?, ?, ?)
-    ''', (full_name, phone, password_hash, is_admin, is_active))
+    try:
+        # تنفيذ العملية مع النسخ الاحتياطي التلقائي
+        execute_db_operation_with_backup(
+            add_user_operation, 
+            'add', 
+            'user', 
+            full_name, 
+            session.get('user_name', 'مدير')
+        )
+        flash('تم إضافة المستخدم بنجاح', 'success')
+    except Exception as e:
+        flash(str(e), 'error')
 
-    conn.commit()
-    conn.close()
-
-    # إنشاء نسخة احتياطية تلقائية
-    create_auto_backup('add', 'user', full_name)
-
-    flash('تم إضافة المستخدم بنجاح', 'success')
     return redirect(url_for('admin_users'))
 
 # تفعيل/إلغاء تفعيل التحقق للمستخدم
@@ -2446,12 +3507,29 @@ def delete_user(user_id):
         flash('لا يمكنك حذف حسابك الحالي', 'error')
         return redirect(url_for('admin_users'))
 
+    # الحصول على اسم المستخدم قبل الحذف
     conn = sqlite3.connect('hussainiya_stores.db')
     cursor = conn.cursor()
-
-    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-    conn.commit()
+    cursor.execute('SELECT full_name FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    user_name = user[0] if user else f'مستخدم #{user_id}'
     conn.close()
+
+    def delete_user_operation():
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        conn.commit()
+        conn.close()
+
+    # تنفيذ العملية مع النسخ الاحتياطي التلقائي
+    execute_db_operation_with_backup(
+        delete_user_operation, 
+        'delete', 
+        'user', 
+        user_name, 
+        session.get('user_name', 'مدير')
+    )
 
     flash('تم حذف المستخدم بنجاح', 'success')
     return redirect(url_for('admin_users'))
@@ -2955,6 +4033,361 @@ def reject_verification_request(request_id):
     flash(f'تم رفض طلب التحقق بسبب: {final_reason}', 'success')
     return redirect(url_for('admin_verification_requests'))
 
+# تمكين/تعطيل النسخ الاحتياطية التلقائية
+@app.route('/admin/toggle-auto-backup')
+def toggle_auto_backup():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    global AUTO_BACKUP_ENABLED
+    AUTO_BACKUP_ENABLED = not AUTO_BACKUP_ENABLED
+    
+    status = "مفعل" if AUTO_BACKUP_ENABLED else "معطل"
+    flash(f'النسخ الاحتياطي التلقائي الآن {status}', 'success')
+    
+    return redirect(url_for('admin_backup'))
+
+# API للحصول على حالة النسخ التلقائي
+@app.route('/api/auto-backup-status')
+def get_auto_backup_status():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    return jsonify({
+        'enabled': AUTO_BACKUP_ENABLED,
+        'bot_available': telegram_bot is not None
+    })
+
+# إدارة الكوبونات
+@app.route('/admin/coupons')
+def admin_coupons():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # إنشاء جدول الكوبونات إذا لم يكن موجوداً
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            code TEXT UNIQUE NOT NULL,
+            points INTEGER NOT NULL,
+            max_uses INTEGER NOT NULL,
+            current_uses INTEGER DEFAULT 0,
+            expires_at DATETIME NOT NULL,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_by INTEGER,
+            description TEXT,
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+    ''')
+
+    # إنشاء جدول استخدام الكوبونات
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS coupon_uses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coupon_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            points_awarded INTEGER NOT NULL,
+            used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            UNIQUE(coupon_id, user_id)
+        )
+    ''')
+
+    # جلب جميع الكوبونات مع معلومات المنشئ
+    cursor.execute('''
+        SELECT c.*, u.full_name as creator_name
+        FROM coupons c 
+        LEFT JOIN users u ON c.created_by = u.id
+        ORDER BY c.created_at DESC
+    ''')
+    coupons = cursor.fetchall()
+
+    # إحصائيات الكوبونات
+    cursor.execute('SELECT COUNT(*) FROM coupons WHERE is_active = 1')
+    active_coupons = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM coupons WHERE expires_at < datetime("now", "+3 hours")')
+    expired_coupons = cursor.fetchone()[0]
+
+    cursor.execute('SELECT SUM(current_uses) FROM coupons')
+    total_uses = cursor.fetchone()[0] or 0
+
+    cursor.execute('SELECT SUM(points * current_uses) FROM coupons')
+    total_points_awarded = cursor.fetchone()[0] or 0
+
+    conn.close()
+
+    stats = {
+        'active_coupons': active_coupons,
+        'expired_coupons': expired_coupons,
+        'total_uses': total_uses,
+        'total_points_awarded': total_points_awarded
+    }
+
+    return render_template('admin_coupons.html', coupons=coupons, stats=stats)
+
+# إضافة كوبون جديد
+@app.route('/admin/add-coupon', methods=['POST'])
+def add_coupon():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    name = request.form['name']
+    code = request.form['code'].upper()
+    points = int(request.form['points'])
+    max_uses = int(request.form['max_uses'])
+    expires_at = request.form['expires_at']
+    description = request.form.get('description', '')
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            INSERT INTO coupons (name, code, points, max_uses, expires_at, created_by, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (name, code, points, max_uses, expires_at, session['user_id'], description))
+        
+        conn.commit()
+        flash('تم إضافة الكوبون بنجاح', 'success')
+    except sqlite3.IntegrityError:
+        flash('كود الكوبون موجود مسبقاً', 'error')
+    
+    conn.close()
+    return redirect(url_for('admin_coupons'))
+
+# تفاصيل الكوبون
+@app.route('/admin/coupon-details/<int:coupon_id>')
+def admin_coupon_details(coupon_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب تفاصيل الكوبون
+    cursor.execute('''
+        SELECT c.*, u.full_name as creator_name
+        FROM coupons c 
+        LEFT JOIN users u ON c.created_by = u.id
+        WHERE c.id = ?
+    ''', (coupon_id,))
+    coupon = cursor.fetchone()
+
+    if not coupon:
+        flash('الكوبون غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('admin_coupons'))
+
+    # جلب سجل الاستخدامات مع معلومات المستخدمين
+    cursor.execute('''
+        SELECT cu.*, u.full_name as user_name, u.phone
+        FROM coupon_uses cu
+        LEFT JOIN users u ON cu.user_id = u.id
+        WHERE cu.coupon_id = ?
+        ORDER BY cu.used_at DESC
+    ''', (coupon_id,))
+    usage_history = cursor.fetchall()
+
+    # إحصائيات سريعة للوحة الإدارة
+    cursor.execute('SELECT COUNT(*) FROM stores')
+    total_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+    pending_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM categories')
+    total_categories = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM important_services')
+    total_services = cursor.fetchone()[0]
+
+    # إحصائيات الكوبون المحدد
+    usage_count = len(usage_history)
+    total_points = sum(usage[3] for usage in usage_history) if usage_history else 0
+
+    conn.close()
+
+    stats = {
+        'total_stores': total_stores,
+        'total_users': total_users,
+        'pending_stores': pending_stores,
+        'total_categories': total_categories,
+        'total_services': total_services
+    }
+
+    return render_template('admin_coupon_details.html', 
+                         coupon=coupon, 
+                         usage_history=usage_history,
+                         stats=stats,
+                         usage_count=usage_count,
+                         total_points=total_points)
+
+# تعديل كوبون
+@app.route('/admin/edit-coupon/<int:coupon_id>', methods=['POST'])
+def edit_coupon(coupon_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    name = request.form['name']
+    code = request.form['code'].upper()
+    points = int(request.form['points'])
+    max_uses = int(request.form['max_uses'])
+    expires_at = request.form['expires_at']
+    description = request.form.get('description', '')
+    is_active = 1 if request.form.get('is_active') else 0
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            UPDATE coupons 
+            SET name = ?, code = ?, points = ?, max_uses = ?, expires_at = ?, description = ?, is_active = ?
+            WHERE id = ?
+        ''', (name, code, points, max_uses, expires_at, description, is_active, coupon_id))
+        
+        conn.commit()
+        flash('تم تحديث الكوبون بنجاح', 'success')
+    except sqlite3.IntegrityError:
+        flash('كود الكوبون موجود مسبقاً', 'error')
+    
+    conn.close()
+    return redirect(url_for('admin_coupon_details', coupon_id=coupon_id))
+
+# تفعيل/إلغاء تفعيل كوبون
+@app.route('/admin/toggle-coupon/<int:coupon_id>')
+def toggle_coupon(coupon_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT is_active FROM coupons WHERE id = ?', (coupon_id,))
+    current_status = cursor.fetchone()
+    
+    if current_status:
+        new_status = 0 if current_status[0] else 1
+        cursor.execute('UPDATE coupons SET is_active = ? WHERE id = ?', (new_status, coupon_id))
+        conn.commit()
+        
+        status_text = 'تم تفعيل' if new_status else 'تم إلغاء تفعيل'
+        flash(f'{status_text} الكوبون بنجاح', 'success')
+    
+    conn.close()
+    return redirect(url_for('admin_coupons'))
+
+# حذف كوبون
+@app.route('/admin/delete-coupon/<int:coupon_id>')
+def delete_coupon(coupon_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('DELETE FROM coupons WHERE id = ?', (coupon_id,))
+    conn.commit()
+    conn.close()
+
+    flash('تم حذف الكوبون بنجاح', 'success')
+    return redirect(url_for('admin_coupons'))
+
+# استخدام كوبون من قبل المستخدم
+@app.route('/use-coupon', methods=['POST'])
+def use_coupon():
+    if 'user_id' not in session:
+        return jsonify({'error': 'يجب تسجيل الدخول أولاً'}), 401
+
+    coupon_code = request.json.get('code', '').upper().strip()
+    
+    if not coupon_code:
+        return jsonify({'error': 'يجب إدخال كود الكوبون'}), 400
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # التحقق من الكوبون
+    cursor.execute('''
+        SELECT id, name, points, max_uses, current_uses, expires_at, is_active
+        FROM coupons 
+        WHERE code = ?
+    ''', (coupon_code,))
+    
+    coupon = cursor.fetchone()
+    
+    if not coupon:
+        conn.close()
+        return jsonify({'error': 'كود الكوبون غير صحيح'}), 400
+    
+    coupon_id, name, points, max_uses, current_uses, expires_at, is_active = coupon
+    
+    # التحقق من تفعيل الكوبون
+    if not is_active:
+        conn.close()
+        return jsonify({'error': 'هذا الكوبون غير مفعل'}), 400
+    
+    # التحقق من انتهاء الصلاحية
+    from datetime import timezone, timedelta
+    damascus_tz = timezone(timedelta(hours=3))
+    current_time = datetime.now(damascus_tz).strftime('%Y-%m-%d %H:%M:%S')
+    
+    if expires_at < current_time:
+        conn.close()
+        return jsonify({'error': 'انتهت صلاحية هذا الكوبون'}), 400
+    
+    # التحقق من عدد الاستخدامات
+    if current_uses >= max_uses:
+        conn.close()
+        return jsonify({'error': 'تم استنفاد جميع استخدامات هذا الكوبون'}), 400
+    
+    # التحقق من عدم استخدام المستخدم للكوبون مسبقاً
+    cursor.execute('SELECT id FROM coupon_uses WHERE coupon_id = ? AND user_id = ?', 
+                  (coupon_id, session['user_id']))
+    
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'لقد استخدمت هذا الكوبون من قبل'}), 400
+    
+    try:
+        # إضافة النقاط للمستخدم
+        add_points(session['user_id'], points, 'coupon_use', f'استخدام كوبون: {name}', coupon_id)
+        
+        # تسجيل استخدام الكوبون
+        cursor.execute('''
+            INSERT INTO coupon_uses (coupon_id, user_id, points_awarded)
+            VALUES (?, ?, ?)
+        ''', (coupon_id, session['user_id'], points))
+        
+        # تحديث عداد الاستخدامات
+        cursor.execute('UPDATE coupons SET current_uses = current_uses + 1 WHERE id = ?', (coupon_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'تم استخدام الكوبون بنجاح! حصلت على {points} نقطة',
+            'points_awarded': points
+        })
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'error': f'خطأ في استخدام الكوبون: {str(e)}'}), 500
+
 # إدارة النقاط والهدايا
 @app.route('/admin/points')
 def admin_points():
@@ -2975,7 +4408,10 @@ def admin_points():
 
     # طلبات الاستبدال
     cursor.execute('''
-        SELECT gr.*, u.full_name as user_name, g.name as gift_name
+        SELECT gr.id, gr.user_id, gr.gift_id, gr.points_spent, gr.status, 
+               gr.admin_notes, gr.requested_at, gr.processed_at, gr.processed_by,
+               u.full_name as user_name, u.phone as user_phone,
+               g.name as gift_name, g.description as gift_description
         FROM gift_redemptions gr
         LEFT JOIN users u ON gr.user_id = u.id
         LEFT JOIN gifts g ON gr.gift_id = g.id
@@ -3777,9 +5213,15 @@ def get_site_settings():
             'whatsapp_number': '0938074766'
         }
 
-# وظيفة النسخ الاحتياطي التلقائي
-def create_auto_backup(action_type, item_type, item_name):
-    """إنشاء نسخة احتياطية تلقائية وإرسالها لبوت التليجرام"""
+# متغير للتحكم في النسخ الاحتياطية التلقائية
+AUTO_BACKUP_ENABLED = True
+
+# وظيفة النسخ الاحتياطي التلقائي المحسنة
+def create_auto_backup(action_type, item_type, item_name, user_name=None):
+    """إنشاء نسخة احتياطية تلقائية وإرسالها لبوت التليجرام عند أي تغيير في قاعدة البيانات"""
+    if not AUTO_BACKUP_ENABLED:
+        return
+        
     try:
         import zipfile
         from datetime import datetime
@@ -3799,7 +5241,7 @@ def create_auto_backup(action_type, item_type, item_name):
         
         # إرسال النسخة الاحتياطية لبوت التليجرام
         if telegram_bot:
-            asyncio.run(send_backup_to_telegram(backup_path, action_type, item_type, item_name))
+            asyncio.run(send_backup_to_telegram(backup_path, action_type, item_type, item_name, user_name))
         
         # حذف النسخة الاحتياطية المؤقتة
         if os.path.exists(backup_path):
@@ -3809,8 +5251,23 @@ def create_auto_backup(action_type, item_type, item_name):
     except Exception as e:
         print(f"❌ خطأ في النسخ الاحتياطي التلقائي: {e}")
 
-async def send_backup_to_telegram(backup_path, action_type, item_type, item_name):
-    """إرسال النسخة الاحتياطية لبوت التليجرام"""
+# وظيفة معالجة العمليات على قاعدة البيانات مع النسخ التلقائي
+def execute_db_operation_with_backup(operation_func, action_type, item_type, item_name, user_name=None, *args, **kwargs):
+    """تنفيذ عملية على قاعدة البيانات مع إنشاء نسخة احتياطية تلقائية"""
+    try:
+        # تنفيذ العملية
+        result = operation_func(*args, **kwargs)
+        
+        # إنشاء نسخة احتياطية تلقائية بعد نجاح العملية
+        create_auto_backup(action_type, item_type, item_name, user_name)
+        
+        return result
+    except Exception as e:
+        print(f"❌ خطأ في تنفيذ العملية: {e}")
+        raise e
+
+async def send_backup_to_telegram(backup_path, action_type, item_type, item_name, user_name=None):
+    """إرسال النسخة الاحتياطية لبوت التليجرام مع معلومات مفصلة"""
     if not telegram_bot:
         return
         
@@ -3833,25 +5290,44 @@ async def send_backup_to_telegram(backup_path, action_type, item_type, item_name
         current_time_str = damascus_time.strftime('%Y-%m-%d %H:%M:%S')
         
         action_text = {
-            'add': 'إضافة',
-            'edit': 'تعديل',
-            'delete': 'حذف'
+            'add': '➕ إضافة',
+            'edit': '✏️ تعديل', 
+            'delete': '🗑️ حذف',
+            'approve': '✅ موافقة',
+            'reject': '❌ رفض',
+            'restore': '🔄 استعادة'
         }.get(action_type, action_type)
         
         item_text = {
-            'user': 'مستخدم',
-            'store': 'محل',
-            'category': 'تصنيف',
-            'service': 'خدمة'
+            'user': '👤 مستخدم',
+            'store': '🏪 محل',
+            'category': '🏷️ تصنيف',
+            'service': '🔧 خدمة',
+            'pharmacy': '💊 صيدلية',
+            'notification': '📢 إشعار',
+            'gift': '🎁 هدية',
+            'coupon': '🎟️ كوبون',
+            'backup': '💾 نسخة احتياطية',
+            'settings': '⚙️ إعدادات'
         }.get(item_type, item_type)
         
-        caption = f"🔄 نسخة احتياطية تلقائية\n\n"
-        caption += f"📝 العملية: {action_text} {item_text}\n"
-        caption += f"🏷️ العنصر: {item_name}\n"
-        caption += f"🕐 التوقيت: {current_time_str}\n"
-        caption += f"📁 حجم الملف: {os.path.getsize(backup_path) / 1024:.1f} KB"
+        file_size = os.path.getsize(backup_path) / 1024
+        size_text = f"{file_size:.1f} KB" if file_size < 1024 else f"{file_size/1024:.1f} MB"
+        
+        caption = f"🔄 **نسخة احتياطية تلقائية**\n\n"
+        caption += f"📝 **العملية:** {action_text}\n"
+        caption += f"🏷️ **النوع:** {item_text}\n"
+        caption += f"📄 **العنصر:** `{item_name}`\n"
+        
+        if user_name:
+            caption += f"👤 **المستخدم:** {user_name}\n"
+            
+        caption += f"🕐 **التوقيت:** {current_time_str}\n"
+        caption += f"📁 **الحجم:** {size_text}\n\n"
+        caption += f"💡 **ملاحظة:** تم إنشاء هذه النسخة تلقائياً عند حدوث تغيير في قاعدة البيانات"
         
         # إرسال الملف لجميع المديرين
+        success_count = 0
         for admin_id in admin_ids:
             try:
                 with open(backup_path, 'rb') as backup_file:
@@ -3859,11 +5335,15 @@ async def send_backup_to_telegram(backup_path, action_type, item_type, item_name
                         chat_id=admin_id[0],
                         document=backup_file,
                         caption=caption,
-                        filename=os.path.basename(backup_path)
+                        filename=os.path.basename(backup_path),
+                        parse_mode='Markdown'
                     )
+                success_count += 1
                 print(f"✅ تم إرسال النسخة الاحتياطية للمدير {admin_id[0]}")
             except Exception as e:
                 print(f"❌ خطأ في إرسال النسخة الاحتياطية للمدير {admin_id[0]}: {e}")
+        
+        print(f"📊 تم إرسال النسخة الاحتياطية لـ {success_count} من أصل {len(admin_ids)} مدير")
                 
     except Exception as e:
         print(f"❌ خطأ في إرسال النسخة الاحتياطية لتليجرام: {e}")
@@ -4493,6 +5973,354 @@ def generate_monthly_schedule():
     flash(f'تم إنشاء جدول المناوبات لشهر {month}/{year} بنجاح', 'success')
     return redirect(url_for('admin_duty_pharmacies'))
 
+# إدارة الإشعارات المتقدمة
+@app.route('/admin/advanced-notifications')
+def admin_advanced_notifications():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # التأكد من وجود جدول الإشعارات المتقدمة مع جميع الأعمدة
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS advanced_notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            type TEXT DEFAULT 'info',
+            target_users TEXT DEFAULT 'all',
+            target_roles TEXT DEFAULT 'all',
+            priority INTEGER DEFAULT 1,
+            is_popup BOOLEAN DEFAULT 0,
+            is_active BOOLEAN DEFAULT 1,
+            action_type TEXT DEFAULT 'none',
+            action_url TEXT,
+            action_page_content TEXT,
+            custom_css TEXT,
+            custom_js TEXT,
+            show_count INTEGER DEFAULT 0,
+            max_shows INTEGER DEFAULT -1,
+            auto_dismiss INTEGER DEFAULT 0,
+            requires_action BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP,
+            created_by INTEGER,
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+    ''')
+
+    # إضافة الأعمدة المفقودة إذا لم تكن موجودة
+    columns_to_add = [
+        ('created_by', 'INTEGER'),
+        ('target_roles', 'TEXT DEFAULT "all"'),
+        ('action_type', 'TEXT DEFAULT "none"'),
+        ('action_url', 'TEXT'),
+        ('action_page_content', 'TEXT'),
+        ('custom_css', 'TEXT'),
+        ('custom_js', 'TEXT'),
+        ('show_count', 'INTEGER DEFAULT 0'),
+        ('max_shows', 'INTEGER DEFAULT -1'),
+        ('auto_dismiss', 'INTEGER DEFAULT 0'),
+        ('requires_action', 'BOOLEAN DEFAULT 0')
+    ]
+
+    for column_name, column_def in columns_to_add:
+        try:
+            cursor.execute(f'ALTER TABLE advanced_notifications ADD COLUMN {column_name} {column_def}')
+        except sqlite3.OperationalError:
+            pass  # العمود موجود بالفعل
+
+    # الحصول على جميع الإشعارات المتقدمة مع الإحصائيات
+    cursor.execute('''
+        SELECT an.*, u.full_name as creator_name,
+               COALESCE(ns.total_sent, 0) as total_sent,
+               COALESCE(ns.total_read, 0) as total_read,
+               COALESCE(ns.total_clicked, 0) as total_clicked,
+               COALESCE(ns.total_dismissed, 0) as total_dismissed
+        FROM advanced_notifications an
+        LEFT JOIN users u ON an.created_by = u.id
+        LEFT JOIN notification_stats ns ON an.id = ns.notification_id
+        ORDER BY an.created_at DESC
+    ''')
+    notifications_raw = cursor.fetchall()
+    
+    # معالجة التواريخ للتأكد من أنها نصوص
+    notifications = []
+    for notif in notifications_raw:
+        notif_list = list(notif)
+        # التأكد من أن created_at (index 18) و expires_at (index 19) هما نصوص
+        if notif_list[18] and not isinstance(notif_list[18], str):
+            notif_list[18] = str(notif_list[18])
+        if notif_list[19] and not isinstance(notif_list[19], str):
+            notif_list[19] = str(notif_list[19])
+        notifications.append(tuple(notif_list))
+
+    # الحصول على المستخدمين للإرسال المخصص
+    cursor.execute('SELECT id, full_name, phone FROM users WHERE is_active = 1 ORDER BY full_name')
+    users = cursor.fetchall()
+
+    # إحصائيات عامة
+    cursor.execute('SELECT COUNT(*) FROM advanced_notifications WHERE is_active = 1')
+    active_count = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM advanced_notifications WHERE expires_at < datetime("now", "+3 hours")')
+    expired_count = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM advanced_notifications WHERE is_popup = 1')
+    popup_count = cursor.fetchone()[0]
+
+    stats = {
+        'active_count': active_count,
+        'expired_count': expired_count,
+        'popup_count': popup_count,
+        'total_count': len(notifications)
+    }
+
+    conn.close()
+    return render_template('admin_advanced_notifications.html', 
+                         notifications=notifications, 
+                         users=users,
+                         stats=stats)
+
+# إضافة إشعار متقدم جديد
+@app.route('/admin/add-advanced-notification', methods=['POST'])
+def add_advanced_notification():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    try:
+        title = request.form['title']
+        message = request.form['message']
+        notification_type = request.form['type']
+        target_users = request.form['target_users']
+        priority = int(request.form.get('priority', 1))
+        is_popup = 1 if request.form.get('is_popup') else 0
+        action_type = request.form.get('action_type', 'none')
+        action_url = request.form.get('action_url', '')
+        action_page_content = request.form.get('action_page_content', '')
+        custom_css = request.form.get('custom_css', '')
+        custom_js = request.form.get('custom_js', '')
+        auto_dismiss = int(request.form.get('auto_dismiss', 0))
+        requires_action = 1 if request.form.get('requires_action') else 0
+        max_shows = int(request.form.get('max_shows', -1))
+        expires_at = request.form.get('expires_at') or None
+
+        # معالجة المستخدمين المحددين
+        if target_users == 'specific':
+            selected_users = request.form.getlist('selected_users')
+            target_users = ','.join(selected_users)
+
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            INSERT INTO advanced_notifications 
+            (title, message, type, target_users, priority, is_popup, action_type, 
+             action_url, action_page_content, custom_css, custom_js, auto_dismiss,
+             requires_action, max_shows, expires_at, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (title, message, notification_type, target_users, priority, is_popup,
+              action_type, action_url, action_page_content, custom_css, custom_js,
+              auto_dismiss, requires_action, max_shows, expires_at, session['user_id']))
+
+        notification_id = cursor.lastrowid
+
+        # إنشاء سجل إحصائيات
+        cursor.execute('''
+            INSERT INTO notification_stats (notification_id, total_sent)
+            VALUES (?, 0)
+        ''', (notification_id,))
+
+        conn.commit()
+        conn.close()
+
+        flash('تم إضافة الإشعار المتقدم بنجاح', 'success')
+    except Exception as e:
+        flash(f'خطأ في إضافة الإشعار: {str(e)}', 'error')
+
+    return redirect(url_for('admin_advanced_notifications'))
+
+# تعديل إشعار متقدم
+@app.route('/admin/edit-advanced-notification/<int:notification_id>', methods=['POST'])
+def edit_advanced_notification(notification_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    try:
+        title = request.form['title']
+        message = request.form['message']
+        notification_type = request.form['type']
+        target_users = request.form['target_users']
+        priority = int(request.form.get('priority', 1))
+        is_popup = 1 if request.form.get('is_popup') else 0
+        is_active = 1 if request.form.get('is_active') else 0
+        action_type = request.form.get('action_type', 'none')
+        action_url = request.form.get('action_url', '')
+        action_page_content = request.form.get('action_page_content', '')
+        custom_css = request.form.get('custom_css', '')
+        custom_js = request.form.get('custom_js', '')
+        auto_dismiss = int(request.form.get('auto_dismiss', 0))
+        requires_action = 1 if request.form.get('requires_action') else 0
+        max_shows = int(request.form.get('max_shows', -1))
+        expires_at = request.form.get('expires_at') or None
+
+        # معالجة المستخدمين المحددين
+        if target_users == 'specific':
+            selected_users = request.form.getlist('selected_users')
+            target_users = ','.join(selected_users)
+
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            UPDATE advanced_notifications 
+            SET title = ?, message = ?, type = ?, target_users = ?, priority = ?,
+                is_popup = ?, is_active = ?, action_type = ?, action_url = ?,
+                action_page_content = ?, custom_css = ?, custom_js = ?,
+                auto_dismiss = ?, requires_action = ?, max_shows = ?, expires_at = ?
+            WHERE id = ?
+        ''', (title, message, notification_type, target_users, priority, is_popup,
+              is_active, action_type, action_url, action_page_content, custom_css,
+              custom_js, auto_dismiss, requires_action, max_shows, expires_at, notification_id))
+
+        conn.commit()
+        conn.close()
+
+        flash('تم تحديث الإشعار بنجاح', 'success')
+    except Exception as e:
+        flash(f'خطأ في تحديث الإشعار: {str(e)}', 'error')
+
+    return redirect(url_for('admin_advanced_notifications'))
+
+# صفحة تعديل إشعار متقدم
+@app.route('/admin/edit-advanced-notification-page/<int:notification_id>')
+def edit_advanced_notification_page(notification_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جلب تفاصيل الإشعار
+    cursor.execute('SELECT * FROM advanced_notifications WHERE id = ?', (notification_id,))
+    notification_raw = cursor.fetchone()
+
+    if not notification_raw:
+        flash('الإشعار غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('admin_advanced_notifications'))
+
+    # تحويل البيانات لقائمة وإصلاح التواريخ
+    notification = list(notification_raw)
+    
+    # التأكد من أن التواريخ في فهارس 18 و 19 هي نصوص
+    if notification[18] and not isinstance(notification[18], str):
+        notification[18] = str(notification[18])
+    if notification[19] and not isinstance(notification[19], str):
+        notification[19] = str(notification[19])
+    
+    # تحويل القائمة إلى tuple مرة أخرى
+    notification = tuple(notification)
+
+    # الحصول على المستخدمين للإرسال المخصص
+    cursor.execute('SELECT id, full_name, phone FROM users WHERE is_active = 1 ORDER BY full_name')
+    users = cursor.fetchall()
+
+    # إحصائيات سريعة للوحة الإدارة
+    cursor.execute('SELECT COUNT(*) FROM stores')
+    total_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM stores WHERE is_approved = 0')
+    pending_stores = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM categories')
+    total_categories = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM important_services')
+    total_services = cursor.fetchone()[0]
+
+    stats = {
+        'total_stores': total_stores,
+        'total_users': total_users,
+        'pending_stores': pending_stores,
+        'total_categories': total_categories,
+        'total_services': total_services
+    }
+
+    conn.close()
+    return render_template('admin_edit_advanced_notification.html', 
+                         notification=notification, 
+                         users=users,
+                         stats=stats)
+
+# حذف إشعار متقدم
+@app.route('/admin/delete-advanced-notification/<int:notification_id>')
+def delete_advanced_notification(notification_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+
+        cursor.execute('DELETE FROM advanced_notifications WHERE id = ?', (notification_id,))
+        conn.commit()
+        conn.close()
+
+        flash('تم حذف الإشعار بنجاح', 'success')
+    except Exception as e:
+        flash(f'خطأ في حذف الإشعار: {str(e)}', 'error')
+
+    return redirect(url_for('admin_advanced_notifications'))
+
+# عرض صفحة مخصصة للإشعار
+@app.route('/notification-page/<int:notification_id>')
+def notification_page(notification_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض هذا المحتوى', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT title, message, action_page_content, custom_css, custom_js
+            FROM advanced_notifications
+            WHERE id = ? AND is_active = 1
+        ''', (notification_id,))
+        
+        notification = cursor.fetchone()
+        conn.close()
+
+        if not notification:
+            flash('الإشعار غير موجود أو غير متاح', 'error')
+            return redirect(url_for('index'))
+
+        # تسجيل النقر
+        mark_notification_read_data = {
+            'notification_id': notification_id,
+            'action_taken': 'clicked'
+        }
+        
+        return render_template('notification_page.html',
+                             title=notification[0],
+                             message=notification[1],
+                             content=notification[2],
+                             custom_css=notification[3],
+                             custom_js=notification[4],
+                             notification_id=notification_id)
+
+    except Exception as e:
+        flash('خطأ في عرض الإشعار', 'error')
+        return redirect(url_for('index'))
+
 # إدارة الإشعارات
 @app.route('/admin/notifications')
 def admin_notifications():
@@ -4608,6 +6436,9 @@ def add_user_store():
     phone = request.form.get('phone', '')
     description = request.form.get('description', '')
 
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
     cursor.execute('''
         INSERT INTO stores (name, category_id, address, phone, description, user_id, is_approved) 
         VALUES (?, ?, ?, ?, ?, ?, 0)
@@ -4708,7 +6539,7 @@ def update_profile():
         flash('يجب تسجيل الدخول أولاً', 'error')
         return redirect(url_for('login'))
 
-    full_name = request.form['full_name']
+    full_name = request.form['full_name'].strip()
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
 
@@ -4723,8 +6554,13 @@ def update_profile():
     cursor.execute('SELECT can_edit_name, is_verified FROM users WHERE id = ?', (session['user_id'],))
     user_perms = cursor.fetchone()
     
-    can_edit_name = user_perms[0] if user_perms else 1
-    is_verified = user_perms[1] if user_perms else 0
+    if not user_perms:
+        flash('خطأ في بيانات المستخدم', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    can_edit_name = user_perms[0] if user_perms[0] is not None else 1
+    is_verified = user_perms[1] if user_perms[1] is not None else 0
 
     if new_password:
         password_hash = generate_password_hash(new_password)
@@ -4735,6 +6571,23 @@ def update_profile():
                 flash(name_error, 'error')
                 conn.close()
                 return redirect(url_for('dashboard'))
+            
+            # التحقق من عدم وجود الاسم مسبقاً
+            name_exists, name_exists_error = check_name_exists(full_name)
+            if name_exists:
+                # التحقق من أن الاسم ليس نفس اسم المستخدم الحالي
+                cursor.execute('SELECT full_name FROM users WHERE id = ?', (session['user_id'],))
+                current_name_result = cursor.fetchone()
+                if current_name_result:
+                    current_name = current_name_result[0]
+                    if full_name != current_name:
+                        flash(name_exists_error, 'error')
+                        conn.close()
+                        return redirect(url_for('dashboard'))
+                else:
+                    flash('خطأ في الحصول على الاسم الحالي', 'error')
+                    conn.close()
+                    return redirect(url_for('dashboard'))
             
             cursor.execute('UPDATE users SET full_name = ?, password_hash = ? WHERE id = ?', 
                           (full_name, password_hash, session['user_id']))
@@ -4752,6 +6605,23 @@ def update_profile():
                 flash(name_error, 'error')
                 conn.close()
                 return redirect(url_for('dashboard'))
+            
+            # التحقق من عدم وجود الاسم مسبقاً
+            name_exists, name_exists_error = check_name_exists(full_name)
+            if name_exists:
+                # التحقق من أن الاسم ليس نفس اسم المستخدم الحالي
+                cursor.execute('SELECT full_name FROM users WHERE id = ?', (session['user_id'],))
+                current_name_result = cursor.fetchone()
+                if current_name_result:
+                    current_name = current_name_result[0]
+                    if full_name != current_name:
+                        flash(name_exists_error, 'error')
+                        conn.close()
+                        return redirect(url_for('dashboard'))
+                else:
+                    flash('خطأ في الحصول على الاسم الحالي', 'error')
+                    conn.close()
+                    return redirect(url_for('dashboard'))
             
             cursor.execute('UPDATE users SET full_name = ? WHERE id = ?', 
                           (full_name, session['user_id']))
@@ -4847,27 +6717,109 @@ def create_full_backup():
 
     return redirect(url_for('admin_backup'))
 
+# حفظ النسخة الشاملة المرفوعة
+@app.route('/admin/save-uploaded-full-backup', methods=['POST'])
+def save_uploaded_full_backup():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    try:
+        if 'backup_file' not in request.files:
+            flash('لم يتم اختيار ملف', 'error')
+            return redirect(url_for('admin_backup'))
+
+        file = request.files['backup_file']
+        if file.filename == '':
+            flash('لم يتم اختيار ملف', 'error')
+            return redirect(url_for('admin_backup'))
+
+        if not file.filename.endswith('.zip'):
+            flash('يجب أن يكون الملف من نوع .zip للنسخة الشاملة', 'error')
+            return redirect(url_for('admin_backup'))
+
+        # إنشاء مجلد النسخ الاحتياطية
+        os.makedirs('backups', exist_ok=True)
+
+        # إنشاء اسم ملف مميز للنسخة الشاملة المرفوعة
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        original_name = secure_filename(file.filename)
+        name_without_ext = os.path.splitext(original_name)[0]
+        
+        # تمييز النسخة الشاملة المرفوعة في الاسم
+        new_filename = f"uploaded_full_{name_without_ext}_{timestamp}.zip"
+        backup_path = os.path.join('backups', new_filename)
+
+        # حفظ الملف
+        file.save(backup_path)
+
+        file_size = os.path.getsize(backup_path)
+        size_text = f"{file_size / 1024:.1f} KB" if file_size < 1024*1024 else f"{file_size / (1024*1024):.1f} MB"
+        
+        flash(f'تم حفظ النسخة الشاملة المرفوعة بنجاح: {new_filename} ({size_text})', 'success')
+
+    except Exception as e:
+        flash(f'خطأ في حفظ النسخة الشاملة المرفوعة: {str(e)}', 'error')
+
+    return redirect(url_for('admin_backup'))
+
 # استعادة النسخة الاحتياطية الشاملة
 @app.route('/admin/restore-full-backup', methods=['POST'])
 def restore_full_backup():
     if 'user_id' not in session or not session.get('is_admin'):
         return redirect(url_for('index'))
 
-    if 'backup_file' not in request.files:
-        flash('لم يتم اختيار ملف', 'error')
-        return redirect(url_for('admin_backup'))
+    # التحقق من وجود اسم ملف من القائمة
+    backup_filename = request.form.get('backup_filename')
+    merge_data = request.form.get('merge_data') == 'on'
+    structure_only = request.form.get('structure_only') == 'on'
+    
+    try:
+        import zipfile
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        if backup_filename:
+            # استعادة من النسخ الموجودة في القائمة
+            backup_path = os.path.join('backups', backup_filename)
+            
+            if not os.path.exists(backup_path):
+                flash('الملف غير موجود', 'error')
+                return redirect(url_for('admin_backup'))
+            
+            if not backup_filename.endswith('.zip'):
+                flash('يجب أن يكون الملف من نوع .zip للنسخة الشاملة', 'error')
+                return redirect(url_for('admin_backup'))
+            
+            # إنشاء نسخة احتياطية من الملفات الحالية
+            current_backup = f'hussainiya_full_backup_before_restore_{timestamp}.zip'
+            
+            with zipfile.ZipFile(current_backup, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                if os.path.exists('hussainiya_stores.db'):
+                    zipf.write('hussainiya_stores.db')
+                zipf.write('app.py')
+                for root, dirs, files in os.walk('templates'):
+                    for file_name in files:
+                        file_path = os.path.join(root, file_name)
+                        zipf.write(file_path)
+            
+            temp_backup_path = f'temp_restore_{timestamp}.zip'
+            shutil.copy2(backup_path, temp_backup_path)
+            
+        else:
+            # استعادة من ملف مرفوع
+            if 'backup_file' not in request.files:
+                flash('لم يتم اختيار ملف', 'error')
+                return redirect(url_for('admin_backup'))
 
-    file = request.files['backup_file']
-    if file.filename == '':
-        flash('لم يتم اختيار ملف', 'error')
-        return redirect(url_for('admin_backup'))
+            file = request.files['backup_file']
+            if file.filename == '':
+                flash('لم يتم اختيار ملف', 'error')
+                return redirect(url_for('admin_backup'))
 
-    if file and file.filename.endswith('.zip'):
-        try:
-            import zipfile
+            if not file.filename.endswith('.zip'):
+                flash('يجب أن يكون الملف من نوع .zip', 'error')
+                return redirect(url_for('admin_backup'))
 
             # إنشاء نسخة احتياطية من الملفات الحالية
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             current_backup = f'hussainiya_full_backup_before_restore_{timestamp}.zip'
 
             with zipfile.ZipFile(current_backup, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -4880,23 +6832,230 @@ def restore_full_backup():
                         zipf.write(file_path)
 
             # حفظ الملف المرفوع مؤقتاً
-            temp_path = f'temp_restore_{timestamp}.zip'
-            file.save(temp_path)
+            temp_backup_path = f'temp_restore_{timestamp}.zip'
+            file.save(temp_backup_path)
 
-            # استخراج الملفات
-            with zipfile.ZipFile(temp_path, 'r') as zipf:
-                zipf.extractall('.')
+        # استخراج إلى مجلد مؤقت
+        temp_extract_dir = f'temp_extract_{timestamp}'
+        os.makedirs(temp_extract_dir, exist_ok=True)
+        
+        with zipfile.ZipFile(temp_backup_path, 'r') as zipf:
+            zipf.extractall(temp_extract_dir)
 
-            # حذف الملف المؤقت
-            os.remove(temp_path)
+        # معالجة قاعدة البيانات
+        extracted_db_path = os.path.join(temp_extract_dir, 'hussainiya_stores.db')
+        
+        if structure_only:
+            # استعادة البنية فقط بدون البيانات
+            if os.path.exists(extracted_db_path):
+                success, structure_log = restore_structure_only(extracted_db_path, 'hussainiya_stores.db')
+                
+                if success:
+                    flash('تم استعادة بنية قاعدة البيانات بنجاح مع الحفاظ على البيانات!', 'success')
+                    for log_entry in structure_log[:10]:
+                        flash(log_entry, 'info')
+                    if len(structure_log) > 10:
+                        flash(f'... و {len(structure_log) - 10} تحديث آخر', 'info')
+                else:
+                    flash('فشل في استعادة بنية قاعدة البيانات', 'error')
+                    for log_entry in structure_log:
+                        flash(log_entry, 'error')
+            
+            # استعادة الملفات والقوالب والكود
+            restore_code_and_templates(temp_extract_dir)
+            flash('تم استعادة البنية والتصميم والكود بنجاح مع الحفاظ على البيانات!', 'success')
+            
+        elif os.path.exists(extracted_db_path):
+            if merge_data:
+                # دمج البيانات
+                success, merge_log = merge_databases(extracted_db_path, 'hussainiya_stores.db')
+                
+                if success:
+                    flash(f'تم دمج البيانات بنجاح من النسخة الشاملة!', 'success')
+                    for log_entry in merge_log[:10]:
+                        flash(log_entry, 'info')
+                    if len(merge_log) > 10:
+                        flash(f'... و {len(merge_log) - 10} عملية أخرى', 'info')
+                else:
+                    flash('فشل في دمج البيانات من النسخة الشاملة', 'error')
+                    for log_entry in merge_log:
+                        flash(log_entry, 'error')
+            else:
+                # استعادة كاملة
+                shutil.copy2(extracted_db_path, 'hussainiya_stores.db')
+                flash('تم استعادة قاعدة البيانات من النسخة الشاملة بنجاح', 'success')
 
-            flash('تم استعادة النسخة الاحتياطية الشاملة بنجاح', 'success')
-        except Exception as e:
-            flash(f'خطأ في استعادة النسخة الاحتياطية الشاملة: {str(e)}', 'error')
-    else:
-        flash('يجب أن يكون الملف من نوع .zip', 'error')
+        # نسخ الملفات الأخرى إذا لم يكن الدمج مفعلاً ولم يكن استعادة البنية فقط
+        if not merge_data and not structure_only:
+            # نسخ app.py
+            extracted_app_path = os.path.join(temp_extract_dir, 'app.py')
+            if os.path.exists(extracted_app_path):
+                shutil.copy2(extracted_app_path, 'app.py')
+            
+            # نسخ مجلد templates
+            extracted_templates_path = os.path.join(temp_extract_dir, 'templates')
+            if os.path.exists(extracted_templates_path):
+                if os.path.exists('templates'):
+                    shutil.rmtree('templates')
+                shutil.copytree(extracted_templates_path, 'templates')
+            
+            flash('تم استعادة النسخة الاحتياطية الشاملة بنجاح (استعادة كاملة)', 'success')
+
+        # تنظيف الملفات المؤقتة
+        if os.path.exists(temp_backup_path):
+            os.remove(temp_backup_path)
+        if os.path.exists(temp_extract_dir):
+            shutil.rmtree(temp_extract_dir)
+
+    except Exception as e:
+        flash(f'خطأ في استعادة النسخة الاحتياطية الشاملة: {str(e)}', 'error')
 
     return redirect(url_for('admin_backup'))
+
+def restore_structure_only(source_db_path, target_db_path):
+    """استعادة بنية قاعدة البيانات فقط مع الحفاظ على البيانات"""
+    try:
+        import sqlite3
+        import tempfile
+        
+        # إنشاء ملف مؤقت لنسخ البيانات الحالية
+        temp_data_file = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        temp_data_file.close()
+        
+        log = []
+        
+        # نسخ البيانات الحالية إلى ملف مؤقت
+        shutil.copy2(target_db_path, temp_data_file.name)
+        log.append("✅ تم نسخ البيانات الحالية للحفظ المؤقت")
+        
+        # الاتصال بقاعدة البيانات المصدر والهدف
+        source_conn = sqlite3.connect(source_db_path)
+        target_conn = sqlite3.connect(target_db_path)
+        temp_conn = sqlite3.connect(temp_data_file.name)
+        
+        source_cursor = source_conn.cursor()
+        target_cursor = target_conn.cursor()
+        temp_cursor = temp_conn.cursor()
+        
+        # الحصول على قائمة الجداول من المصدر
+        source_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        source_tables = [row[0] for row in source_cursor.fetchall()]
+        
+        # الحصول على قائمة الجداول الحالية
+        temp_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        current_tables = [row[0] for row in temp_cursor.fetchall()]
+        
+        # إنشاء الجداول الجديدة أو تحديث البنية
+        for table in source_tables:
+            # الحصول على بنية الجدول من المصدر
+            source_cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table}'")
+            table_schema = source_cursor.fetchone()
+            
+            if table_schema:
+                # حذف الجدول الحالي إذا كان موجوداً
+                target_cursor.execute(f"DROP TABLE IF EXISTS {table}")
+                
+                # إنشاء الجدول الجديد بالبنية المحدثة
+                target_cursor.execute(table_schema[0])
+                log.append(f"✅ تم تحديث بنية جدول {table}")
+                
+                # استعادة البيانات إذا كان الجدول موجوداً في النسخة السابقة
+                if table in current_tables:
+                    try:
+                        # الحصول على أعمدة الجدول الجديد
+                        target_cursor.execute(f"PRAGMA table_info({table})")
+                        new_columns = [col[1] for col in target_cursor.fetchall()]
+                        
+                        # الحصول على أعمدة الجدول القديم
+                        temp_cursor.execute(f"PRAGMA table_info({table})")
+                        old_columns = [col[1] for col in temp_cursor.fetchall()]
+                        
+                        # العثور على الأعمدة المشتركة
+                        common_columns = [col for col in new_columns if col in old_columns]
+                        
+                        if common_columns:
+                            columns_str = ', '.join(common_columns)
+                            
+                            # نسخ البيانات للأعمدة المشتركة
+                            temp_cursor.execute(f"SELECT {columns_str} FROM {table}")
+                            data = temp_cursor.fetchall()
+                            
+                            if data:
+                                placeholders = ', '.join(['?' for _ in common_columns])
+                                target_cursor.executemany(f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})", data)
+                                log.append(f"✅ تم استعادة {len(data)} سجل من جدول {table}")
+                            else:
+                                log.append(f"ℹ️ جدول {table} فارغ")
+                        else:
+                            log.append(f"⚠️ لا توجد أعمدة مشتركة في جدول {table}")
+                            
+                    except Exception as e:
+                        log.append(f"⚠️ تعذر استعادة بيانات جدول {table}: {str(e)}")
+                else:
+                    log.append(f"ℹ️ جدول {table} جديد - لا توجد بيانات للاستعادة")
+        
+        # إنشاء الفهارس والمفاتيح الخارجية
+        source_cursor.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'")
+        indexes = source_cursor.fetchall()
+        
+        for index in indexes:
+            if index[0]:
+                try:
+                    target_cursor.execute(index[0])
+                    log.append(f"✅ تم إنشاء فهرس")
+                except Exception as e:
+                    log.append(f"⚠️ فشل في إنشاء فهرس: {str(e)}")
+        
+        # حفظ التغييرات
+        target_conn.commit()
+        
+        # إغلاق الاتصالات
+        source_conn.close()
+        target_conn.close()
+        temp_conn.close()
+        
+        # حذف الملف المؤقت
+        os.unlink(temp_data_file.name)
+        
+        log.append("🎉 تم استعادة البنية بنجاح مع الحفاظ على جميع البيانات")
+        return True, log
+        
+    except Exception as e:
+        return False, [f"❌ خطأ في استعادة البنية: {str(e)}"]
+
+def restore_code_and_templates(extract_dir):
+    """استعادة ملفات الكود والقوالب"""
+    try:
+        # نسخ app.py
+        extracted_app_path = os.path.join(extract_dir, 'app.py')
+        if os.path.exists(extracted_app_path):
+            shutil.copy2(extracted_app_path, 'app.py')
+        
+        # نسخ مجلد templates
+        extracted_templates_path = os.path.join(extract_dir, 'templates')
+        if os.path.exists(extracted_templates_path):
+            if os.path.exists('templates'):
+                shutil.rmtree('templates')
+            shutil.copytree(extracted_templates_path, 'templates')
+        
+        # نسخ الملفات الثابتة إذا كانت موجودة
+        extracted_static_path = os.path.join(extract_dir, 'static')
+        if os.path.exists(extracted_static_path):
+            if os.path.exists('static'):
+                shutil.rmtree('static')
+            shutil.copytree(extracted_static_path, 'static')
+        
+        # نسخ ملفات CSS و JS
+        for file_name in ['style.css', 'script.js']:
+            extracted_file_path = os.path.join(extract_dir, file_name)
+            if os.path.exists(extracted_file_path):
+                shutil.copy2(extracted_file_path, file_name)
+        
+        return True
+        
+    except Exception as e:
+        print(f"خطأ في استعادة الملفات: {e}")
+        return False
 
 # نظام الإشعارات المتطور
 @app.route('/admin/send-notification', methods=['POST'])
@@ -5126,29 +7285,76 @@ def get_notifications():
         return jsonify({'notifications': [], 'error': str(e)})
 
 # تعيين الإشعار كمقروء
+@app.route('/api/mark-notification-read', methods=['POST'])
 @app.route('/api/mark-notification-read/<int:notification_id>', methods=['POST'])
-def mark_notification_read(notification_id):
+def mark_notification_read(notification_id=None):
     if 'user_id' not in session:
-        return jsonify({'error': 'غير مصرح'}), 401
+        return jsonify({'error': 'يجب تسجيل الدخول'}), 401
+    
+    try:
+        if notification_id is None:
+            # استخدام البيانات من الـ JSON
+            data = request.get_json()
+            notification_id = data.get('notification_id')
+            action_taken = data.get('action_taken', 'read')
+        else:
+            # استخدام notification_id من URL
+            action_taken = 'read'
+        
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        user_id = str(session['user_id'])
 
-    conn = sqlite3.connect('hussainiya_stores.db')
-    cursor = conn.cursor()
+        # للإشعارات المتقدمة
+        cursor.execute('SELECT read_by FROM advanced_notifications WHERE id = ?', (notification_id,))
+        result = cursor.fetchone()
 
-    user_id = str(session['user_id'])
+        if result:
+            read_by = result[0] or ''
+            if user_id not in read_by:
+                new_read_by = f"{read_by},{user_id}" if read_by else user_id
+                cursor.execute('UPDATE advanced_notifications SET read_by = ? WHERE id = ?', 
+                              (new_read_by, notification_id))
+        
+        # تسجيل القراءة في جدول notification_reads
+        cursor.execute('''
+            INSERT OR REPLACE INTO notification_reads 
+            (notification_id, user_id, action_taken)
+            VALUES (?, ?, ?)
+        ''', (notification_id, session['user_id'], action_taken))
+        
+        # تحديث الإحصائيات
+        cursor.execute('''
+            INSERT OR IGNORE INTO notification_stats (notification_id, total_sent)
+            VALUES (?, 1)
+        ''', (notification_id,))
+        
+        if action_taken == 'read':
+            cursor.execute('''
+                UPDATE notification_stats 
+                SET total_read = total_read + 1
+                WHERE notification_id = ?
+            ''', (notification_id,))
+        elif action_taken == 'clicked':
+            cursor.execute('''
+                UPDATE notification_stats 
+                SET total_clicked = total_clicked + 1
+                WHERE notification_id = ?
+            ''', (notification_id,))
+        elif action_taken == 'dismissed':
+            cursor.execute('''
+                UPDATE notification_stats 
+                SET total_dismissed = total_dismissed + 1
+                WHERE notification_id = ?
+            ''', (notification_id,))
 
-    cursor.execute('SELECT read_by FROM advanced_notifications WHERE id = ?', (notification_id,))
-    result = cursor.fetchone()
-
-    if result:
-        read_by = result[0] or ''
-        if user_id not in read_by:
-            new_read_by = f"{read_by},{user_id}" if read_by else user_id
-            cursor.execute('UPDATE advanced_notifications SET read_by = ? WHERE id = ?', 
-                          (new_read_by, notification_id))
-            conn.commit()
-
-    conn.close()
-    return jsonify({'success': True})
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # تعطيل الإشعار المنتهي الصلاحية (API للواجهة الأمامية)
 @app.route('/api/disable-expired-notification/<int:notification_id>', methods=['POST'])
@@ -5238,37 +7444,1069 @@ def download_backup(filename):
         flash('الملف غير موجود', 'error')
         return redirect(url_for('admin_backup'))
 
+# دمج البيانات من قاعدة بيانات احتياطية
+def merge_databases(backup_db_path, current_db_path):
+    """دمج البيانات من قاعدة البيانات الاحتياطية مع الحالية مع الحفاظ على جميع البيانات الحالية"""
+    current_conn = None
+    temp_backup_conn = None
+    
+    try:
+        # التأكد من إغلاق جميع الاتصالات السابقة
+        import gc
+        gc.collect()
+        
+        # نسخ قاعدة البيانات الاحتياطية إلى ملف مؤقت لتجنب القفل
+        temp_backup_path = f"temp_merge_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        shutil.copy2(backup_db_path, temp_backup_path)
+        
+        # الاتصال بقاعدة البيانات الحالية
+        current_conn = sqlite3.connect(current_db_path, timeout=30.0)
+        current_conn.execute('PRAGMA journal_mode=WAL')
+        current_cursor = current_conn.cursor()
+        
+        # الاتصال بقاعدة البيانات الاحتياطية المؤقتة
+        temp_backup_conn = sqlite3.connect(temp_backup_path, timeout=30.0)
+        temp_backup_cursor = temp_backup_conn.cursor()
+        
+        merge_log = []
+        merge_log.append("بدء عملية دمج البيانات مع الحفاظ على جميع البيانات الحالية...")
+        
+        # دمج جدول المستخدمين
+        merge_log.extend(merge_users_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول التصنيفات
+        merge_log.extend(merge_categories_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول المحلات
+        merge_log.extend(merge_stores_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول الخدمات الهامة
+        merge_log.extend(merge_services_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول تصنيفات الخدمات
+        merge_log.extend(merge_service_categories_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول الصيدليات المناوبة
+        merge_log.extend(merge_duty_pharmacies_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول الإشعارات
+        merge_log.extend(merge_notifications_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول الشريط المتحرك
+        merge_log.extend(merge_ticker_messages_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول التقييمات
+        merge_log.extend(merge_ratings_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول إعدادات الموقع
+        merge_log.extend(merge_site_settings_table_safe(current_cursor, temp_backup_cursor))
+        
+        # دمج جدول النقاط والهدايا
+        merge_log.extend(merge_points_tables_safe(current_cursor, temp_backup_cursor))
+        
+        # حفظ التغييرات
+        current_conn.commit()
+        
+        # إغلاق الاتصالات
+        temp_backup_conn.close()
+        current_conn.close()
+        
+        # حذف الملف المؤقت
+        if os.path.exists(temp_backup_path):
+            os.remove(temp_backup_path)
+        
+        merge_log.append("تم إنهاء عملية الدمج بنجاح مع الحفاظ على جميع البيانات الحالية")
+        return True, merge_log
+        
+    except Exception as e:
+        # التأكد من إغلاق الاتصالات في حالة الخطأ
+        if temp_backup_conn:
+            try:
+                temp_backup_conn.close()
+            except:
+                pass
+        if current_conn:
+            try:
+                current_conn.rollback()
+                current_conn.close()
+            except:
+                pass
+        
+        # حذف الملف المؤقت
+        if 'temp_backup_path' in locals() and os.path.exists(temp_backup_path):
+            try:
+                os.remove(temp_backup_path)
+            except:
+                pass
+        
+        return False, [f"خطأ في دمج البيانات: {str(e)}"]
+
+def merge_users_table_safe(current_cursor, backup_cursor):
+    """دمج جدول المستخدمين بطريقة آمنة - الحفاظ على جميع البيانات الموجودة وإضافة الجديدة فقط"""
+    log = []
+    try:
+        # جلب المستخدمين من النسخة الاحتياطية
+        backup_cursor.execute('''
+            SELECT id, full_name, phone, password_hash, is_active, is_admin, is_verified, can_edit_name, created_at
+            FROM users
+        ''')
+        backup_users = backup_cursor.fetchall()
+        
+        # جلب جميع المستخدمين الحاليين
+        current_cursor.execute('SELECT phone FROM users')
+        existing_phones = set(row[0] for row in current_cursor.fetchall())
+        
+        updated_count = 0
+        added_count = 0
+        preserved_count = 0
+        
+        for user in backup_users:
+            phone = user[2]
+            
+            if phone in existing_phones:
+                # المستخدم موجود - الاحتفاظ بالبيانات الحالية تماماً
+                preserved_count += 1
+                log.append(f"تم الاحتفاظ بالمستخدم الموجود: {user[1]} ({phone})")
+            else:
+                # مستخدم جديد - إضافته
+                try:
+                    current_cursor.execute('''
+                        INSERT INTO users (full_name, phone, password_hash, is_active, is_admin, is_verified, can_edit_name, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', user[1:])
+                    added_count += 1
+                    log.append(f"تم إضافة المستخدم الجديد: {user[1]} ({phone})")
+                except Exception as e:
+                    log.append(f"خطأ في إضافة المستخدم {user[1]}: {str(e)}")
+        
+        log.insert(0, f"المستخدمين: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج المستخدمين: {str(e)}")
+    
+    return log
+
+def merge_categories_table_safe(current_cursor, backup_cursor):
+    """دمج جدول التصنيفات بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('SELECT id, name, description FROM categories')
+        backup_categories = backup_cursor.fetchall()
+        
+        # جلب التصنيفات الحالية
+        current_cursor.execute('SELECT name FROM categories')
+        existing_names = set(row[0] for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for category in backup_categories:
+            if category[1] in existing_names:
+                preserved_count += 1
+            else:
+                current_cursor.execute('INSERT INTO categories (name, description) VALUES (?, ?)', 
+                                     (category[1], category[2]))
+                added_count += 1
+        
+        log.append(f"التصنيفات: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج التصنيفات: {str(e)}")
+    
+    return log
+
+def merge_stores_table_safe(current_cursor, backup_cursor):
+    """دمج جدول المحلات بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('''
+            SELECT id, name, category_id, address, phone, description, image_url, 
+                   user_id, is_approved, visits_count, search_count, rating_avg, created_at
+            FROM stores
+        ''')
+        backup_stores = backup_cursor.fetchall()
+        
+        # جلب المحلات الحالية (بناءً على الاسم والعنوان)
+        current_cursor.execute('SELECT name, address FROM stores')
+        existing_stores = set((row[0], row[1]) for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for store in backup_stores:
+            store_key = (store[1], store[3])  # (name, address)
+            
+            if store_key in existing_stores:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO stores (name, category_id, address, phone, description, image_url, 
+                                      user_id, is_approved, visits_count, search_count, rating_avg, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', store[1:])
+                added_count += 1
+        
+        log.append(f"المحلات: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج المحلات: {str(e)}")
+    
+    return log
+
+def merge_services_table_safe(current_cursor, backup_cursor):
+    """دمج جدول الخدمات الهامة بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('SELECT id, name, phone, description, category FROM important_services')
+        backup_services = backup_cursor.fetchall()
+        
+        # جلب الخدمات الحالية
+        current_cursor.execute('SELECT name, phone FROM important_services')
+        existing_services = set((row[0], row[1]) for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for service in backup_services:
+            service_key = (service[1], service[2])  # (name, phone)
+            
+            if service_key in existing_services:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO important_services (name, phone, description, category) 
+                    VALUES (?, ?, ?, ?)
+                ''', (service[1], service[2], service[3], service[4]))
+                added_count += 1
+        
+        log.append(f"الخدمات الهامة: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الخدمات الهامة: {str(e)}")
+    
+    return log
+
+def merge_service_categories_table_safe(current_cursor, backup_cursor):
+    """دمج جدول تصنيفات الخدمات بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('SELECT id, name, description, icon, color FROM service_categories')
+        backup_categories = backup_cursor.fetchall()
+        
+        # جلب تصنيفات الخدمات الحالية
+        current_cursor.execute('SELECT name FROM service_categories')
+        existing_names = set(row[0] for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for category in backup_categories:
+            if category[1] in existing_names:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO service_categories (name, description, icon, color) 
+                    VALUES (?, ?, ?, ?)
+                ''', (category[1], category[2], category[3], category[4]))
+                added_count += 1
+        
+        log.append(f"تصنيفات الخدمات: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج تصنيفات الخدمات: {str(e)}")
+    
+    return log
+
+def merge_duty_pharmacies_table_safe(current_cursor, backup_cursor):
+    """دمج جدول الصيدليات المناوبة بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('SELECT id, name, address, phone, duty_date FROM duty_pharmacies')
+        backup_pharmacies = backup_cursor.fetchall()
+        
+        # جلب الصيدليات المناوبة الحالية
+        current_cursor.execute('SELECT duty_date FROM duty_pharmacies')
+        existing_dates = set(row[0] for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for pharmacy in backup_pharmacies:
+            if pharmacy[4] in existing_dates:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO duty_pharmacies (name, address, phone, duty_date) 
+                    VALUES (?, ?, ?, ?)
+                ''', (pharmacy[1], pharmacy[2], pharmacy[3], pharmacy[4]))
+                added_count += 1
+        
+        log.append(f"الصيدليات المناوبة: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الصيدليات المناوبة: {str(e)}")
+    
+    return log
+
+def merge_notifications_table_safe(current_cursor, backup_cursor):
+    """دمج جدول الإشعارات بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('''
+            SELECT id, title, message, type, is_active, created_at, expires_at 
+            FROM notifications
+        ''')
+        backup_notifications = backup_cursor.fetchall()
+        
+        # جلب الإشعارات الحالية
+        current_cursor.execute('SELECT title, message FROM notifications')
+        existing_notifications = set((row[0], row[1]) for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for notification in backup_notifications:
+            notification_key = (notification[1], notification[2])  # (title, message)
+            
+            if notification_key in existing_notifications:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO notifications (title, message, type, is_active, created_at, expires_at) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (notification[1], notification[2], notification[3], notification[4], notification[5], notification[6]))
+                added_count += 1
+        
+        log.append(f"الإشعارات: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الإشعارات: {str(e)}")
+    
+    return log
+
+def merge_ticker_messages_table_safe(current_cursor, backup_cursor):
+    """دمج جدول الشريط المتحرك بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('''
+            SELECT id, message, type, priority, is_active, direction, speed, 
+                   background_color, text_color, font_size, created_at
+            FROM ticker_messages
+        ''')
+        backup_messages = backup_cursor.fetchall()
+        
+        # جلب رسائل الشريط المتحرك الحالية
+        current_cursor.execute('SELECT message FROM ticker_messages')
+        existing_messages = set(row[0] for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for message in backup_messages:
+            if message[1] in existing_messages:
+                preserved_count += 1
+            else:
+                try:
+                    current_cursor.execute('''
+                        INSERT INTO ticker_messages (message, type, priority, is_active, direction, 
+                                                   speed, background_color, text_color, font_size, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', message[1:])
+                    added_count += 1
+                except:
+                    # إذا فشل، جرب بدون الأعمدة الجديدة
+                    current_cursor.execute('''
+                        INSERT INTO ticker_messages (message, type, priority, is_active, created_at) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (message[1], message[2], message[3], message[4], message[10]))
+                    added_count += 1
+        
+        log.append(f"رسائل الشريط المتحرك: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج رسائل الشريط المتحرك: {str(e)}")
+    
+    return log
+
+def merge_ratings_table_safe(current_cursor, backup_cursor):
+    """دمج جدول التقييمات بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('''
+            SELECT id, store_id, user_id, rating, comment, created_at
+            FROM ratings
+        ''')
+        backup_ratings = backup_cursor.fetchall()
+        
+        # جلب التقييمات الحالية
+        current_cursor.execute('SELECT store_id, user_id FROM ratings')
+        existing_ratings = set((row[0], row[1]) for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for rating in backup_ratings:
+            rating_key = (rating[1], rating[2])  # (store_id, user_id)
+            
+            if rating_key in existing_ratings:
+                preserved_count += 1
+            else:
+                try:
+                    current_cursor.execute('''
+                        INSERT INTO ratings (store_id, user_id, rating, comment, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (rating[1], rating[2], rating[3], rating[4], rating[5], rating[5]))
+                    added_count += 1
+                except:
+                    current_cursor.execute('''
+                        INSERT INTO ratings (store_id, user_id, rating, comment, created_at) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (rating[1], rating[2], rating[3], rating[4], rating[5]))
+                    added_count += 1
+        
+        log.append(f"التقييمات: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج التقييمات: {str(e)}")
+    
+    return log
+
+def merge_site_settings_table_safe(current_cursor, backup_cursor):
+    """دمج جدول إعدادات الموقع بطريقة آمنة"""
+    log = []
+    try:
+        backup_cursor.execute('''
+            SELECT id, setting_key, setting_value, description, category 
+            FROM site_settings
+        ''')
+        backup_settings = backup_cursor.fetchall()
+        
+        # جلب الإعدادات الحالية
+        current_cursor.execute('SELECT setting_key FROM site_settings')
+        existing_keys = set(row[0] for row in current_cursor.fetchall())
+        
+        added_count = 0
+        preserved_count = 0
+        
+        for setting in backup_settings:
+            if setting[1] in existing_keys:
+                preserved_count += 1
+            else:
+                current_cursor.execute('''
+                    INSERT INTO site_settings (setting_key, setting_value, description, category) 
+                    VALUES (?, ?, ?, ?)
+                ''', (setting[1], setting[2], setting[3], setting[4]))
+                added_count += 1
+        
+        log.append(f"إعدادات الموقع: تم إضافة {added_count} جديد، المحافظة على {preserved_count} موجود")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج إعدادات الموقع: {str(e)}")
+    
+    return log
+
+def merge_points_tables_safe(current_cursor, backup_cursor):
+    """دمج جداول النقاط والهدايا بطريقة آمنة"""
+    log = []
+    try:
+        # دمج إعدادات النقاط
+        try:
+            backup_cursor.execute('''
+                SELECT id, setting_key, setting_value, description, updated_at 
+                FROM points_settings
+            ''')
+            backup_points_settings = backup_cursor.fetchall()
+            
+            # جلب إعدادات النقاط الحالية
+            current_cursor.execute('SELECT setting_key FROM points_settings')
+            existing_keys = set(row[0] for row in current_cursor.fetchall())
+            
+            for setting in backup_points_settings:
+                if setting[1] not in existing_keys:
+                    current_cursor.execute('''
+                        INSERT INTO points_settings (setting_key, setting_value, description, updated_at) 
+                        VALUES (?, ?, ?, ?)
+                    ''', (setting[1], setting[2], setting[3], setting[4]))
+        except:
+            pass
+        
+        # دمج الهدايا
+        try:
+            backup_cursor.execute('''
+                SELECT id, name, description, points_cost, is_active, stock_quantity, 
+                       image_url, category, created_at, updated_at 
+                FROM gifts
+            ''')
+            backup_gifts = backup_cursor.fetchall()
+            
+            # جلب الهدايا الحالية
+            current_cursor.execute('SELECT name FROM gifts')
+            existing_names = set(row[0] for row in current_cursor.fetchall())
+            
+            gifts_added = 0
+            for gift in backup_gifts:
+                if gift[1] not in existing_names:
+                    current_cursor.execute('''
+                        INSERT INTO gifts (name, description, points_cost, is_active, stock_quantity, 
+                                         image_url, category, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', gift[1:])
+                    gifts_added += 1
+            
+            log.append(f"الهدايا: تم إضافة {gifts_added} هدية جديدة، المحافظة على الهدايا الموجودة")
+        except:
+            pass
+        
+        log.append("تم دمج جداول النقاط والهدايا بنجاح مع الحفاظ على البيانات الحالية")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج جداول النقاط: {str(e)}")
+    
+    return log
+
+def merge_categories_table(cursor):
+    """دمج جدول التصنيفات"""
+    log = []
+    try:
+        cursor.execute('SELECT id, name, description FROM backup_db.categories')
+        backup_categories = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for category in backup_categories:
+            cursor.execute('SELECT id FROM categories WHERE name = ?', (category[1],))
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.execute('UPDATE categories SET description = ? WHERE name = ?', 
+                             (category[2], category[1]))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                cursor.execute('INSERT INTO categories (name, description) VALUES (?, ?)', 
+                             (category[1], category[2]))
+                added_count += 1
+        
+        log.append(f"التصنيفات: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج التصنيفات: {str(e)}")
+    
+    return log
+
+def merge_stores_table(cursor):
+    """دمج جدول المحلات"""
+    log = []
+    try:
+        cursor.execute('''
+            SELECT id, name, category_id, address, phone, description, image_url, 
+                   user_id, is_approved, visits_count, search_count, rating_avg, created_at
+            FROM backup_db.stores
+        ''')
+        backup_stores = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for store in backup_stores:
+            # البحث عن محل بنفس الاسم والعنوان
+            cursor.execute('SELECT id FROM stores WHERE name = ? AND address = ?', 
+                         (store[1], store[3]))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # تحديث المحل الموجود (الحفاظ على الإحصائيات الأعلى)
+                cursor.execute('''
+                    SELECT visits_count, search_count, rating_avg, is_approved 
+                    FROM stores WHERE id = ?
+                ''', (existing[0],))
+                current_stats = cursor.fetchone()
+                
+                new_visits = max(current_stats[0] or 0, store[9] or 0)
+                new_search = max(current_stats[1] or 0, store[10] or 0)
+                new_rating = max(current_stats[2] or 0, store[11] or 0)
+                new_approved = max(current_stats[3] or 0, store[8] or 0)
+                
+                cursor.execute('''
+                    UPDATE stores SET 
+                        description = ?, phone = ?, image_url = ?, 
+                        visits_count = ?, search_count = ?, rating_avg = ?, is_approved = ?
+                    WHERE id = ?
+                ''', (store[5], store[4], store[6], new_visits, new_search, new_rating, new_approved, existing[0]))
+                
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                # إضافة محل جديد
+                cursor.execute('''
+                    INSERT INTO stores (name, category_id, address, phone, description, image_url, 
+                                      user_id, is_approved, visits_count, search_count, rating_avg, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', store[1:])
+                added_count += 1
+        
+        log.append(f"المحلات: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج المحلات: {str(e)}")
+    
+    return log
+
+def merge_services_table(cursor):
+    """دمج جدول الخدمات الهامة"""
+    log = []
+    try:
+        cursor.execute('SELECT id, name, phone, description, category FROM backup_db.important_services')
+        backup_services = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for service in backup_services:
+            cursor.execute('SELECT id FROM important_services WHERE name = ? AND phone = ?', 
+                         (service[1], service[2]))
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.execute('''
+                    UPDATE important_services SET description = ?, category = ? 
+                    WHERE id = ?
+                ''', (service[3], service[4], existing[0]))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                cursor.execute('''
+                    INSERT INTO important_services (name, phone, description, category) 
+                    VALUES (?, ?, ?, ?)
+                ''', (service[1], service[2], service[3], service[4]))
+                added_count += 1
+        
+        log.append(f"الخدمات الهامة: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الخدمات الهامة: {str(e)}")
+    
+    return log
+
+def merge_service_categories_table(cursor):
+    """دمج جدول تصنيفات الخدمات"""
+    log = []
+    try:
+        cursor.execute('SELECT id, name, description, icon, color FROM backup_db.service_categories')
+        backup_categories = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for category in backup_categories:
+            cursor.execute('SELECT id FROM service_categories WHERE name = ?', (category[1],))
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.execute('''
+                    UPDATE service_categories SET description = ?, icon = ?, color = ? 
+                    WHERE name = ?
+                ''', (category[2], category[3], category[4], category[1]))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                cursor.execute('''
+                    INSERT INTO service_categories (name, description, icon, color) 
+                    VALUES (?, ?, ?, ?)
+                ''', (category[1], category[2], category[3], category[4]))
+                added_count += 1
+        
+        log.append(f"تصنيفات الخدمات: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج تصنيفات الخدمات: {str(e)}")
+    
+    return log
+
+def merge_duty_pharmacies_table(cursor):
+    """دمج جدول الصيدليات المناوبة"""
+    log = []
+    try:
+        cursor.execute('SELECT id, name, address, phone, duty_date FROM backup_db.duty_pharmacies')
+        backup_pharmacies = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for pharmacy in backup_pharmacies:
+            cursor.execute('SELECT id FROM duty_pharmacies WHERE duty_date = ?', (pharmacy[4],))
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.execute('''
+                    UPDATE duty_pharmacies SET name = ?, address = ?, phone = ? 
+                    WHERE duty_date = ?
+                ''', (pharmacy[1], pharmacy[2], pharmacy[3], pharmacy[4]))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                cursor.execute('''
+                    INSERT INTO duty_pharmacies (name, address, phone, duty_date) 
+                    VALUES (?, ?, ?, ?)
+                ''', (pharmacy[1], pharmacy[2], pharmacy[3], pharmacy[4]))
+                added_count += 1
+        
+        log.append(f"الصيدليات المناوبة: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الصيدليات المناوبة: {str(e)}")
+    
+    return log
+
+def merge_notifications_table(cursor):
+    """دمج جدول الإشعارات"""
+    log = []
+    try:
+        cursor.execute('''
+            SELECT id, title, message, type, is_active, created_at, expires_at 
+            FROM backup_db.notifications
+        ''')
+        backup_notifications = cursor.fetchall()
+        
+        added_count = 0
+        
+        for notification in backup_notifications:
+            # إضافة الإشعارات الجديدة فقط (تجنب التكرار بناءً على العنوان والرسالة)
+            cursor.execute('SELECT id FROM notifications WHERE title = ? AND message = ?', 
+                         (notification[1], notification[2]))
+            existing = cursor.fetchone()
+            
+            if not existing:
+                cursor.execute('''
+                    INSERT INTO notifications (title, message, type, is_active, created_at, expires_at) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (notification[1], notification[2], notification[3], notification[4], notification[5], notification[6]))
+                added_count += 1
+        
+        log.append(f"الإشعارات: تم إضافة {added_count} إشعار جديد")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج الإشعارات: {str(e)}")
+    
+    return log
+
+def merge_ticker_messages_table(cursor):
+    """دمج جدول الشريط المتحرك"""
+    log = []
+    try:
+        cursor.execute('''
+            SELECT id, message, type, priority, is_active, direction, speed, 
+                   background_color, text_color, font_size, created_at
+            FROM backup_db.ticker_messages
+        ''')
+        backup_messages = cursor.fetchall()
+        
+        added_count = 0
+        
+        for message in backup_messages:
+            # إضافة الرسائل الجديدة فقط
+            cursor.execute('SELECT id FROM ticker_messages WHERE message = ?', (message[1],))
+            existing = cursor.fetchone()
+            
+            if not existing:
+                try:
+                    cursor.execute('''
+                        INSERT INTO ticker_messages (message, type, priority, is_active, direction, 
+                                                   speed, background_color, text_color, font_size, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', message[1:])
+                    added_count += 1
+                except:
+                    # إذا فشل، جرب بدون الأعمدة الجديدة
+                    cursor.execute('''
+                        INSERT INTO ticker_messages (message, type, priority, is_active, created_at) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (message[1], message[2], message[3], message[4], message[10]))
+                    added_count += 1
+        
+        log.append(f"رسائل الشريط المتحرك: تم إضافة {added_count} رسالة جديدة")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج رسائل الشريط المتحرك: {str(e)}")
+    
+    return log
+
+def merge_ratings_table(cursor):
+    """دمج جدول التقييمات"""
+    log = []
+    try:
+        cursor.execute('''
+            SELECT id, store_id, user_id, rating, comment, created_at
+            FROM backup_db.ratings
+        ''')
+        backup_ratings = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for rating in backup_ratings:
+            cursor.execute('SELECT id, rating, comment FROM ratings WHERE store_id = ? AND user_id = ?', 
+                         (rating[1], rating[2]))
+            existing = cursor.fetchone()
+            
+            if existing:
+                # تحديث التقييم إذا كان مختلفاً
+                if existing[1] != rating[3] or existing[2] != rating[4]:
+                    try:
+                        cursor.execute('''
+                            UPDATE ratings SET rating = ?, comment = ?, updated_at = ? 
+                            WHERE store_id = ? AND user_id = ?
+                        ''', (rating[3], rating[4], rating[5], rating[1], rating[2]))
+                    except:
+                        cursor.execute('''
+                            UPDATE ratings SET rating = ?, comment = ? 
+                            WHERE store_id = ? AND user_id = ?
+                        ''', (rating[3], rating[4], rating[1], rating[2]))
+                    updated_count += 1
+            else:
+                # إضافة تقييم جديد
+                try:
+                    cursor.execute('''
+                        INSERT INTO ratings (store_id, user_id, rating, comment, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (rating[1], rating[2], rating[3], rating[4], rating[5], rating[5]))
+                except:
+                    cursor.execute('''
+                        INSERT INTO ratings (store_id, user_id, rating, comment, created_at) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (rating[1], rating[2], rating[3], rating[4], rating[5]))
+                added_count += 1
+        
+        log.append(f"التقييمات: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج التقييمات: {str(e)}")
+    
+    return log
+
+def merge_site_settings_table(cursor):
+    """دمج جدول إعدادات الموقع"""
+    log = []
+    try:
+        cursor.execute('''
+            SELECT id, setting_key, setting_value, description, category 
+            FROM backup_db.site_settings
+        ''')
+        backup_settings = cursor.fetchall()
+        
+        updated_count = 0
+        added_count = 0
+        
+        for setting in backup_settings:
+            cursor.execute('SELECT id FROM site_settings WHERE setting_key = ?', (setting[1],))
+            existing = cursor.fetchone()
+            
+            if existing:
+                cursor.execute('''
+                    UPDATE site_settings SET setting_value = ?, description = ?, category = ? 
+                    WHERE setting_key = ?
+                ''', (setting[2], setting[3], setting[4], setting[1]))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            else:
+                cursor.execute('''
+                    INSERT INTO site_settings (setting_key, setting_value, description, category) 
+                    VALUES (?, ?, ?, ?)
+                ''', (setting[1], setting[2], setting[3], setting[4]))
+                added_count += 1
+        
+        log.append(f"إعدادات الموقع: تم إضافة {added_count} وتحديث {updated_count}")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج إعدادات الموقع: {str(e)}")
+    
+    return log
+
+def merge_points_tables(cursor):
+    """دمج جداول النقاط والهدايا"""
+    log = []
+    try:
+        # دمج إعدادات النقاط
+        try:
+            cursor.execute('''
+                SELECT id, setting_key, setting_value, description, updated_at 
+                FROM backup_db.points_settings
+            ''')
+            backup_points_settings = cursor.fetchall()
+            
+            for setting in backup_points_settings:
+                cursor.execute('SELECT id FROM points_settings WHERE setting_key = ?', (setting[1],))
+                if cursor.fetchone():
+                    cursor.execute('''
+                        UPDATE points_settings SET setting_value = ?, description = ?, updated_at = ? 
+                        WHERE setting_key = ?
+                    ''', (setting[2], setting[3], setting[4], setting[1]))
+                else:
+                    cursor.execute('''
+                        INSERT INTO points_settings (setting_key, setting_value, description, updated_at) 
+                        VALUES (?, ?, ?, ?)
+                    ''', (setting[1], setting[2], setting[3], setting[4]))
+        except:
+            pass
+        
+        # دمج الهدايا
+        try:
+            cursor.execute('''
+                SELECT id, name, description, points_cost, is_active, stock_quantity, 
+                       image_url, category, created_at, updated_at 
+                FROM backup_db.gifts
+            ''')
+            backup_gifts = cursor.fetchall()
+            
+            gifts_added = 0
+            for gift in backup_gifts:
+                cursor.execute('SELECT id FROM gifts WHERE name = ?', (gift[1],))
+                if not cursor.fetchone():
+                    cursor.execute('''
+                        INSERT INTO gifts (name, description, points_cost, is_active, stock_quantity, 
+                                         image_url, category, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', gift[1:])
+                    gifts_added += 1
+            
+            log.append(f"الهدايا: تم إضافة {gifts_added} هدية جديدة")
+        except:
+            pass
+        
+        log.append("تم دمج جداول النقاط والهدايا بنجاح")
+        
+    except Exception as e:
+        log.append(f"خطأ في دمج جداول النقاط: {str(e)}")
+    
+    return log
+
+# حفظ النسخة المرفوعة في جدول النسخ الاحتياطية
+@app.route('/admin/save-uploaded-backup', methods=['POST'])
+def save_uploaded_backup():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    try:
+        if 'backup_file' not in request.files:
+            flash('لم يتم اختيار ملف', 'error')
+            return redirect(url_for('admin_backup'))
+
+        file = request.files['backup_file']
+        if file.filename == '':
+            flash('لم يتم اختيار ملف', 'error')
+            return redirect(url_for('admin_backup'))
+
+        # التحقق من نوع الملف
+        allowed_extensions = ['.db', '.zip']
+        if not any(file.filename.endswith(ext) for ext in allowed_extensions):
+            flash('يجب أن يكون الملف من نوع .db أو .zip', 'error')
+            return redirect(url_for('admin_backup'))
+
+        # إنشاء مجلد النسخ الاحتياطية
+        os.makedirs('backups', exist_ok=True)
+
+        # إنشاء اسم ملف مميز للنسخة المرفوعة
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        original_name = secure_filename(file.filename)
+        name_without_ext = os.path.splitext(original_name)[0]
+        file_ext = os.path.splitext(original_name)[1]
+        
+        # تمييز النسخة المرفوعة في الاسم
+        new_filename = f"uploaded_{name_without_ext}_{timestamp}{file_ext}"
+        backup_path = os.path.join('backups', new_filename)
+
+        # حفظ الملف
+        file.save(backup_path)
+
+        file_size = os.path.getsize(backup_path)
+        size_text = f"{file_size / 1024:.1f} KB" if file_size < 1024*1024 else f"{file_size / (1024*1024):.1f} MB"
+        
+        flash(f'تم حفظ النسخة المرفوعة بنجاح: {new_filename} ({size_text})', 'success')
+
+    except Exception as e:
+        flash(f'خطأ في حفظ النسخة المرفوعة: {str(e)}', 'error')
+
+    return redirect(url_for('admin_backup'))
+
 # رفع واستعادة النسخة الاحتياطية
 @app.route('/admin/restore-backup', methods=['POST'])
 def restore_backup():
     if 'user_id' not in session or not session.get('is_admin'):
         return redirect(url_for('index'))
 
-    if 'backup_file' not in request.files:
-        flash('لم يتم اختيار ملف', 'error')
-        return redirect(url_for('admin_backup'))
-
-    file = request.files['backup_file']
-    if file.filename == '':
-        flash('لم يتم اختيار ملف', 'error')
-        return redirect(url_for('admin_backup'))
-
-    if file and file.filename.endswith('.db'):
-        try:
+    # التحقق من وجود اسم ملف من القائمة
+    backup_filename = request.form.get('backup_filename')
+    merge_data = request.form.get('merge_data') == 'on'
+    
+    try:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        if backup_filename:
+            # استعادة من النسخ الموجودة في القائمة
+            backup_path = os.path.join('backups', backup_filename)
+            
+            if not os.path.exists(backup_path):
+                flash('الملف غير موجود', 'error')
+                return redirect(url_for('admin_backup'))
+            
             # إنشاء نسخة احتياطية من قاعدة البيانات الحالية
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            current_backup = f'hussainiya_stores_backup_before_restore_{timestamp}.db'
+            shutil.copy2('hussainiya_stores.db', current_backup)
+            
+            temp_backup_path = f'temp_restore_{timestamp}.db'
+            shutil.copy2(backup_path, temp_backup_path)
+            
+        else:
+            # استعادة من ملف مرفوع
+            if 'backup_file' not in request.files:
+                flash('لم يتم اختيار ملف', 'error')
+                return redirect(url_for('admin_backup'))
+
+            file = request.files['backup_file']
+            if file.filename == '':
+                flash('لم يتم اختيار ملف', 'error')
+                return redirect(url_for('admin_backup'))
+
+            if not file.filename.endswith('.db'):
+                flash('يجب أن يكون الملف من نوع .db', 'error')
+                return redirect(url_for('admin_backup'))
+
+            # إنشاء نسخة احتياطية من قاعدة البيانات الحالية
             current_backup = f'hussainiya_stores_backup_before_restore_{timestamp}.db'
             shutil.copy2('hussainiya_stores.db', current_backup)
 
-            # استعادة النسخة الاحتياطية المرفوعة
+            # حفظ الملف المرفوع مؤقتاً
             filename = secure_filename(file.filename)
-            file.save('hussainiya_stores.db')
+            temp_backup_path = f'temp_backup_{timestamp}.db'
+            file.save(temp_backup_path)
 
-            flash('تم استعادة النسخة الاحتياطية بنجاح', 'success')
-        except Exception as e:
-            flash(f'خطأ في استعادة النسخة الاحتياطية: {str(e)}', 'error')
-    else:
-        flash('يجب أن يكون الملف من نوع .db', 'error')
+        # تطبيق الاستعادة حسب النوع المختار
+        if merge_data:
+            # دمج البيانات
+            success, merge_log = merge_databases(temp_backup_path, 'hussainiya_stores.db')
+            
+            if success:
+                flash(f'تم دمج البيانات بنجاح! تفاصيل العملية:', 'success')
+                for log_entry in merge_log[:10]:  # عرض أول 10 سطور
+                    flash(log_entry, 'info')
+                if len(merge_log) > 10:
+                    flash(f'... و {len(merge_log) - 10} عملية أخرى', 'info')
+            else:
+                flash('فشل في دمج البيانات', 'error')
+                for log_entry in merge_log:
+                    flash(log_entry, 'error')
+        else:
+            # استعادة كاملة (الطريقة القديمة)
+            shutil.copy2(temp_backup_path, 'hussainiya_stores.db')
+            flash('تم استعادة النسخة الاحتياطية بنجاح (استعادة كاملة)', 'success')
+
+        # حذف الملف المؤقت
+        if os.path.exists(temp_backup_path):
+            os.remove(temp_backup_path)
+
+    except Exception as e:
+        flash(f'خطأ في استعادة النسخة الاحتياطية: {str(e)}', 'error')
 
     return redirect(url_for('admin_backup'))
 
