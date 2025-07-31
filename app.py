@@ -907,6 +907,46 @@ def init_db():
         )
     ''')
 
+    # جدول العروض
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS offers (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT,
+            store_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            offer_type TEXT DEFAULT 'store_page',
+            custom_url TEXT,
+            custom_page_content TEXT,
+            image_url TEXT,
+            start_date DATE NOT NULL,
+            end_date DATE NOT NULL,
+            status TEXT DEFAULT 'pending',
+            is_featured BOOLEAN DEFAULT 0,
+            admin_notes TEXT,
+            views_count INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP,
+            processed_by INTEGER,
+            FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+            FOREIGN KEY (processed_by) REFERENCES users (id)
+        )
+    ''')
+
+    # جدول إحصائيات العروض
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS offer_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            offer_id TEXT NOT NULL,
+            views_count INTEGER DEFAULT 0,
+            clicks_count INTEGER DEFAULT 0,
+            last_viewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (offer_id) REFERENCES offers (id) ON DELETE CASCADE
+        )
+    ''')
+
     # إضافة عمود النقاط للمستخدمين الحاليين
     try:
         cursor.execute('ALTER TABLE users ADD COLUMN total_points INTEGER DEFAULT 0')
@@ -1915,6 +1955,16 @@ def dashboard():
     # الحصول على نقاط المستخدم
     points_summary = get_user_points_summary(session['user_id'])
 
+    # الحصول على عروض المستخدم
+    cursor.execute('''
+        SELECT o.id, o.title, o.description, o.start_date, o.end_date, 
+               o.status, o.is_featured, o.created_at
+        FROM offers o
+        WHERE o.user_id = ?
+        ORDER BY o.created_at DESC
+    ''', (session['user_id'],))
+    user_offers = cursor.fetchall()
+
     conn.close()
 
     return render_template('dashboard.html', 
@@ -1924,7 +1974,8 @@ def dashboard():
                          avg_rating=avg_rating,
                          approved_stores=approved_stores,
                          categories=categories,
-                         user_points=points_summary['available_points'])
+                         user_points=points_summary['available_points'],
+                         user_offers=user_offers)
 
 # صفحة الخدمات الهامة - مع التسجيل الإجباري
 @app.route('/important-services')
@@ -2411,6 +2462,76 @@ def add_store():
 
     flash('تم إضافة المحل بنجاح', 'success')
     return redirect(url_for('admin_stores'))
+
+# صفحة تعديل المحل للمستخدمين
+@app.route('/edit-store/<int:store_id>')
+def edit_store_page(store_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لتعديل المحل', 'warning')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن المحل يخص المستخدم الحالي
+    cursor.execute('''
+        SELECT s.*, c.name as category_name 
+        FROM stores s 
+        LEFT JOIN categories c ON s.category_id = c.id 
+        WHERE s.id = ? AND s.user_id = ?
+    ''', (store_id, session['user_id']))
+    store = cursor.fetchone()
+    
+    if not store:
+        flash('المحل غير موجود أو ليس لديك صلاحية لتعديله', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # الحصول على التصنيفات
+    cursor.execute('SELECT * FROM categories ORDER BY name')
+    categories = cursor.fetchall()
+    
+    conn.close()
+    return render_template('edit_store.html', store=store, categories=categories)
+
+# تعديل المحل (معالجة النموذج)
+@app.route('/edit-store/<int:store_id>', methods=['POST'])
+def update_store(store_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لتعديل المحل', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن المحل يخص المستخدم الحالي
+    cursor.execute('SELECT id FROM stores WHERE id = ? AND user_id = ?', (store_id, session['user_id']))
+    if not cursor.fetchone():
+        flash('المحل غير موجود أو ليس لديك صلاحية لتعديله', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    name = request.form['name']
+    category_id = request.form['category_id']
+    address = request.form['address']
+    phone = request.form.get('phone', '')
+    description = request.form.get('description', '')
+    
+    cursor.execute('''
+        UPDATE stores SET name = ?, category_id = ?, address = ?, phone = ?, description = ?
+        WHERE id = ? AND user_id = ?
+    ''', (name, category_id, address, phone, description, store_id, session['user_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('تم تحديث المحل بنجاح', 'success')
+    return redirect(url_for('dashboard'))
 
 # تعديل محل
 @app.route('/admin/edit-store/<int:store_id>', methods=['POST'])
@@ -3227,6 +3348,573 @@ def disable_expired_advanced_notification(notification_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# API للحصول على جدول مناوبة صيدلية محددة
+@app.route('/api/pharmacy-schedule', methods=['POST'])
+def get_pharmacy_schedule():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'يجب تسجيل الدخول'}), 401
+    
+    try:
+        data = request.get_json()
+        pharmacy_name = data.get('pharmacy_name', '').strip()
+        
+        if not pharmacy_name:
+            return jsonify({'success': False, 'error': 'اسم الصيدلية مطلوب'}), 400
+        
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # البحث عن جميع مناوبات هذه الصيدلية
+        cursor.execute('''
+            SELECT id, name, address, phone, duty_date 
+            FROM duty_pharmacies 
+            WHERE name LIKE ? OR name = ?
+            ORDER BY duty_date ASC
+        ''', (f'%{pharmacy_name}%', pharmacy_name))
+        
+        schedule_data = cursor.fetchall()
+        conn.close()
+        
+        # تحويل البيانات لصيغة JSON
+        schedule = []
+        for item in schedule_data:
+            schedule.append({
+                'id': item[0],
+                'name': item[1],
+                'address': item[2],
+                'phone': item[3],
+                'duty_date': item[4]
+            })
+        
+        return jsonify({
+            'success': True,
+            'schedule': schedule,
+            'total_count': len(schedule)
+        })
+        
+    except Exception as e:
+        print(f"خطأ في جلب جدول المناوبة: {e}")
+        return jsonify({'success': False, 'error': 'خطأ في الخادم'}), 500
+
+# صفحة العروض الرئيسية
+@app.route('/offers')
+def offers():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لعرض العروض', 'warning')
+        return redirect(url_for('login'))
+    
+    # الحصول على رقم الصفحة من URL
+    page = request.args.get('page', 1, type=int)
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على إعدادات العروض
+    settings = get_site_settings()
+    offers_per_page = int(settings.get('offers_per_page', '9'))
+    show_expired = settings.get('show_expired_offers', '0') == '1'
+    
+    # تحديد شرط التاريخ بناءً على الإعدادات
+    date_condition = "o.end_date >= date('now', 'localtime')" if not show_expired else "1=1"
+    
+    # حساب إجمالي العروض المعتمدة
+    cursor.execute(f'''
+        SELECT COUNT(*) FROM offers o
+        WHERE o.status = 'approved' AND {date_condition}
+    ''')
+    total_offers = cursor.fetchone()[0]
+    
+    # حساب عدد الصفحات
+    total_pages = (total_offers + offers_per_page - 1) // offers_per_page
+    
+    # التأكد من أن رقم الصفحة صحيح
+    if page < 1:
+        page = 1
+    elif page > total_pages and total_pages > 0:
+        page = total_pages
+    
+    # حساب الإزاحة
+    offset = (page - 1) * offers_per_page
+    
+    # الحصول على العروض المميزة للسلايدر فقط (أول 6 عروض)
+    cursor.execute(f'''
+        SELECT o.id, o.title, o.description, o.image_url, o.start_date, o.end_date, 
+               o.status, o.is_featured, o.views_count, o.created_at,
+               s.name as store_name, s.id as store_id,
+               u.full_name as owner_name
+        FROM offers o
+        LEFT JOIN stores s ON o.store_id = s.id
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.status = 'approved' AND o.is_featured = 1 AND {date_condition}
+        ORDER BY CASE WHEN o.start_date <= date('now', 'localtime') THEN 0 ELSE 1 END,
+                o.created_at DESC
+        LIMIT 6
+    ''')
+    featured_offers = cursor.fetchall()
+    
+    # الحصول على جميع العروض المعتمدة (مميزة وعادية) للقائمة الرئيسية
+    cursor.execute(f'''
+        SELECT o.id, o.title, o.description, o.image_url, o.start_date, o.end_date, 
+               o.status, o.is_featured, o.views_count, o.created_at,
+               s.name as store_name, s.id as store_id,
+               u.full_name as owner_name
+        FROM offers o
+        LEFT JOIN stores s ON o.store_id = s.id
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.status = 'approved' AND {date_condition}
+        ORDER BY o.is_featured DESC,
+                CASE WHEN o.start_date <= date('now', 'localtime') THEN 0 ELSE 1 END,
+                o.created_at DESC
+        LIMIT ? OFFSET ?
+    ''', (offers_per_page, offset))
+    regular_offers = cursor.fetchall()
+    
+    # جميع العروض للعرض
+    all_offers = list(regular_offers)
+    
+    print(f"الصفحة {page}: تم العثور على {len(featured_offers)} عرض مميز و {len(regular_offers)} عرض عادي")
+    
+    conn.close()
+    
+    # الحصول على التاريخ الحالي
+    from datetime import datetime
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    
+    return render_template('offers.html', 
+                         featured_offers=featured_offers,
+                         regular_offers=regular_offers,
+                         all_offers=all_offers,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_offers=total_offers,
+                         offers_per_page=offers_per_page,
+                         today_date=today_date)
+
+# صفحة إضافة عرض جديد
+@app.route('/offers/new')
+def add_offer_page():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لإضافة عرض', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على محلات المستخدم المعتمدة فقط
+    cursor.execute('''
+        SELECT id, name FROM stores 
+        WHERE user_id = ? AND is_approved = 1
+        ORDER BY name
+    ''', (session['user_id'],))
+    user_stores = cursor.fetchall()
+    
+    conn.close()
+    
+    if not user_stores:
+        flash('يجب أن يكون لديك محل معتمد واحد على الأقل لإضافة عرض', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('add_offer.html', user_stores=user_stores)
+
+# إضافة عرض جديد
+@app.route('/offers/new', methods=['POST'])
+def add_offer():
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لإضافة عرض', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    title = request.form['title'].strip()
+    description = request.form['description'].strip()
+    store_id = request.form['store_id']
+    offer_type = request.form['offer_type']
+    custom_url = request.form.get('custom_url', '').strip()
+    custom_page_content = request.form.get('custom_page_content', '').strip()
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    image_url = request.form.get('image_url', '').strip()
+    
+    # التحقق من الحقول الإجبارية
+    if not title:
+        flash('عنوان العرض مطلوب', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    if not description:
+        flash('وصف العرض مطلوب', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    if not store_id:
+        flash('يجب اختيار المحل', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    if not offer_type:
+        flash('يجب اختيار نوع العرض', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    # التحقق من الرابط المخصص إذا كان نوع العرض يتطلب ذلك
+    if offer_type == 'custom_url' and not custom_url:
+        flash('الرابط المخصص مطلوب لهذا النوع من العروض', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    # التحقق من محتوى الصفحة المخصصة إذا كان نوع العرض يتطلب ذلك
+    if offer_type == 'custom_page' and not custom_page_content:
+        flash('محتوى الصفحة المخصصة مطلوب لهذا النوع من العروض', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    # التحقق من التواريخ
+    from datetime import datetime
+    try:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        if end_dt <= start_dt:
+            flash('تاريخ النهاية يجب أن يكون بعد تاريخ البداية', 'error')
+            return redirect(url_for('add_offer_page'))
+    except ValueError:
+        flash('تنسيق التاريخ غير صحيح', 'error')
+        return redirect(url_for('add_offer_page'))
+    
+    # إنشاء UUID للعرض
+    import uuid
+    offer_id = str(uuid.uuid4())
+    
+    # إذا لم يتم رفع صورة، استخدم الصورة الافتراضية
+    if not image_url:
+        image_url = 'https://j.top4top.io/p_3483v39jn1.jpg'
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن المحل يخص المستخدم
+    cursor.execute('SELECT id FROM stores WHERE id = ? AND user_id = ?', (store_id, session['user_id']))
+    if not cursor.fetchone():
+        flash('المحل المحدد غير صحيح', 'error')
+        conn.close()
+        return redirect(url_for('add_offer_page'))
+    
+    # إضافة العرض
+    cursor.execute('''
+        INSERT INTO offers (id, title, description, store_id, user_id, offer_type, 
+                           custom_url, custom_page_content, image_url, start_date, end_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (offer_id, title, description, store_id, session['user_id'], offer_type,
+          custom_url, custom_page_content, image_url, start_date, end_date))
+    
+    # الحصول على معلومات للإشعار
+    cursor.execute('SELECT name FROM stores WHERE id = ?', (store_id,))
+    store = cursor.fetchone()
+    store_name = store[0] if store else 'غير محدد'
+    
+    conn.commit()
+    conn.close()
+    
+    # إرسال إشعار تليجرام للإدارة
+    try:
+        if telegram_bot:
+            asyncio.run(send_new_offer_notification(offer_id, title, store_name, session.get('user_name', 'مستخدم')))
+    except Exception as e:
+        print(f"خطأ في إرسال إشعار العرض: {e}")
+    
+    flash('تم إرسال عرضك بنجاح وسيتم مراجعته من قبل الإدارة خلال 24 ساعة.', 'success')
+    return redirect(url_for('offers'))
+
+# عرض تفاصيل العرض
+@app.route('/offers/<offer_id>')
+def offer_details(offer_id):
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # الحصول على تفاصيل العرض
+    cursor.execute('''
+        SELECT o.id, o.title, o.description, o.offer_type, o.custom_url, o.custom_page_content,
+               o.image_url, o.start_date, o.end_date, o.status, o.is_featured, 
+               o.views_count, o.created_at,
+               s.name as store_name, s.id as store_id, s.rating_avg, s.address,
+               u.full_name as owner_name
+        FROM offers o
+        LEFT JOIN stores s ON o.store_id = s.id
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.id = ?
+    ''', (offer_id,))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('offers'))
+    
+    # التحقق من أن العرض معتمد أو أن المستخدم هو صاحبه
+    if offer[9] != 'approved' and (not session.get('user_id') or 
+                                   not session.get('is_admin')):
+        # التحقق من أن المستخدم هو صاحب العرض
+        cursor.execute('SELECT user_id FROM offers WHERE id = ?', (offer_id,))
+        offer_owner = cursor.fetchone()
+        if not offer_owner or offer_owner[0] != session.get('user_id'):
+            flash('العرض غير متاح', 'error')
+            conn.close()
+            return redirect(url_for('offers'))
+    
+    # تحديث عداد المشاهدات
+    if offer[9] == 'approved':  # العروض المعتمدة فقط
+        cursor.execute('UPDATE offers SET views_count = views_count + 1 WHERE id = ?', (offer_id,))
+        conn.commit()
+    
+    conn.close()
+    
+    return render_template('offer_details.html', offer=offer)
+
+# صفحة تعديل العرض
+@app.route('/edit-offer/<offer_id>')
+def edit_offer_page(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لتعديل العرض', 'warning')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن العرض يخص المستخدم الحالي
+    cursor.execute('''
+        SELECT o.*, s.name as store_name
+        FROM offers o 
+        LEFT JOIN stores s ON o.store_id = s.id 
+        WHERE o.id = ? AND o.user_id = ?
+    ''', (offer_id, session['user_id']))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود أو ليس لديك صلاحية لتعديله', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # الحصول على محلات المستخدم المعتمدة فقط
+    cursor.execute('''
+        SELECT id, name FROM stores 
+        WHERE user_id = ? AND is_approved = 1
+        ORDER BY name
+    ''', (session['user_id'],))
+    user_stores = cursor.fetchall()
+    
+    conn.close()
+    return render_template('edit_offer.html', offer=offer, user_stores=user_stores)
+
+# تعديل العرض (معالجة النموذج)
+@app.route('/edit-offer/<offer_id>', methods=['POST'])
+def update_offer(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لتعديل العرض', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن العرض يخص المستخدم الحالي
+    cursor.execute('SELECT id, status FROM offers WHERE id = ? AND user_id = ?', (offer_id, session['user_id']))
+    offer_check = cursor.fetchone()
+    
+    if not offer_check:
+        flash('العرض غير موجود أو ليس لديك صلاحية لتعديله', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    title = request.form['title'].strip()
+    description = request.form['description'].strip()
+    store_id = request.form['store_id']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    image_url = request.form.get('image_url', '').strip()
+    
+    # التحقق من الحقول الإجبارية
+    if not title:
+        flash('عنوان العرض مطلوب', 'error')
+        conn.close()
+        return redirect(url_for('edit_offer_page', offer_id=offer_id))
+    
+    if not description:
+        flash('وصف العرض مطلوب', 'error')
+        conn.close()
+        return redirect(url_for('edit_offer_page', offer_id=offer_id))
+    
+    # التحقق من التواريخ
+    from datetime import datetime
+    try:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        if end_dt <= start_dt:
+            flash('تاريخ النهاية يجب أن يكون بعد تاريخ البداية', 'error')
+            conn.close()
+            return redirect(url_for('edit_offer_page', offer_id=offer_id))
+    except ValueError:
+        flash('تنسيق التاريخ غير صحيح', 'error')
+        conn.close()
+        return redirect(url_for('edit_offer_page', offer_id=offer_id))
+    
+    # التحقق من أن المحل يخص المستخدم
+    cursor.execute('SELECT id FROM stores WHERE id = ? AND user_id = ?', (store_id, session['user_id']))
+    if not cursor.fetchone():
+        flash('المحل المحدد غير صحيح', 'error')
+        conn.close()
+        return redirect(url_for('edit_offer_page', offer_id=offer_id))
+    
+    # إذا لم يتم توفير صورة، استخدم الافتراضية
+    if not image_url:
+        image_url = 'https://j.top4top.io/p_3483v39jn1.jpg'
+    
+    # تحديد الحالة الجديدة: إذا كان العرض معتمداً، يحتاج مراجعة مرة أخرى
+    old_status = offer_check[1]
+    new_status = 'pending' if old_status == 'approved' else old_status
+    
+    # تحديث العرض
+    cursor.execute('''
+        UPDATE offers 
+        SET title = ?, description = ?, store_id = ?, start_date = ?, end_date = ?, 
+            image_url = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?
+    ''', (title, description, store_id, start_date, end_date, image_url, new_status, offer_id, session['user_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    if new_status == 'pending' and old_status == 'approved':
+        flash('تم تحديث العرض بنجاح وسيتم مراجعته من قبل الإدارة مرة أخرى', 'success')
+    else:
+        flash('تم تحديث العرض بنجاح', 'success')
+    
+    return redirect(url_for('dashboard'))
+
+# صفحة تأكيد حذف العرض
+@app.route('/delete-offer/<offer_id>')
+def delete_offer_page(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لحذف العرض', 'warning')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن العرض يخص المستخدم الحالي
+    cursor.execute('''
+        SELECT o.*, s.name as store_name
+        FROM offers o 
+        LEFT JOIN stores s ON o.store_id = s.id 
+        WHERE o.id = ? AND o.user_id = ?
+    ''', (offer_id, session['user_id']))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود أو ليس لديك صلاحية لحذفه', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    store_name = offer[20] if len(offer) > 20 and offer[20] else 'غير محدد'
+    
+    conn.close()
+    return render_template('delete_offer.html', offer=offer, store_name=store_name)
+
+# حذف العرض (معالجة النموذج)
+@app.route('/delete-offer/<offer_id>', methods=['POST'])
+def delete_offer(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لحذف العرض', 'warning')
+        return redirect(url_for('login'))
+    
+    # التحقق من التحقق
+    redirect_response = check_verification_required()
+    if redirect_response:
+        return redirect_response
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن العرض يخص المستخدم الحالي
+    cursor.execute('SELECT title FROM offers WHERE id = ? AND user_id = ?', (offer_id, session['user_id']))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود أو ليس لديك صلاحية لحذفه', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    offer_title = offer[0]
+    
+    # حذف العرض
+    cursor.execute('DELETE FROM offers WHERE id = ? AND user_id = ?', (offer_id, session['user_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    flash(f'تم حذف العرض "{offer_title}" بنجاح', 'success')
+    return redirect(url_for('dashboard'))
+
+# API للحصول على العروض المميزة للسلايدر
+@app.route('/api/featured-offers')
+def get_featured_offers():
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        # الحصول على إعدادات العروض
+        settings = get_site_settings()
+        slider_count = int(settings.get('featured_offers_count', '6'))  # للسلايدر في الصفحة الرئيسية
+        show_expired = settings.get('show_expired_offers', '0') == '1'
+        
+        # استخدام التوقيت الحالي بتوقيت دمشق
+        from datetime import timezone, timedelta
+        damascus_tz = timezone(timedelta(hours=3))
+        damascus_time = datetime.now(damascus_tz)
+        current_date = damascus_time.strftime('%Y-%m-%d')
+        
+        # تحديد شرط التاريخ بناءً على الإعدادات
+        date_condition = "AND o.end_date >= ?" if not show_expired else ""
+        date_params = [current_date, current_date] if not show_expired else [current_date]
+        
+        # جلب العروض المميزة المعتمدة والصالحة
+        query = f'''
+            SELECT o.id, o.title, o.image_url, s.name as store_name, o.description
+            FROM offers o
+            LEFT JOIN stores s ON o.store_id = s.id
+            WHERE o.status = 'approved' AND o.is_featured = 1 {date_condition}
+            ORDER BY 
+                CASE WHEN o.start_date <= ? THEN 0 ELSE 1 END,
+                o.created_at DESC
+            LIMIT ?
+        '''
+        
+        cursor.execute(query, date_params + [slider_count])
+        offers = cursor.fetchall()
+        
+        print(f"العروض المميزة للسلايدر: {len(offers)} عرض")
+        
+        offers_list = []
+        for offer in offers:
+            offers_list.append({
+                'id': offer[0],
+                'title': offer[1],
+                'image_url': offer[2] or 'https://j.top4top.io/p_3483v39jn1.jpg',
+                'store_name': offer[3] or 'غير محدد',
+                'description': offer[4] or ''
+            })
+        
+        conn.close()
+        return jsonify({'success': True, 'offers': offers_list})
+        
+    except Exception as e:
+        print(f"خطأ في جلب العروض المميزة: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 # API للحصول على التوقيت الحالي بتوقيت دمشق
 @app.route('/api/current-time')
 def get_current_time():
@@ -3261,12 +3949,358 @@ def get_current_time():
         print(f"خطأ في الحصول على التوقيت: {e}")
         return jsonify({'error': 'خطأ في الحصول على التوقيت'}), 500
 
+# إدارة العروض - لوحة الإدارة
+@app.route('/admin/offers')
+def admin_offers():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    # الحصول على رقم الصفحة من URL
+    page = request.args.get('page', 1, type=int)
+    
+    # الحصول على إعدادات العروض
+    settings = get_site_settings()
+    items_per_page = int(settings.get('admin_offers_per_page', '15'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # حساب إجمالي العروض
+    cursor.execute('SELECT COUNT(*) FROM offers')
+    total_offers = cursor.fetchone()[0]
+
+    # حساب عدد الصفحات
+    total_pages = (total_offers + items_per_page - 1) // items_per_page
+    
+    # التأكد من أن رقم الصفحة صحيح
+    if page < 1:
+        page = 1
+    elif page > total_pages and total_pages > 0:
+        page = total_pages
+
+    # حساب الإزاحة
+    offset = (page - 1) * items_per_page
+
+    # جميع العروض مع بيانات إضافية مع التصفح
+    cursor.execute('''
+        SELECT o.id, o.title, o.description, o.start_date, o.end_date, 
+               o.status, o.is_featured, o.views_count, o.image_url, 
+               s.name as store_name, s.id as store_id,
+               u.full_name as owner_name, u.phone as owner_phone
+        FROM offers o
+        LEFT JOIN stores s ON o.store_id = s.id
+        LEFT JOIN users u ON o.user_id = u.id
+        ORDER BY o.created_at DESC
+        LIMIT ? OFFSET ?
+    ''', (items_per_page, offset))
+    current_page_offers = cursor.fetchall()
+
+    # إحصائيات العروض
+    cursor.execute('SELECT COUNT(*) FROM offers WHERE status = "pending"')
+    pending_offers = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM offers WHERE status = "approved"')
+    approved_offers = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM offers WHERE is_featured = 1')
+    featured_offers = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM offers WHERE end_date < date("now")')
+    expired_offers = cursor.fetchone()[0]
+
+    # الحصول على المحلات لإضافة عروض إدارية
+    cursor.execute('SELECT id, name FROM stores WHERE is_approved = 1 ORDER BY name')
+    stores = cursor.fetchall()
+
+    stats = {
+        'total_offers': total_offers,
+        'pending_offers': pending_offers,
+        'approved_offers': approved_offers,
+        'featured_offers': featured_offers,
+        'expired_offers': expired_offers
+    }
 
     conn.close()
+    return render_template('admin_offers.html', 
+                         current_page_offers=current_page_offers, 
+                         stores=stores, 
+                         stats=stats,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_offers=total_offers,
+                         items_per_page=items_per_page)
 
-    status_text = 'تم تفعيل' if new_status else 'تم إلغاء تفعيل'
-    flash(f'{status_text} المحل بنجاح', 'success')
-    return redirect(url_for('admin_stores'))
+# تفاصيل العرض للإدارة
+@app.route('/admin/offers/<offer_id>')
+def admin_offer_details(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT o.*, s.name as store_name, s.address as store_address,
+               u.full_name as owner_name, u.phone as owner_phone
+        FROM offers o
+        LEFT JOIN stores s ON o.store_id = s.id
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.id = ?
+    ''', (offer_id,))
+    offer = cursor.fetchone()
+
+    if not offer:
+        flash('العرض غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('admin_offers'))
+
+    # جلب جميع المحلات للقائمة المنسدلة
+    cursor.execute('SELECT id, name FROM stores ORDER BY name')
+    stores = cursor.fetchall()
+    
+    conn.close()
+    return render_template('admin_offer_details.html', offer=offer, stores=stores)
+
+# اعتماد العرض
+@app.route('/admin/approve-offer/<offer_id>')
+def approve_offer(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE offers SET status = "approved" WHERE id = ?', (offer_id,))
+    conn.commit()
+    conn.close()
+
+    flash('تم اعتماد العرض بنجاح', 'success')
+    return redirect(url_for('admin_offers'))
+
+# رفض العرض
+@app.route('/admin/reject-offer/<offer_id>', methods=['POST'])
+def reject_offer(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    reason = request.form.get('reason')
+    custom_reason = request.form.get('custom_reason')
+    
+    if reason == 'custom' and custom_reason:
+        admin_notes = custom_reason
+    else:
+        admin_notes = reason
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        UPDATE offers 
+        SET status = "rejected", admin_notes = ?, processed_at = CURRENT_TIMESTAMP, processed_by = ?
+        WHERE id = ?
+    ''', (admin_notes, session['user_id'], offer_id))
+    
+    conn.commit()
+    conn.close()
+
+    flash('تم رفض العرض', 'success')
+    return redirect(url_for('admin_offers'))
+
+# تمييز/إلغاء تمييز العرض
+@app.route('/admin/feature-offer/<offer_id>')
+def feature_offer(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # التحقق من الحالة الحالية للتمييز
+    cursor.execute('SELECT is_featured FROM offers WHERE id = ?', (offer_id,))
+    current_status = cursor.fetchone()
+    
+    if current_status:
+        new_status = 0 if current_status[0] else 1
+        cursor.execute('UPDATE offers SET is_featured = ? WHERE id = ?', (new_status, offer_id))
+        conn.commit()
+        
+        status_text = 'تم تمييز' if new_status else 'تم إلغاء تمييز'
+        flash(f'{status_text} العرض بنجاح', 'success')
+    else:
+        flash('العرض غير موجود', 'error')
+
+    conn.close()
+    return redirect(url_for('admin_offers'))
+
+# تعديل العرض من الإدارة
+@app.route('/admin/edit-offer/<offer_id>', methods=['POST'])
+def admin_edit_offer(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    title = request.form['title'].strip()
+    description = request.form['description'].strip()
+    store_id = request.form['store_id']
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    image_url = request.form.get('image_url', '').strip()
+    is_featured = 1 if request.form.get('is_featured') else 0
+
+    # التحقق من صحة التواريخ
+    from datetime import datetime
+    try:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        if end_dt <= start_dt:
+            flash('تاريخ النهاية يجب أن يكون بعد تاريخ البداية', 'error')
+            return redirect(url_for('admin_offers'))
+    except ValueError:
+        flash('تنسيق التاريخ غير صحيح', 'error')
+        return redirect(url_for('admin_offers'))
+
+    # إذا لم يتم توفير صورة، استخدم الافتراضية
+    if not image_url:
+        image_url = 'https://j.top4top.io/p_3483v39jn1.jpg'
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # تحديث العرض
+    cursor.execute('''
+        UPDATE offers 
+        SET title = ?, description = ?, store_id = ?, start_date = ?, end_date = ?, 
+            image_url = ?, is_featured = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    ''', (title, description, store_id, start_date, end_date, image_url, is_featured, offer_id))
+
+    conn.commit()
+    conn.close()
+
+    flash('تم تحديث العرض بنجاح', 'success')
+    return redirect(url_for('admin_offers'))
+
+# حذف العرض من الإدارة
+@app.route('/admin/delete-offer/<offer_id>')
+def admin_delete_offer(offer_id):
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    cursor.execute('DELETE FROM offers WHERE id = ?', (offer_id,))
+    conn.commit()
+    conn.close()
+
+    flash('تم حذف العرض بنجاح', 'success')
+    return redirect(url_for('admin_offers'))
+
+# صفحة إضافة عرض من الإدارة
+@app.route('/admin/add-offer-page')
+def admin_add_offer_page():
+    if 'user_id' not in session or not session.get('is_admin'):
+        flash('ليس لديك صلاحية للوصول لهذه الصفحة', 'error')
+        return redirect(url_for('index'))
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # جميع المحلات المعتمدة
+    cursor.execute('''
+        SELECT s.id, s.name, u.full_name as owner_name
+        FROM stores s
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.is_approved = 1
+        ORDER BY s.name
+    ''')
+    stores = cursor.fetchall()
+
+    conn.close()
+    return render_template('admin_add_offer.html', stores=stores)
+
+# إضافة عرض من الإدارة
+@app.route('/admin/add-offer', methods=['POST'])
+def admin_add_offer():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    title = request.form['title'].strip()
+    description = request.form['description'].strip()
+    store_id = request.form['store_id']
+    offer_type = request.form['offer_type']
+    custom_url = request.form.get('custom_url', '').strip()
+    custom_page_content = request.form.get('custom_page_content', '').strip()
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    image_url = request.form.get('image_url', '').strip()
+    is_featured = 1 if request.form.get('is_featured') else 0
+
+    # إنشاء UUID للعرض
+    import uuid
+    offer_id = str(uuid.uuid4())
+
+    # إذا لم يتم رفع صورة، استخدم الصورة الافتراضية
+    if not image_url:
+        image_url = 'https://j.top4top.io/p_3483v39jn1.jpg'
+
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+
+    # الحصول على user_id من المحل المحدد
+    cursor.execute('SELECT user_id FROM stores WHERE id = ?', (store_id,))
+    store_owner = cursor.fetchone()
+    
+    if store_owner:
+        user_id = store_owner[0]
+    else:
+        user_id = session['user_id']  # إذا لم يتم العثور على المحل، استخدم ID المدير
+
+    # إضافة العرض كمعتمد مباشرة
+    cursor.execute('''
+        INSERT INTO offers (id, title, description, store_id, user_id, offer_type, 
+                           custom_url, custom_page_content, image_url, start_date, end_date,
+                           status, is_featured, processed_by, processed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, CURRENT_TIMESTAMP)
+    ''', (offer_id, title, description, store_id, user_id, offer_type,
+          custom_url, custom_page_content, image_url, start_date, end_date, is_featured, session['user_id']))
+
+    conn.commit()
+    conn.close()
+
+    flash('تم إضافة العرض بنجاح', 'success')
+    return redirect(url_for('admin_offers'))
+
+# تعطيل العرض من قبل المستخدم
+@app.route('/disable-offer/<offer_id>', methods=['POST'])
+def disable_offer(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول لتعطيل العرض', 'warning')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من أن العرض يخص المستخدم الحالي
+    cursor.execute('SELECT id, title FROM offers WHERE id = ? AND user_id = ?', (offer_id, session['user_id']))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود أو ليس لديك صلاحية لتعطيله', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    offer_title = offer[1]
+    
+    # تعطيل العرض (تغيير الحالة إلى disabled)
+    cursor.execute('UPDATE offers SET status = "disabled" WHERE id = ? AND user_id = ?', (offer_id, session['user_id']))
+    
+    conn.commit()
+    conn.close()
+    
+    flash(f'تم تعطيل العرض "{offer_title}" بنجاح', 'success')
+    return redirect(url_for('dashboard'))
 
 # موافقة على محل
 @app.route('/admin/approve-store/<int:store_id>')
@@ -3814,6 +4848,55 @@ def delete_service(service_id):
     flash('تم حذف الخدمة بنجاح', 'success')
     return redirect(url_for('admin_services'))
 
+# تبديل حالة العرض (تفعيل/تعطيل)
+@app.route('/toggle-offer-status/<offer_id>')
+def toggle_offer_status(offer_id):
+    if 'user_id' not in session:
+        flash('يجب تسجيل الدخول أولاً', 'error')
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('hussainiya_stores.db')
+    cursor = conn.cursor()
+    
+    # التحقق من ملكية العرض
+    cursor.execute('''
+        SELECT o.*, s.user_id FROM offers o
+        JOIN stores s ON o.store_id = s.id
+        WHERE o.id = ?
+    ''', (offer_id,))
+    offer = cursor.fetchone()
+    
+    if not offer:
+        flash('العرض غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # التحقق من الصلاحية (المالك أو المدير)
+    if offer[-1] != session['user_id'] and not session.get('is_admin'):
+        flash('ليس لديك صلاحية لتعديل هذا العرض', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    # تبديل الحالة
+    current_status = offer[5]  # status field
+    if current_status == 'approved':
+        new_status = 'disabled'
+        message = 'تم تعطيل العرض'
+    elif current_status == 'disabled':
+        new_status = 'approved'
+        message = 'تم تفعيل العرض'
+    else:
+        flash('لا يمكن تغيير حالة هذا العرض', 'error')
+        conn.close()
+        return redirect(url_for('dashboard'))
+    
+    cursor.execute('UPDATE offers SET status = ? WHERE id = ?', (new_status, offer_id))
+    conn.commit()
+    conn.close()
+    
+    flash(message, 'success')
+    return redirect(url_for('dashboard'))
+
 # إدارة طلبات التحقق
 @app.route('/admin/verification-requests')
 def admin_verification_requests():
@@ -4057,6 +5140,10 @@ def get_auto_backup_status():
         'enabled': AUTO_BACKUP_ENABLED,
         'bot_available': telegram_bot is not None
     })
+
+
+
+# هذا القسم تم حذفه لإزالة التكرار
 
 # إدارة الكوبونات
 @app.route('/admin/coupons')
@@ -5026,6 +6113,15 @@ def create_settings_table():
         ('instagram_link', '', 'رابط انستقرام', 'contact'),
         ('whatsapp_number', '', 'رقم الواتساب', 'contact'),
 
+        # إعدادات العروض
+        ('featured_offers_count', '10', 'عدد العروض المميزة في السلايدر', 'offers'),
+        ('regular_offers_count', '12', 'عدد العروض العادية في الصفحة', 'offers'),
+        ('offers_per_page', '9', 'عدد العروض لكل صفحة', 'offers'),
+        ('show_expired_offers', '0', 'عرض العروض المنتهية الصلاحية', 'offers'),
+        ('auto_feature_admin_offers', '1', 'تمييز العروض الإدارية تلقائياً', 'offers'),
+        ('admin_offers_per_page', '15', 'عدد العروض في صفحة الإدارة', 'offers'),
+        ('max_offers_per_user', '5', 'حد أقصى للعروض لكل مستخدم', 'offers'),
+
         # إعدادات متقدمة
         ('auto_approve_stores', '0', 'الموافقة التلقائية على المحلات', 'advanced'),
         ('allow_user_registration', '1', 'السماح بتسجيل المستخدمين', 'advanced'),
@@ -5814,6 +6910,84 @@ async def send_verification_request_notification(user_id, user_name, user_phone)
                 
     except Exception as e:
         print(f"خطأ في إرسال إشعارات طلبات التحقق: {e}")
+
+async def send_new_offer_notification(offer_id, title, store_name, user_name):
+    """إرسال إشعار للمديرين عند إضافة عرض جديد"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        message = f"🎉 عرض جديد يحتاج للموافقة!\n\n"
+        message += f"🏪 المحل: {store_name}\n"
+        message += f"📢 العرض: {title}\n"
+        message += f"👤 المستخدم: {user_name}\n\n"
+        message += "يرجى مراجعة العرض من لوحة الإدارة"
+        
+        keyboard = [[
+            InlineKeyboardButton("مراجعة العروض", 
+                               url=f"https://{os.getenv('REPL_SLUG', 'localhost')}-{os.getenv('REPL_OWNER', 'user')}.replit.dev/admin/offers"),
+            InlineKeyboardButton("تفاصيل العرض", 
+                               url=f"https://{os.getenv('REPL_SLUG', 'localhost')}-{os.getenv('REPL_OWNER', 'user')}.replit.dev/admin/offers/{offer_id}")
+        ]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message,
+                    reply_markup=reply_markup
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال إشعار العرض للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات العروض: {e}")
+
+async def send_offer_status_notification(user_id, title, status, reason=None):
+    """إرسال إشعار للمديرين بحالة العرض"""
+    if not telegram_bot:
+        return
+        
+    try:
+        conn = sqlite3.connect('hussainiya_stores.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT telegram_id FROM admin_telegram_ids')
+        admin_ids = cursor.fetchall()
+        conn.close()
+        
+        if status == 'approved':
+            message = f"✅ تم الموافقة على العرض\n\n"
+            message += f"📢 العنوان: {title}\n"
+            message += f"🆔 معرف المستخدم: {user_id}\n\n"
+            message += "تم نشر العرض في الموقع"
+        else:
+            message = f"❌ تم رفض العرض\n\n"
+            message += f"📢 العنوان: {title}\n"
+            message += f"🆔 معرف المستخدم: {user_id}\n"
+            if reason:
+                message += f"📝 السبب: {reason}\n\n"
+            message += "يرجى إبلاغ المستخدم بالقرار"
+        
+        for admin_id in admin_ids:
+            try:
+                await telegram_bot.send_message(
+                    chat_id=admin_id[0],
+                    text=message
+                )
+            except Exception as e:
+                print(f"خطأ في إرسال إشعار حالة العرض للمدير {admin_id[0]}: {e}")
+                
+    except Exception as e:
+        print(f"خطأ في إرسال إشعارات حالة العروض: {e}")
 
 async def send_verification_status_notification(user_id, user_name, status, reason=None):
     """إرسال إشعار للمستخدم بحالة طلب التحقق"""
