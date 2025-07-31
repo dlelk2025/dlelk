@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نتائج البحث - دليل محلات الحسينية</title>
+    <title>نتائج البحث - دليل نشاطات تجارية الحسينية</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -480,11 +480,11 @@
                             <div class="row g-3">
                                 <div class="col-lg-3">
                                     <input type="text" name="q" class="form-control search-input" 
-                                           placeholder="ابحث عن محل، خدمة، أو منتج..." value="{{ query }}">
+                                           placeholder="ابحث عن نشاط تجاري، خدمة، أو منتج..." value="{{ query }}">
                                 </div>
                                 <div class="col-lg-3">
                                     <select name="category" class="form-control search-select">
-                                        <option value="">جميع تصنيفات المحلات</option>
+                                        <option value="">جميع تصنيفات النشاطات التجارية</option>
                                         {% for category in categories %}
                                         <option value="{{ category[0] }}" {% if selected_category == category[0]|string %}selected{% endif %}>
                                             {{ category[1] }}
@@ -512,7 +512,7 @@
                             <!-- نوع البحث -->
                             <div class="search-tabs text-center">
                                 <button type="submit" name="type" value="stores" class="tab-btn {% if search_type == 'stores' %}active{% endif %}">
-                                    <i class="bi bi-shop"></i> المحلات (افتراضي)
+                                    <i class="bi bi-shop"></i> النشاطات التجارية (افتراضي)
                                 </button>
                                 <button type="submit" name="type" value="all" class="tab-btn {% if search_type == 'all' %}active{% endif %}">
                                     <i class="bi bi-globe2"></i> البحث الشامل
@@ -548,7 +548,7 @@
                             <div class="results-summary">
                                 <div class="summary-item">
                                     <div class="summary-number">{{ store_results|length }}</div>
-                                    <div class="summary-label">محل تجاري</div>
+                                    <div class="summary-label">نشاط تجاري</div>
                                 </div>
                                 <div class="summary-item">
                                     <div class="summary-number">{{ service_results|length }}</div>
@@ -650,7 +650,7 @@
                 {% if store_results and search_type in ['all', 'stores'] %}
                 <div class="section-title">
                     <i class="bi bi-shop-window"></i>
-                    المحلات التجارية ({{ store_results|length }})
+                    النشاطات التجارية ({{ store_results|length }})
                 </div>
 
                 {% for store in store_results %}

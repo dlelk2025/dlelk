@@ -15,11 +15,18 @@
                 </div>
                 <div class="list-group list-group-flush">
                     <a href="#stores-section" class="list-group-item list-group-item-action active">
-                        <i class="bi bi-shop"></i> محلاتي
+                        <i class="bi bi-shop"></i> نشاطاتي التجارية
                         <span class="badge bg-primary rounded-pill">{{ user_stores|length }}</span>
                     </a>
+                    <a href="#offers-section" class="list-group-item list-group-item-action">
+                        <i class="bi bi-megaphone"></i> عروضي
+                        <span class="badge bg-success rounded-pill">{{ user_offers|length if user_offers else 0 }}</span>
+                    </a>
                     <a href="{{ url_for('add_store_page') }}" class="list-group-item list-group-item-action">
-                        <i class="bi bi-plus-circle"></i> إضافة محل جديد
+                        <i class="bi bi-plus-circle"></i> إضافة نشاط تجاري جديد
+                    </a>
+                    <a href="{{ url_for('add_offer_page') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-plus-circle"></i> إضافة عرض جديد
                     </a>
                     <a href="#profile" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#profileModal">
                         <i class="bi bi-person-gear"></i> تعديل الملف الشخصي
@@ -87,7 +94,7 @@
                 <h4 class="alert-heading">
                     <i class="bi bi-emoji-smile"></i> مرحباً بك، {{ session.user_name }}!
                 </h4>
-                <p class="mb-0">إدارة محلاتك وتتبع الإحصائيات من هنا.</p>
+                <p class="mb-0">إدارة نشاطاتك التجارية وتتبع الإحصائيات من هنا.</p>
             </div>
 
             <!-- الإحصائيات السريعة -->
@@ -99,7 +106,7 @@
                                 <i class="bi bi-shop display-6"></i>
                             </div>
                             <h3 class="mb-1">{{ user_stores|length }}</h3>
-                            <p class="text-muted mb-0">إجمالي المحلات</p>
+                            <p class="text-muted mb-0">إجمالي النشاطات التجارية</p>
                         </div>
                     </div>
                 </div>
@@ -110,7 +117,7 @@
                                 <i class="bi bi-check-circle display-6"></i>
                             </div>
                             <h3 class="mb-1">{{ approved_stores }}</h3>
-                            <p class="text-muted mb-0">محلات معتمدة</p>
+                            <p class="text-muted mb-0">نشاطات التجارية معتمدة</p>
                         </div>
                     </div>
                 </div>
@@ -136,16 +143,27 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i class="bi bi-megaphone display-6"></i>
+                            </div>
+                            <h3 class="mb-1">{{ user_offers|length if user_offers else 0 }}</h3>
+                            <p class="text-muted mb-0">إجمالي العروض</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- محلاتي -->
+            <!-- نشاطاتي التجارية -->
             <div class="card border-0 shadow-sm" id="stores-section">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-shop"></i> محلاتي
+                        <i class="bi bi-shop"></i> نشاطاتي التجارية
                     </h5>
                     <a href="{{ url_for('add_store_page') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> إضافة محل جديد
+                        <i class="bi bi-plus-circle"></i> إضافة نشاط تجاري جديد
                     </a>
                 </div>
                 <div class="card-body">
@@ -162,7 +180,7 @@
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editStoreModal{{ store[0] }}">
+                                                <li><a class="dropdown-item" href="{{ url_for('edit_store_page', store_id=store[0]) }}">
                                                     <i class="bi bi-pencil"></i> تعديل
                                                 </a></li>
                                                 <li><a class="dropdown-item" href="{{ url_for('store_ratings', store_id=store[0]) }}">
@@ -224,10 +242,10 @@
                                                 {% endif %}
                                             </small>
                                             <div>
-                                                <button class="btn btn-sm btn-outline-primary" 
-                                                        data-bs-toggle="modal" data-bs-target="#editStoreModal{{ store[0] }}">
+                                                <a href="{{ url_for('edit_store_page', store_id=store[0]) }}" 
+                                                   class="btn btn-sm btn-outline-warning">
                                                     <i class="bi bi-pencil"></i> تعديل
-                                                </button>
+                                                </a>
                                             </div>
                                         </div>
                             </div>
@@ -239,13 +257,104 @@
                         <div class="mb-4">
                             <i class="bi bi-shop display-1 text-muted"></i>
                         </div>
-                        <h4 class="text-muted">لا توجد محلات بعد</h4>
-                        <p class="text-muted mb-4">ابدأ رحلتك التجارية بإضافة محلك الأول</p>
+                        <h4 class="text-muted">لا توجد نشاطات التجارية بعد</h4>
+                        <p class="text-muted mb-4">ابدأ رحلتك التجارية بإضافة نشاطك التجاريك الأول</p>
                         <a href="{{ url_for('add_store') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-lg"></i> إضافة محل جديد
+                            <i class="bi bi-plus-lg"></i> إضافة نشاط تجاري جديد
                         </a>ta-bs-toggle="modal" data-bs-target="#addStoreModal">
-                            <i class="bi bi-plus-circle"></i> إضافة محل جديد
+                            <i class="bi bi-plus-circle"></i> إضافة نشاط تجاري جديد
                         </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- عروضي -->
+            <div class="card border-0 shadow-sm mt-4" id="offers-section">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-megaphone"></i> عروضي
+                    </h5>
+                    <a href="{{ url_for('add_offer_page') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> إضافة عرض جديد
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if user_offers %}
+                    <div class="row">
+                        {% for offer in user_offers %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <img src="{{ offer[6] or 'https://j.top4top.io/p_3483v39jn1.jpg' }}" alt="{{ offer[1] }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ offer[1][:30] }}{{ '...' if offer[1]|length > 30 else '' }}</h6>
+                                    {% if offer[2] %}
+                                    <p class="card-text text-muted small">{{ offer[2][:80] }}{{ '...' if offer[2]|length > 80 else '' }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> من {{ offer[3] }} إلى {{ offer[4] }}
+                                    </small>
+                                    <div class="row mt-2">
+                                        <div class="col-6">
+                                            {% if offer[5] == 'approved' %}
+                                                {% if offer[8] %}
+                                                <span class="badge bg-warning w-100">⭐ مميز</span>
+                                                {% else %}
+                                                <span class="badge bg-success w-100">✅ منشور</span>
+                                                {% endif %}
+                                            {% elif offer[5] == 'pending' %}
+                                            <span class="badge bg-warning w-100">⏳ في الانتظار</span>
+                                            {% elif offer[5] == 'rejected' %}
+                                            <span class="badge bg-danger w-100">❌ مرفوض</span>
+                                            {% elif offer[5] == 'disabled' %}
+                                            <span class="badge bg-secondary w-100">⏸️ معطل</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-6">
+                                            {% if offer[7] %}
+                                            <span class="badge bg-warning w-100">⭐ مميز</span>
+                                            {% else %}
+                                            <span class="badge bg-light text-dark w-100">عادي</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye"></i> {{ offer[9] or 0 }} مشاهدة
+                                    </small>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('offer_details', offer_id=offer[0]) }}" class="btn btn-sm btn-outline-info" title="عرض التفاصيل">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('edit_offer_page', offer_id=offer[0]) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% if offer[5] == 'approved' %}
+                                        <a href="{{ url_for('toggle_offer_status', offer_id=offer[0]) }}" class="btn btn-sm btn-outline-warning" title="تعطيل العرض" onclick="return confirm('هل تريد تعطيل هذا العرض؟')">
+                                            <i class="bi bi-pause"></i>
+                                        </a>
+                                        {% elif offer[5] == 'disabled' %}
+                                        <a href="{{ url_for('toggle_offer_status', offer_id=offer[0]) }}" class="btn btn-sm btn-outline-success" title="تفعيل العرض" onclick="return confirm('هل تريد تفعيل هذا العرض؟')">
+                                            <i class="bi bi-play"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-megaphone display-1 text-muted"></i>
+                        </div>
+                        <h4 class="text-muted">لا توجد عروض بعد</h4>
+                        <p class="text-muted mb-4">ابدأ بإضافة عرضك الأول لجذب العملاء</p>
+                        <a href="{{ url_for('add_offer_page') }}" class="btn btn-success">
+                            <i class="bi bi-plus-lg"></i> إضافة عرض جديد
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -254,7 +363,7 @@
     </div>
 </div>
 
-<!-- نافذة إضافة محل جديد -->
+<!-- نافذة إضافة نشاط تجاري جديد -->
 
 <!-- نافذة تعديل الملف الشخصي -->
 <div class="modal fade" id="profileModal" tabindex="-1">
@@ -299,7 +408,7 @@
     </div>
 </div>
 
-<!-- نماذج تعديل المحلات -->
+<!-- نماذج تعديل النشاطات التجارية -->
 {% for store in user_stores %}
 <div class="modal fade" id="editStoreModal{{ store[0] }}" tabindex="-1">
     <div class="modal-dialog">
@@ -426,7 +535,7 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h5>إجمالي المحلات</h5>
+                                <h5>إجمالي النشاطات التجارية</h5>
                                 <h2 class="text-primary">{{ user_stores|length }}</h2>
                             </div>
                         </div>
@@ -434,7 +543,7 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h5>المحلات المعتمدة</h5>
+                                <h5>النشاطات التجارية المعتمدة</h5>
                                 <h2 class="text-success">{{ approved_stores }}</h2>
                             </div>
                         </div>
@@ -606,7 +715,7 @@ function checkVerificationStatus() {
                     <div class="text-center">
                         <i class="bi bi-clock-history text-warning" style="font-size: 3rem;"></i>
                         <h5 class="mt-3 text-warning">طلبك قيد المراجعة</h5>
-                        <p class="text-muted">تم إرسال طلب التحقق وهو قيد المراجعة من قبل الإدارة</p>
+                        <p classass="text-muted">تم إرسال طلب التحقق وهو قيد المراجعة من قبل الإدارة</p>
                         <small class="text-muted">تاريخ الطلب: ${new Date(data.requested_at).toLocaleDateString('ar-SA')}</small>
                     </div>
                 `;
@@ -807,5 +916,33 @@ function requestVerification() {
             nameError.textContent = '';
         });
         {% endif %}
+    </script>
+
+    <script>
+        // تحديث الروابط النشطة في الشريط الجانبي
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.list-group-item-action');
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.getAttribute('href').startsWith('#')) {
+                        e.preventDefault();
+
+                        // إزالة الكلاس النشط من جميع الروابط
+                        sidebarLinks.forEach(l => l.classList.remove('active'));
+
+                        // إضافة الكلاس النشط للرابط المضغوط
+                        this.classList.add('active');
+
+                        // التمرير للقسم المطلوب
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetElement = document.getElementById(targetId);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                });
+            });
+        });
     </script>
 {% endblock %}

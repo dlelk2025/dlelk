@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ site_settings.site_title or 'دليل محلات الحسينية' }}</title>
+    <title>{{ site_settings.site_title or 'دليل نشاطات تجارية الحسينية' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
     <style>
         :root {
             --primary_gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1147,6 +1148,153 @@
                 transform: translateY(0);
             }
         }
+
+        /* تحسين الأزرار */
+        .btn {
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* سلايدر العروض المميزة */
+        .featured-offers-slider {
+            margin: 30px 0;
+            padding: 0 20px;
+        }
+
+        .offers-swiper {
+            width: 100%;
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .offers-swiper .swiper-slide {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .offer-slide-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .offers-swiper .swiper-slide:hover .offer-slide-image {
+            transform: scale(1.05);
+        }
+
+        .offer-slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 25px;
+            color: white;
+        }
+
+        .offer-slide-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .offer-slide-store {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .offer-slide-btn {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .offer-slide-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .offers-swiper .swiper-pagination {
+            bottom: 15px;
+        }
+
+        .offers-swiper .swiper-pagination-bullet {
+            background: rgba(255,255,255,0.7);
+        }
+
+        .offers-swiper .swiper-pagination-bullet-active {
+            background: white;
+        }
+
+        .offers-swiper .swiper-button-next,
+        .offers-swiper .swiper-button-prev {
+            color: white;
+            background: rgba(0,0,0,0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-top: -20px;
+        }
+
+        .offers-swiper .swiper-button-next:after,
+        .offers-swiper .swiper-button-prev:after {
+            font-size: 16px;
+        }
+
+        .slider-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .slider-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .slider-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .offers-swiper {
+                height: 250px;
+            }
+
+            .offer-slide-title {
+                font-size: 1rem;
+            }
+
+            .slider-title {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1195,7 +1343,7 @@
         <nav class="navbar navbar-expand-lg">
             <div class="container">
                 <a class="navbar-brand" href="{{ url_for('index') }}">
-                    <i class="bi bi-shop"></i> {{ site_settings.site_title or 'دليل محلات الحسينية' }}
+                    <i class="bi bi-shop"></i> {{ site_settings.site_title or 'دليل نشاطات تجارية الحسينية' }}
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -1258,6 +1406,27 @@
     </header>
 
     <div class="container">
+        <!-- شريط الصيدليات المناوبة - مخفي -->
+        {% if false %}
+        <div class="pharmacy-ticker-container" id="pharmacyTicker">
+            <div class="pharmacy-ticker">
+                <div class="ticker-content">
+                    <i class="bi bi-capsule ticker-icon"></i>
+                    <span class="ticker-text">الصيدليات المناوبة اليوم: 
+                        {% for pharmacy in today_pharmacies %}
+                            {{ pharmacy[1] }} ({{ pharmacy[2] }}){% if not loop.last %} • {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- سلايدر العروض المميزة -->
+        <div id="featuredOffersSlider" class="featured-offers-slider">
+            <!-- سيتم تحميل السلايدر هنا عبر JavaScript -->
+        </div>
+
         <!-- صيدلية اليوم -->
         {% if today_pharmacies and site_settings.get('show_pharmacy_ticker', '1') == '1' %}
         <div class="modern-card slide-up">
@@ -1317,19 +1486,19 @@
 
         <!-- قسم البحث البطولي -->
         <div class="hero-search fade-in">
-            <h1 class="hero-title">اكتشف أفضل المحلات في الحسينية</h1>
-            <p class="hero-subtitle">دليلك الشامل للوصول إلى أفضل المحلات والخدمات في منطقتك</p>
+            <h1 class="hero-title">اكتشف أفضل النشاطات التجارية في الحسينية</h1>
+            <p class="hero-subtitle">دليلك الشامل للوصول إلى أفضل النشاطات التجارية والخدمات في منطقتك</p>
 
             <form action="{{ url_for('search') }}" method="GET" class="search-form">
                 <input type="hidden" name="type" value="stores">
                 <div class="row g-3 justify-content-center">
                     <div class="col-md-5">
                         <input type="text" name="q" class="form-control search-input" 
-                               placeholder="ابحث عن محل أو منتج...">
+                               placeholder="ابحث عن نشاط تجاري أو منتج...">
                     </div>
                     <div class="col-md-4">
                         <select class="form-control search-input" name="category">
-                            <option value="">جميع تصنيفات المحلات</option>
+                            <option value="">جميع تصنيفات النشاطات التجارية</option>
                             {% for category in all_categories %}
                             <option value="{{ category[0] }}">{{ category[1] }}</option>
                             {% endfor %}
@@ -1337,7 +1506,7 @@
                     </div>
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-search w-100">
-                            <i class="bi bi-search"></i> بحث في المحلات
+                            <i class="bi bi-search"></i> بحث في النشاطات التجارية
                         </button>
                     </div>
                 </div>
@@ -1350,13 +1519,30 @@
                 <!-- زر إضافة محل جديد -->
                 <div class="text-center mt-4">
                     <a href="{{ url_for('add_store_page') }}" class="btn btn-success btn-lg px-5 py-3">
-                        <i class="bi bi-plus-circle-fill"></i> أضف محلك الآن
+                        <i class="bi bi-plus-circle-fill"></i> أضف نشاطك التجاري الآن
                     </a>
                     <small class="d-block text-muted mt-2">
                         انضم إلى دليلنا وابدأ رحلتك التجارية مجاناً
                     </small>
                 </div>
             </form>
+        </div>
+
+        <!-- قسم العروض -->
+        <div class="modern-card slide-up">
+            <h2 class="section-title">العروض والخصومات الخاصة</h2>
+            <p class="hero-subtitle">اكتشف أفضل العروض والخصومات الحصرية من المحلات في منطقة الحسينية</p>
+            <div class="text-center">
+                <a href="{{ url_for('offers') }}" class="btn btn-search btn-lg px-5 py-3">
+                    <i class="bi bi-megaphone-fill"></i> عرض جميع العروض
+                </a>
+            </div>
+            <!-- إضافة معاينة سريعة للعروض -->
+            <div id="quickOffersPreview" class="mt-4" style="display: none;">
+                <div class="row" id="quickOffersList">
+                    <!-- سيتم ملء العروض هنا عبر JavaScript -->
+                </div>
+            </div>
         </div>
 
         <!-- التصنيفات -->
@@ -1380,7 +1566,7 @@
         <!-- أحدث المحلات -->
         {% if latest_stores and site_settings.get('show_latest_stores', '1') == '1' %}
         <div class="modern-card slide-up">
-            <h2 class="section-title">أحدث المحلات المضافة</h2>
+            <h2 class="section-title">أحدث النشاطات التجارية المضافة</h2>
             <div class="row">
                 {% for store in latest_stores %}
                 <div class="col-md-6 col-lg-4">
@@ -1520,7 +1706,7 @@
         <!-- أكثر المحلات تقييماً -->
         {% if top_rated_stores and site_settings.get('show_top_rated_stores', '1') == '1' %}
         <div class="modern-card slide-up">
-            <h2 class="section-title">الأعلى تقييماً</h2>
+            <h2 class="section-title">النشاطات التجارية الأعلى تقييماً</h2>
             <div class="row">
                 {% for store in top_rated_stores %}
                 <div class="col-md-6 col-lg-4">
@@ -1591,12 +1777,12 @@
         <div class="modern-card slide-up" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px dashed #28a745;">
             <div class="text-center">
                 <i class="bi bi-shop" style="font-size: 4rem; color: #28a745; margin-bottom: 20px;"></i>
-                <h2 class="section-title" style="color: #28a745;">هل تملك محلاً تجارياً؟</h2>
+                <h2 class="section-title" style="color: #28a745;">هل تملك نشاطا تجارياً؟</h2>
                 <p class="hero-subtitle" style="font-size: 1.1rem; margin-bottom: 30px;">
                     انضم إلى دليلنا المجاني واكتسب عملاء جدد
                 </p>
                 <a href="{{ url_for('add_store_page') }}" class="btn btn-success btn-lg px-5 py-3" style="font-size: 1.2rem;">
-                    <i class="bi bi-plus-circle-fill"></i> أضف محلك مجاناً
+                    <i class="bi bi-plus-circle-fill"></i> أضف نشاطك التجاري مجاناً
                 </a>
                 <div class="row mt-4">
                     <div class="col-md-4">
@@ -1637,8 +1823,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="footer-title">دليل محلات الحسينية</h5>
-                    <p>{{ site_settings.site_description or 'دليل شامل لجميع المحلات والخدمات في منطقة الحسينية. نساعدك في العثور على ما تحتاجه بسهولة وسرعة.' }}</p>
+                    <h5 class="footer-title">دليل نشاطات تجارية الحسينية</h5>
+                    <p>{{ site_settings.site_description or 'دليل شامل لجميع النشاطات التجارية والخدمات في منطقة الحسينية. نساعدك في العثور على ما تحتاجه بسهولة وسرعة.' }}</p>
                 </div>
                 <div class="col-md-4">
                     <h5 class="footer-title">روابط سريعة</h5>
@@ -1767,6 +1953,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
     <script>
         // التحكم بصيدليات الصفحة الرئيسية
         let currentMainPharmacyIndex = 0;
@@ -2546,6 +2733,119 @@
                 notificationSystem.markAllAsRead();
             }
         }
+
+        // تحميل وعرض العروض المميزة
+        function loadFeaturedOffers() {
+            fetch('/api/featured-offers')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('استجابة العروض المميزة:', data);
+                    
+                    if (data.success && data.offers.length > 0) {
+                        const sliderContainer = document.getElementById('featuredOffersSlider');
+
+                        const sliderHTML = `
+                            <div class="slider-header">
+                                <h2 class="slider-title">العروض المميزة ⭐</h2>
+                                <p class="text-muted">اكتشف أفضل العروض والخصومات الحصرية (${data.offers.length} عرض متاح)</p>
+                            </div>
+                            <div class="swiper offers-swiper">
+                                <div class="swiper-wrapper">
+                                    ${data.offers.map(offer => `
+                                        <div class="swiper-slide" onclick="window.location.href='/offers/${offer.id}'">
+                                            <img src="${offer.image_url}" 
+                                                 alt="${offer.title}" class="offer-slide-image">
+                                            <div class="offer-slide-overlay">
+                                                <h5 class="offer-slide-title">${offer.title}</h5>
+                                                <p class="offer-slide-store">
+                                                    <i class="bi bi-shop"></i> ${offer.store_name}
+                                                </p>
+                                                <button class="offer-slide-btn">
+                                                    <i class="bi bi-eye"></i> التفاصيل
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="swiper-pagination"></div>
+                                <div class="swiper-button-next"></div>
+                                <div class="swiper-button-prev"></div>
+                            </div>
+                        `;
+
+                        sliderContainer.innerHTML = sliderHTML;
+
+                        // تهيئة السلايدر
+                        new Swiper('.offers-swiper', {
+                            loop: true,
+                            autoplay: {
+                                delay: 4000,
+                                disableOnInteraction: false,
+                            },
+                            pagination: {
+                                el: '.swiper-pagination',
+                                clickable: true,
+                            },
+                            navigation: {
+                                nextEl: '.swiper-button-next',
+                                prevEl: '.swiper-button-prev',
+                            },
+                            breakpoints: {
+                                640: {
+                                    slidesPerView: 1,
+                                },
+                                768: {
+                                    slidesPerView: 2,
+                                    spaceBetween: 20,
+                                },
+                                1024: {
+                                    slidesPerView: 3,
+                                    spaceBetween: 30,
+                                },
+                            },
+                        });
+
+                        // إظهار معاينة سريعة في قسم العروض
+                        loadQuickOffersPreview(data.offers.slice(0, 3));
+                    } else {
+                        console.log('لا توجد عروض مميزة متاحة');
+                    }
+                })
+                .catch(error => {
+                    console.error('خطأ في تحميل العروض المميزة:', error);
+                });
+        }
+
+        // تحميل معاينة سريعة للعروض
+        function loadQuickOffersPreview(offers) {
+            const quickPreview = document.getElementById('quickOffersPreview');
+            const quickList = document.getElementById('quickOffersList');
+            
+            if (offers && offers.length > 0) {
+                const offersHTML = offers.map(offer => `
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm">
+                            <img src="${offer.image_url}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${offer.title}">
+                            <div class="card-body">
+                                <h6 class="card-title">${offer.title}</h6>
+                                <p class="card-text text-muted">
+                                    <i class="bi bi-shop"></i> ${offer.store_name}
+                                </p>
+                                <a href="/offers/${offer.id}" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-eye"></i> عرض التفاصيل
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                quickList.innerHTML = offersHTML;
+                quickPreview.style.display = 'block';
+            }
+        }
+
+        // تحميل العروض عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', loadFeaturedOffers);
     </script>
 </body>
 </html>

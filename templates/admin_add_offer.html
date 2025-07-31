@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة عرض جديد - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+            padding: 30px;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            margin: -40px -40px 40px -40px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .offer-type-options {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .offer-type-options.show {
+            display: block;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-content">
+        <div class="form-container">
+            <!-- رأس الصفحة -->
+            <div class="page-header">
+                <h1><i class="bi bi-plus-circle"></i> إضافة عرض جديد</h1>
+                <p class="lead">إضافة عرض إداري جديد للموقع</p>
+            </div>
+
+            <!-- الرسائل -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- نموذج إضافة العرض -->
+            <form method="POST" action="{{ url_for('admin_add_offer') }}" onsubmit="return validateForm()">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="title" class="form-label">عنوان العرض <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="مثال: خصم 30% على جميع المنتجات">
+                        <div class="help-text">اكتب عنواناً جذاباً ومختصراً للعرض</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="store_id" class="form-label">اختر المحل <span class="required">*</span></label>
+                        <select class="form-select" id="store_id" name="store_id" required>
+                            <option value="">-- اختر المحل --</option>
+                            {% for store in stores %}
+                                <option value="{{ store[0] }}">{{ store[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">وصف العرض <span class="required">*</span></label>
+                    <textarea class="form-control" id="description" name="description" rows="4" required
+                              placeholder="اكتب وصفاً مفصلاً عن العرض والشروط والأحكام..."></textarea>
+                    <div class="help-text">وصف تفصيلي للعرض وشروطه</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="offer_type" class="form-label">نوع العرض <span class="required">*</span></label>
+                    <select class="form-select" id="offer_type" name="offer_type" required onchange="toggleOfferOptions()">
+                        <option value="">-- اختر نوع العرض --</option>
+                        <option value="store_page" selected>توجيه إلى صفحة المحل</option>
+                        <option value="custom_url">رابط مخصص</option>
+                        <option value="custom_page">صفحة مخصصة</option>
+                    </select>
+                    
+                    <!-- خيارات الرابط المخصص -->
+                    <div id="custom_url_options" class="offer-type-options">
+                        <label for="custom_url" class="form-label mt-3">الرابط المخصص</label>
+                        <input type="url" class="form-control" id="custom_url" name="custom_url" 
+                               placeholder="https://example.com">
+                        <div class="help-text">رابط خارجي يتم توجيه المستخدم إليه عند النقر على العرض</div>
+                    </div>
+
+                    <!-- خيارات الصفحة المخصصة -->
+                    <div id="custom_page_options" class="offer-type-options">
+                        <label for="custom_page_content" class="form-label mt-3">محتوى الصفحة المخصصة</label>
+                        <textarea class="form-control" id="custom_page_content" name="custom_page_content" rows="6"
+                                  placeholder="اكتب محتوى الصفحة المخصصة هنا..."></textarea>
+                        <div class="help-text">محتوى HTML للصفحة المخصصة</div>
+                    </div>
+                </div>
+
+
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_date" class="form-label">تاريخ بداية العرض <span class="required">*</span></label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="end_date" class="form-label">تاريخ نهاية العرض <span class="required">*</span></label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="image_url" class="form-label">رابط صورة العرض (اختياري)</label>
+                    <input type="url" class="form-control" id="image_url" name="image_url" 
+                           placeholder="https://example.com/image.jpg" onchange="previewImage()">
+                    <div class="help-text">رابط صورة للعرض. إذا لم تضع صورة، سيتم استخدام صورة افتراضية.</div>
+                    <img id="image_preview" class="image-preview" alt="معاينة الصورة">
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_featured" name="is_featured">
+                    <label class="form-check-label" for="is_featured">
+                        <i class="bi bi-star-fill text-warning"></i> عرض مميز
+                    </label>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>ملاحظة:</strong> العروض الإدارية يتم نشرها تلقائياً بدون الحاجة لموافقة.
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="submit" class="btn btn-admin">
+                        <i class="bi bi-check-circle"></i> إضافة العرض
+                    </button>
+                    <a href="{{ url_for('admin_offers') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> العودة للعروض
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        // تهيئة محرر TinyMCE
+        tinymce.init({
+            selector: '#custom_page_content',
+            height: 400,
+            language: 'ar',
+            directionality: 'rtl',
+            plugins: [
+                'advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code fullscreen',
+                'insertdatetime media table paste code help wordcount',
+                'textcolor colorpicker'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | ' +
+                    'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | removeformat | link image | ' +
+                    'table | code preview fullscreen help',
+            menubar: 'edit view insert format tools table help',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; direction: rtl; }',
+            setup: function (editor) {
+                editor.on('change', function () {
+                    editor.save();
+                });
+            },
+            // إعدادات الصور
+            image_upload_handler: function (blobInfo, success, failure) {
+                // يمكنك إضافة رفع الصور هنا إذا أردت
+                failure('رفع الصور غير مفعل حالياً');
+            },
+            // إعدادات الروابط
+            link_default_target: '_blank',
+            // منع تحرير الكود مباشرة للمستخدمين العاديين
+            readonly: false
+        });
+
+        // إظهار/إخفاء خيارات نوع العرض
+        function toggleOfferOptions() {
+            const offerType = document.getElementById('offer_type').value;
+            const customUrlOptions = document.getElementById('custom_url_options');
+            const customPageOptions = document.getElementById('custom_page_options');
+
+            // إخفاء جميع الخيارات أولاً
+            customUrlOptions.classList.remove('show');
+            customPageOptions.classList.remove('show');
+
+            // إظهار الخيار المناسب
+            if (offerType === 'custom_url') {
+                customUrlOptions.classList.add('show');
+            } else if (offerType === 'custom_page') {
+                customPageOptions.classList.add('show');
+            }
+        }
+    
+
+        // معاينة الصورة
+        function previewImage() {
+            const url = document.getElementById('image_url').value;
+            const preview = document.getElementById('image_preview');
+
+            if (url) {
+                preview.src = url;
+                preview.style.display = 'block';
+                preview.onerror = function() {
+                    this.style.display = 'none';
+                    alert('رابط الصورة غير صحيح');
+                };
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // التحقق من صحة النموذج
+        function validateForm() {
+            const title = document.getElementById('title').value.trim();
+            const storeId = document.getElementById('store_id').value;
+            const description = document.getElementById('description').value.trim();
+           
+            const startDate = new Date(document.getElementById('start_date').value);
+            const endDate = new Date(document.getElementById('end_date').value);
+
+            // التحقق من الحقول الإجبارية
+            if (!title) {
+                alert('عنوان العرض مطلوب');
+                return false;
+            }
+
+            if (!storeId) {
+                alert('يجب اختيار المحل');
+                return false;
+            }
+
+            if (!description) {
+                alert('وصف العرض مطلوب');
+                return false;
+            }
+
+            // التحقق من نوع العرض
+            const offerType = document.getElementById('offer_type').value;
+            if (!offerType) {
+                alert('يجب اختيار نوع العرض');
+                return false;
+            }
+
+            // التحقق من الحقول المطلوبة حسب نوع العرض
+            if (offerType === 'custom_url') {
+                const customUrl = document.getElementById('custom_url').value.trim();
+                if (!customUrl) {
+                    alert('الرابط المخصص مطلوب لهذا النوع من العروض');
+                    return false;
+                }
+            } else if (offerType === 'custom_page') {
+                const customPageContent = document.getElementById('custom_page_content').value.trim();
+                if (!customPageContent) {
+                    alert('محتوى الصفحة المخصصة مطلوب لهذا النوع من العروض');
+                    return false;
+                }
+            }
+
+           
+
+            if (endDate <= startDate) {
+                alert('تاريخ نهاية العرض يجب أن يكون بعد تاريخ البداية');
+                return false;
+            }
+
+            return true;
+        }
+
+        // تعيين التواريخ الافتراضية
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+
+            document.getElementById('start_date').valueAsDate = today;
+            document.getElementById('end_date').valueAsDate = nextWeek;
+        });
+
+         // التأكد من حفظ محتوى المحرر قبل إرسال النموذج
+        document.querySelector('form').addEventListener('submit', function() {
+            tinymce.triggerSave();
+        });
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة عرض جديد - لوحة الإدارة</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .admin-content {
+            background: rgba(255,255,255,0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .sidebar-menu {
+            padding: 0;
+        }
+
+        .sidebar-menu .nav-link {
+            color: rgba(255,255,255,0.9);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            margin: 2px 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu .nav-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            transform: translateX(5px);
+            border-left: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-menu .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-left: 3px solid #ffc107;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-menu .nav-link i {
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="row g-0">
+        <!-- الشريط الجانبي -->
+        <div class="col-md-2">
+            <div class="admin-sidebar">
+                <div class="sidebar-header">
+                    <h4><i class="bi bi-shield-check"></i></h4>
+                    <h5>لوحة الإدارة</h5>
+                    <small>{{ session.user_name }}</small>
+                </div>
+
+                <nav class="sidebar-menu">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i>
+                        الرئيسية
+                    </a>
+                    <a href="{{ url_for('admin_stores') }}" class="nav-link">
+                        <i class="bi bi-shop"></i>
+                        إدارة المحلات
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="nav-link">
+                        <i class="bi bi-people"></i>
+                        إدارة المستخدمين
+                    </a>
+                    <a href="{{ url_for('admin_offers') }}" class="nav-link active">
+                        <i class="bi bi-megaphone"></i>
+                        إدارة العروض
+                    </a>
+                    <a href="{{ url_for('admin_categories') }}" class="nav-link">
+                        <i class="bi bi-tags"></i>
+                        إدارة التصنيفات
+                    </a>
+                    <a href="{{ url_for('admin_settings') }}" class="nav-link">
+                        <i class="bi bi-gear"></i>
+                        الإعدادات
+                    </a>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="{{ url_for('index') }}" class="nav-link">
+                        <i class="bi bi-house"></i>
+                        العودة للموقع
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i>
+                        تسجيل خروج
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="col-md-10">
+            <div class="admin-content p-4">
+                <!-- الرأس -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-plus-circle"></i> إضافة عرض جديد</h2>
+                    <a href="{{ url_for('admin_offers') }}" class="btn btn-admin">
+                        <i class="bi bi-arrow-right"></i> العودة للقائمة
+                    </a>
+                </div>
+
+                <!-- الرسائل -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- نموذج إضافة العرض -->
+                <div class="form-container">
+                    <form method="POST" action="{{ url_for('admin_add_offer') }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">عنوان العرض *</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="store_id" class="form-label">المحل *</label>
+                                    <select class="form-select" id="store_id" name="store_id" required>
+                                        <option value="">-- اختر المحل --</option>
+                                        {% for store in stores %}
+                                        <option value="{{ store[0] }}">{{ store[1] }} ({{ store[2] }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">وصف العرض *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="offer_type" class="form-label">نوع العرض *</label>
+                                    <select class="form-select" id="offer_type" name="offer_type" required>
+                                        <option value="store_page">صفحة المحل</option>
+                                        <option value="custom_url">رابط مخصص</option>
+                                        <option value="custom_page">صفحة مخصصة</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">تاريخ البداية *</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">تاريخ النهاية *</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="custom_url_field" style="display: none;">
+                            <label for="custom_url" class="form-label">الرابط المخصص</label>
+                            <input type="url" class="form-control" id="custom_url" name="custom_url" placeholder="https://example.com">
+                        </div>
+
+                        <div class="mb-3" id="custom_page_field" style="display: none;">
+                            <label for="custom_page_content" class="form-label">محتوى الصفحة المخصصة</label>
+                            <textarea class="form-control" id="custom_page_content" name="custom_page_content" rows="6"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">رابط الصورة</label>
+                            <input type="url" class="form-control" id="image_url" name="image_url" placeholder="https://example.com/image.jpg">
+                            <small class="form-text text-muted">إذا تُرك فارغاً، سيتم استخدام صورة افتراضية</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                                <label class="form-check-label" for="is_featured">
+                                    جعل العرض مميزاً ⭐
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_offers') }}" class="btn btn-secondary">إلغاء</a>
+                            <button type="submit" class="btn btn-admin">
+                                <i class="bi bi-check"></i> إضافة العرض
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // إظهار/إخفاء الحقول حسب نوع العرض
+        document.getElementById('offer_type').addEventListener('change', function() {
+            const customUrlField = document.getElementById('custom_url_field');
+            const customPageField = document.getElementById('custom_page_field');
+            const customUrlInput = document.getElementById('custom_url');
+            const customPageInput = document.getElementById('custom_page_content');
+            
+            // إخفاء جميع الحقول
+            customUrlField.style.display = 'none';
+            customPageField.style.display = 'none';
+            customUrlInput.required = false;
+            customPageInput.required = false;
+            
+            // إظهار الحقل المطلوب
+            if (this.value === 'custom_url') {
+                customUrlField.style.display = 'block';
+                customUrlInput.required = true;
+            } else if (this.value === 'custom_page') {
+                customPageField.style.display = 'block';
+                customPageInput.required = true;
+            }
+        });
+
+        // تعيين التاريخ الحالي كتاريخ افتراضي
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').value = today;
+        
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        document.getElementById('end_date').value = nextWeek.toISOString().split('T')[0];
+    </script>
+</body>
+</html>

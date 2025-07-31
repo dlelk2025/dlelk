@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ store[1] }} - دليل محلات الحسينية</title>
+    <title>{{ store[1] }} - دليل النشاطات التجارية بالحسينية</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -317,6 +317,52 @@
             margin-bottom: 20px;
         }
 
+        /* أنماط قسم المناوبات */
+        .pharmacy-schedule-section {
+            background: linear-gradient(135deg, rgba(17, 153, 142, 0.05) 0%, rgba(56, 239, 125, 0.05) 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .schedule-info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow-light);
+            border-left: 4px solid #11998e;
+            transition: all 0.3s ease;
+        }
+
+        .schedule-info-card:hover {
+            transform: translateX(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .next-duty-badge {
+            background: var(--success-gradient);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .current-duty-badge {
+            background: var(--warning-gradient);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
         @media (max-width: 768px) {
             .store-header {
                 padding: 25px;
@@ -354,7 +400,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- رأس المحل -->
+        <!-- رأس النشاط التجاري -->
         <div class="store-header">
             <div class="store-title">
                 <div class="store-icon">
@@ -391,7 +437,7 @@
             {% if store[14] %}
             <div class="store-info">
                 <i class="bi bi-person-fill"></i>
-                مالك المحل: {{ store[14] }}
+                مالك النشاط: {{ store[14] }}
             </div>
             {% endif %}
 
@@ -447,7 +493,7 @@
                     {% if user_verification_status %}
                     <button class="btn-rate" onclick="openRatingModal({{ store[0] }}, '{{ store[1] }}')">
                         <i class="bi bi-star me-2"></i>
-                        قيم المحل
+                        قيم النشاط
                     </button>
                     {% else %}
                     <button class="btn-rate" onclick="window.location.href='/verification'">
@@ -516,17 +562,36 @@
             <div class="no-ratings">
                 <i class="bi bi-star"></i>
                 <h4>لا توجد تقييمات بعد</h4>
-                <p>كن أول من يقيم هذا المحل</p>
+                <p>كن أول من يقيم هذا النشاط التجاري</p>
             </div>
         </div>
         {% endif %}
 
-        <!-- المحلات المشابهة -->
+        <!-- أوقات المناوبة للصيدليات -->
+        {% if store[13] and 'صيدل' in store[13] %}
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="bi bi-calendar-week"></i>
+                أوقات المناوبة
+            </h2>
+            
+            <div id="pharmacy-schedule-container">
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">جارِ التحميل...</span>
+                    </div>
+                    <p class="mt-2 text-muted">جارِ تحميل أوقات المناوبة...</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- النشاطات التجارية المشابهة -->
         {% if similar_stores %}
         <div class="content-card">
             <h2 class="section-title">
                 <i class="bi bi-shop"></i>
-                محلات مشابهة
+                نشاطات تجارية مشابهة
             </h2>
 
             <div class="similar-stores">
@@ -567,7 +632,7 @@
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="ratingModalLabel">
-                        <i class="bi bi-star-fill me-2"></i>تقييم المحل
+                        <i class="bi bi-star-fill me-2"></i>تقييم النشاط التجاري
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -597,7 +662,7 @@
                             اكتب تعليقك: <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="ratingComment" rows="4" 
-                                  placeholder="شاركنا تجربتك مع هذا المحل..." 
+                                  placeholder="شاركنا تجربتك مع هذا النشاط التجاري..." 
                                   required></textarea>
                     </div>
                 </div>
@@ -721,6 +786,150 @@
             highlightStars(selectedRating);
         }
 
+        // تحميل أوقات المناوبة للصيدليات
+        function loadPharmacySchedule() {
+            const pharmacyScheduleContainer = document.getElementById('pharmacy-schedule-container');
+            if (!pharmacyScheduleContainer) return;
+
+            const storeName = '{{ store[1] }}';
+            
+            fetch('/api/pharmacy-schedule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    pharmacy_name: storeName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.schedule.length > 0) {
+                    displayPharmacySchedule(data.schedule);
+                } else {
+                    displayNoSchedule();
+                }
+            })
+            .catch(error => {
+                console.error('خطأ في تحميل أوقات المناوبة:', error);
+                displayNoSchedule();
+            });
+        }
+
+        function displayPharmacySchedule(schedule) {
+            const container = document.getElementById('pharmacy-schedule-container');
+            let html = '<div class="schedule-grid">';
+            
+            // إضافة CSS للشبكة
+            const style = document.createElement('style');
+            style.textContent = `
+                .schedule-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+                .schedule-card {
+                    background: #f8f9fa;
+                    border-radius: 15px;
+                    padding: 20px;
+                    border-left: 4px solid var(--success-gradient);
+                    transition: all 0.3s ease;
+                }
+                .schedule-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                }
+                .schedule-card.today {
+                    background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%);
+                    border-left-color: #11998e;
+                }
+                .schedule-date {
+                    font-weight: 700;
+                    color: var(--text-dark);
+                    margin-bottom: 10px;
+                    font-size: 1.1rem;
+                }
+                .schedule-date.today {
+                    color: #11998e;
+                }
+                .schedule-status {
+                    padding: 5px 15px;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    display: inline-block;
+                }
+                .schedule-status.on-duty {
+                    background: var(--success-gradient);
+                    color: white;
+                }
+                .schedule-status.off-duty {
+                    background: var(--text-light);
+                    color: white;
+                }
+            `;
+            document.head.appendChild(style);
+
+            const today = new Date().toISOString().split('T')[0];
+            
+            schedule.forEach(item => {
+                const isToday = item.duty_date === today;
+                html += `
+                    <div class="schedule-card ${isToday ? 'today' : ''}">
+                        <div class="schedule-date ${isToday ? 'today' : ''}">
+                            <i class="bi bi-calendar-day"></i>
+                            ${formatArabicDate(item.duty_date)}
+                            ${isToday ? '<span class="badge bg-success ms-2">اليوم</span>' : ''}
+                        </div>
+                        <div class="schedule-status ${isToday ? 'on-duty' : 'off-duty'}">
+                            <i class="bi bi-${isToday ? 'check-circle' : 'clock'}"></i>
+                            ${isToday ? 'مناوبة نشطة' : 'مناوبة مجدولة'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            if (schedule.length > 5) {
+                html += `
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary btn-sm" onclick="toggleAllSchedule()">
+                            <i class="bi bi-chevron-down"></i>
+                            عرض جميع المواعيد
+                        </button>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function displayNoSchedule() {
+            const container = document.getElementById('pharmacy-schedule-container');
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: var(--text-light);"></i>
+                    <h5 class="mt-3 text-muted">لا توجد مناوبات مجدولة</h5>
+                    <p class="text-muted">لم يتم تحديد أوقات مناوبة لهذه الصيدلية بعد</p>
+                </div>
+            `;
+        }
+
+        function formatArabicDate(dateString) {
+            const date = new Date(dateString);
+            const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            
+            const dayName = arabicDays[date.getDay()];
+            const day = date.getDate();
+            const month = arabicMonths[date.getMonth()];
+            const year = date.getFullYear();
+            
+            return `${dayName} ${day} ${month} ${year}`;
+        }
+
         // تأثيرات التحميل
         document.addEventListener('DOMContentLoaded', function() {
             const elements = document.querySelectorAll('.store-header, .content-card');
@@ -734,6 +943,9 @@
                     element.style.transform = 'translateY(0)';
                 }, index * 200);
             });
+
+            // تحميل أوقات المناوبة للصيدليات
+            loadPharmacySchedule();
         });
     </script>
 </body>

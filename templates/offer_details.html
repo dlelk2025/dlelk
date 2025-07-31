@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ offer[1] }} - {{ site_settings.get('site_title', 'دليل محلات الحسينية') }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 20px;
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 40px);
+        }
+
+        .offer-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .offer-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .offer-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .offer-meta {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .meta-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .meta-item i {
+            font-size: 1.3rem;
+            margin-left: 15px;
+            color: #667eea;
+            width: 25px;
+        }
+
+        .offer-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d1edff;
+            color: #0c5460;
+        }
+
+        .status-featured {
+            background: #ffd700;
+            color: #8b6914;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .offer-description {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .store-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .store-rating {
+            color: #ffc107;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .offer-stats {
+            text-align: center;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .custom-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .offer-header {
+                padding: 25px;
+            }
+            
+            .d-flex.gap-3 {
+                flex-direction: column;
+            }
+            
+            .btn-action, .btn-secondary {
+                text-align: center;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="bi bi-shop"></i> دليل الحسينية
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('offers') }}">العروض</a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if session.user_id %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- رأس العرض -->
+        <div class="offer-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="bi bi-megaphone"></i> {{ offer[1] }}</h1>
+                    <p class="lead">
+                        <i class="bi bi-shop"></i> {{ offer[13] }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    {% if offer[10] %}
+                        <span class="offer-status status-featured">⭐ عرض مميز</span>
+                    {% elif offer[9] == 'approved' %}
+                        <span class="offer-status status-approved">✅ نشط</span>
+                    {% elif offer[9] == 'pending' %}
+                        <span class="offer-status status-pending">⏳ قيد المراجعة</span>
+                    {% elif offer[9] == 'rejected' %}
+                        <span class="offer-status status-rejected">❌ مرفوض</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- الرسائل -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- صورة العرض -->
+                <img src="{{ offer[6] or 'https://j.top4top.io/p_3483v39jn1.jpg' }}" alt="{{ offer[1] }}" class="offer-image">
+                
+                <!-- وصف العرض -->
+                {% if offer[2] %}
+                <div class="offer-description">
+                    <h3><i class="bi bi-info-circle"></i> تفاصيل العرض</h3>
+                    <p>{{ offer[2] }}</p>
+                </div>
+                {% endif %}
+
+                <!-- المحتوى المخصص -->
+                {% if offer[3] == 'custom_page' and offer[5] %}
+                <div class="custom-content">
+                    <h3><i class="bi bi-file-text"></i> تفاصيل إضافية</h3>
+                    {{ offer[5]|safe }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-4">
+                <!-- معلومات العرض -->
+                <div class="offer-meta">
+                    <h4><i class="bi bi-calendar-event"></i> معلومات العرض</h4>
+                    
+                    <div class="meta-item">
+                        <i class="bi bi-calendar-check"></i>
+                        <div>
+                            <strong>يبدأ في:</strong><br>
+                            {{ offer[7] }}
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="bi bi-calendar-x"></i>
+                        <div>
+                            <strong>ينتهي في:</strong><br>
+                            {{ offer[8] }}
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="bi bi-eye"></i>
+                        <div>
+                            <strong>المشاهدات:</strong><br>
+                            {{ offer[11] }} مشاهدة
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="bi bi-clock"></i>
+                        <div>
+                            <strong>تاريخ النشر:</strong><br>
+                            {{ offer[12][:10] if offer[12] else 'غير محدد' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- معلومات المحل -->
+                <div class="store-info">
+                    <h4><i class="bi bi-shop"></i> معلومات المحل</h4>
+                    
+                    <h5>{{ offer[13] }}</h5>
+                    
+                    {% if offer[16] %}
+                    <div class="meta-item">
+                        <i class="bi bi-geo-alt"></i>
+                        <span>{{ offer[16] }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if offer[15] and offer[15] > 0 %}
+                    <div class="store-rating">
+                        {% for i in range(5) %}
+                            {% if i < offer[15] %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                        ({{ "%.1f"|format(offer[15]) }})
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('store_details', store_id=offer[14]) }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-eye"></i> عرض صفحة المحل
+                        </a>
+                    </div>
+                </div>
+
+                <!-- إحصائيات العرض -->
+                {% if offer[9] == 'approved' %}
+                <div class="offer-stats">
+                    <h6><i class="bi bi-graph-up"></i> إحصائيات العرض</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="fs-4 fw-bold text-primary">{{ offer[11] }}</div>
+                            <small class="text-muted">مشاهدة</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="fs-4 fw-bold text-success">
+                                {% set end_date = offer[8] %}
+                                {% if end_date %}
+                                    {{ "أيام متبقية" }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">يوم متبقي</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- أزرار العمل -->
+                <div class="d-flex flex-column gap-3">
+                    {% if offer[9] == 'approved' %}
+                        {% if offer[3] == 'custom_url' and offer[4] %}
+                            <a href="{{ offer[4] }}" target="_blank" class="btn-action text-center" onclick="trackClick()">
+                                <i class="bi bi-link-45deg"></i> زيارة الرابط
+                            </a>
+                        {% elif offer[3] == 'store_page' %}
+                            <a href="{{ url_for('store_details', store_id=offer[14]) }}" class="btn-action text-center">
+                                <i class="bi bi-shop"></i> زيارة المحل
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ url_for('offers') }}" class="btn-secondary text-center">
+                        <i class="bi bi-arrow-left"></i> العودة للعروض
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // تتبع النقرات
+        function trackClick() {
+            // يمكن إضافة كود لتتبع النقرات هنا
+            console.log('تم النقر على العرض: {{ offer[0] }}');
+        }
+    </script>
+</body>
+</html>

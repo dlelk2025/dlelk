@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المحلات - لوحة الإدارة</title>
+    <title>إدارة النشاطات التجارية - لوحة الإدارة</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -149,7 +150,7 @@
                     </a>
                     <a href="{{ url_for('admin_stores') }}" class="nav-link active">
                         <i class="bi bi-shop"></i>
-                        إدارة المحلات
+                        إدارة النشاطات التجارية
                     </a>
                     <a href="{{ url_for('admin_users') }}" class="nav-link">
                         <i class="bi bi-people"></i>
@@ -188,16 +189,6 @@
                         <i class="bi bi-box-arrow-right"></i>
                         تسجيل خروج
                     </a>
-                    </a>
-                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
-                    <a href="{{ url_for('index') }}" class="nav-link">
-                        <i class="bi bi-house"></i>
-                        العودة للموقع
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="nav-link">
-                        <i class="bi bi-box-arrow-right"></i>
-                        تسجيل خروج
-                    </a>
                 </nav>
             </div>
         </div>
@@ -207,10 +198,10 @@
             <div class="admin-content p-4">
                 <!-- الرأس -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="bi bi-shop"></i> إدارة المحلات</h2>
+                    <h2><i class="bi bi-shop"></i> إدارة النشاطات التجارية</h2>
                     <div class="d-flex gap-2">
                         <a href="{{ url_for('admin_add_store_page') }}" class="btn btn-admin">
-                            <i class="bi bi-plus"></i> إضافة محل جديد
+                            <i class="bi bi-plus"></i> إضافة نشاط تجاري جديد
                         </a>
                         <span class="badge bg-primary">إجمالي: {{ stores|length }}</span>
                         <span class="badge bg-warning">معلق: {{ stores|selectattr('8', 'equalto', 0)|list|length }}</span>
@@ -218,10 +209,10 @@
                     </div>
                 </div>
 
-                <!-- جدول المحلات -->
+                <!-- جدول النشاطات التجارية -->
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="bi bi-list-ul"></i> جميع المحلات</h5>
+                        <h5><i class="bi bi-list-ul"></i> جميع النشاطات التجارية</h5>
                     </div>
                     <div class="card-body">
                         {% if stores %}
@@ -230,7 +221,7 @@
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>اسم المحل</th>
+                                        <th>اسم النشاط التجاري</th>
                                         <th>التصنيف</th>
                                         <th>المالك</th>
                                         <th>العنوان</th>
@@ -282,21 +273,19 @@
                                                 </a>
                                                 <a href="{{ url_for('delete_store', store_id=store[0]) }}" 
                                                    class="btn btn-danger btn-sm" 
-                                                   onclick="return confirm('هل تريد حذف هذا المحل؟')">
+                                                   onclick="return confirm('هل تريد حذف هذا النشاط التجاري؟')">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </div>
                                         </td>
                                     </tr>
 
-
-
-                                    <!-- Modal للتعديل السريع (الأصلي) -->
+                                    <!-- Modal للتعديل السريع -->
                                     <div class="modal fade" id="editStoreModal{{ store[0] }}" tabindex="-1">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">تعديل المحل</h5>
+                                                    <h5 class="modal-title">تعديل النشاط التجاري</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <form method="POST" action="{{ url_for('edit_store', store_id=store[0]) }}">
@@ -304,7 +293,7 @@
                                                         <div class="row">
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
-                                                                    <label class="form-label">اسم المحل</label>
+                                                                    <label class="form-label">اسم النشاط التجاري</label>
                                                                     <input type="text" class="form-control" name="name" 
                                                                            value="{{ store[1] }}" required>
                                                                 </div>
@@ -358,7 +347,7 @@
                                                         <div class="form-check">
                                                             <input class="form-check-input" type="checkbox" name="is_approved" 
                                                                    {{ 'checked' if store[8] else '' }}>
-                                                            <label class="form-check-label">محل مفعل</label>
+                                                            <label class="form-check-label">نشاط تجاري مفعل</label>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
@@ -376,8 +365,8 @@
                         {% else %}
                         <div class="text-center py-5">
                             <i class="bi bi-shop" style="font-size: 3rem; color: #ccc;"></i>
-                            <h5 class="mt-3 text-muted">لا توجد محلات مسجلة</h5>
-                            <p class="text-muted">عندما يقوم المستخدمون بإضافة محلات، ستظهر هنا</p>
+                            <h5 class="mt-3 text-muted">لا توجد نشاطات تجارية مسجلة</h5>
+                            <p class="text-muted">عندما يقوم المستخدمون بإضافة نشاطات تجارية، ستظهر هنا</p>
                         </div>
                         {% endif %}
                     </div>
@@ -386,12 +375,12 @@
         </div>
     </div>
 
-    <!-- Modal إضافة محل جديد -->
+    <!-- Modal إضافة نشاط تجاري جديد -->
     <div class="modal fade" id="addStoreModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">إضافة محل جديد</h5>
+                    <h5 class="modal-title">إضافة نشاط تجاري جديد</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form method="POST" action="{{ url_for('add_store') }}">
@@ -399,7 +388,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">اسم المحل</label>
+                                    <label class="form-label">اسم النشاط التجاري</label>
                                     <input type="text" class="form-control" name="name" required>
                                 </div>
                             </div>
@@ -444,12 +433,12 @@
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_approved" checked>
-                            <label class="form-check-label">محل مفعل</label>
+                            <label class="form-check-label">نشاط تجاري مفعل</label>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-admin">إضافة المحل</button>
+                        <button type="submit" class="btn btn-admin">إضافة النشاط التجاري</button>
                     </div>
                 </form>
             </div>

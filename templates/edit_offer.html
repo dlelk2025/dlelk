@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعديل العرض - {{ site_settings.get('site_title', 'دليل محلات الحسينية') }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 20px;
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 40px);
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        .form-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin: 10px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="bi bi-shop"></i> دليل الحسينية
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('offers') }}">العروض</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">تسجيل خروج</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="form-container">
+            <!-- رأس الصفحة -->
+            <div class="page-header">
+                <h1><i class="bi bi-pencil-square"></i> تعديل العرض</h1>
+                <p class="lead">تعديل تفاصيل العرض الخاص بك</p>
+            </div>
+
+            <!-- الرسائل -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- نموذج تعديل العرض -->
+            <form method="POST" onsubmit="return validateForm()">
+                <!-- المعلومات الأساسية -->
+                <div class="form-section">
+                    <h4 class="mb-3"><i class="bi bi-info-circle"></i> المعلومات الأساسية</h4>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">عنوان العرض <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ offer[1] }}" required>
+                        <div class="form-text">اكتب عنواناً جذاباً ووصفياً للعرض</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">وصف العرض <span class="required">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required>{{ offer[2] }}</textarea>
+                        <div class="form-text">اشرح تفاصيل العرض والفوائد التي سيحصل عليها العميل</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="store_id" class="form-label">المحل <span class="required">*</span></label>
+                        <select class="form-control" id="store_id" name="store_id" required>
+                            <option value="">اختر المحل</option>
+                            {% for store in user_stores %}
+                                <option value="{{ store[0] }}" {{ 'selected' if store[0] == offer[3] else '' }}>{{ store[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- تواريخ العرض -->
+                <div class="form-section">
+                    <h4 class="mb-3"><i class="bi bi-calendar-range"></i> تواريخ العرض</h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">تاريخ البداية <span class="required">*</span></label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ offer[9] }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">تاريخ النهاية <span class="required">*</span></label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ offer[10] }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الصورة -->
+                <div class="form-section">
+                    <h4 class="mb-3"><i class="bi bi-image"></i> صورة العرض</h4>
+                    
+                    <div class="mb-3">
+                        <label for="image_url" class="form-label">رابط الصورة</label>
+                        <input type="url" class="form-control" id="image_url" name="image_url" value="{{ offer[8] }}" onchange="previewImage()">
+                        <div class="form-text">اتركه فارغاً لاستخدام صورة افتراضية</div>
+                        <img id="image_preview" class="image-preview" alt="معاينة الصورة">
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>ملاحظة:</strong> إذا كان العرض معتمداً، فسيحتاج لمراجعة الإدارة مرة أخرى بعد التعديل.
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> حفظ التعديلات
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> إلغاء
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function validateForm() {
+            const startDate = new Date(document.getElementById('start_date').value);
+            const endDate = new Date(document.getElementById('end_date').value);
+            
+            if (endDate <= startDate) {
+                alert('تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function previewImage() {
+            const imageUrl = document.getElementById('image_url').value;
+            const preview = document.getElementById('image_preview');
+            
+            if (imageUrl) {
+                preview.src = imageUrl;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // تحميل الصورة الحالية عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            previewImage();
+        });
+    </script>
+</body>
+</html>

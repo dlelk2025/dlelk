@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>العروض - {{ site_settings.get('site_title', 'دليل محلات الحسينية') }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 20px;
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 40px);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="60" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .featured-slider {
+            margin-bottom: 50px;
+        }
+
+        .swiper {
+            width: 100%;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .swiper-slide {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .slide-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 30px;
+            color: white;
+        }
+
+        .offer-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .offer-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .offer-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .offer-card:hover .offer-image {
+            transform: scale(1.05);
+        }
+
+        .offer-content {
+            padding: 20px;
+        }
+
+        .offer-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .offer-store {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .offer-dates {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .offer-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d1edff;
+            color: #0c5460;
+        }
+
+        .status-featured {
+            background: #ffd700;
+            color: #8b6914;
+        }
+
+        .btn-add-offer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-add-offer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .no-offers {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-offers i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin: 10px;
+                padding: 20px;
+            }
+
+            .swiper {
+                height: 300px;
+            }
+
+            .offer-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="bi bi-shop"></i> دليل الحسينية
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('offers') }}">العروض</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('duty_pharmacies') }}">الصيدليات المناوبة</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if session.user_id %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">لوحة التحكم</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">تسجيل خروج</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">تسجيل دخول</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- رأس الصفحة -->
+        <div class="page-header">
+            <h1><i class="bi bi-megaphone"></i> العروض الخاصة</h1>
+            <p class="lead">اكتشف أفضل العروض والخصومات في منطقة الحسينية</p>
+            {% if session.user_id %}
+                <a href="{{ url_for('add_offer_page') }}" class="btn-add-offer">
+                    <i class="bi bi-plus-circle"></i> إضافة عرض جديد
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- الرسائل -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- سلايدر العروض المميزة -->
+        {% if featured_offers %}
+        <div class="featured-slider">
+            <h2 class="section-title text-center">العروض المميزة ⭐</h2>
+            <div class="swiper featured-swiper">
+                <div class="swiper-wrapper">
+                    {% for offer in featured_offers %}
+                    <div class="swiper-slide">
+                        <img src="{{ offer[3] or 'https://j.top4top.io/p_3483v39jn1.jpg' }}" alt="{{ offer[1] }}" class="slide-image">
+                        <div class="slide-overlay">
+                            <h3>{{ offer[1] }}</h3>
+                            <p><i class="bi bi-shop"></i> {{ offer[11] }}</p>
+                            <a href="{{ url_for('offer_details', offer_id=offer[0]) }}" class="btn btn-light btn-sm">
+                                <i class="bi bi-eye"></i> المزيد
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="swiper-pagination"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- جميع العروض -->
+        <div class="all-offers">
+            <h2 class="section-title text-center">جميع العروض</h2>
+
+            {% if regular_offers and regular_offers|length > 0 %}
+            <div class="row">
+                {% for offer in regular_offers %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="offer-card">
+                        <img src="{{ offer[3] or 'https://j.top4top.io/p_3483v39jn1.jpg' }}" alt="{{ offer[1] }}" class="offer-image">
+                        <div class="offer-content">
+                            <h5 class="offer-title">{{ offer[1] }}</h5>
+                            <div class="offer-store">
+                                <i class="bi bi-shop"></i> {{ offer[10] }}
+                            </div>
+                            {% if offer[2] %}
+                            <p class="text-muted">{{ offer[2][:100] }}{{ '...' if offer[2]|length > 100 else '' }}</p>
+                            {% endif %}
+                            <div class="offer-dates">
+                                <i class="bi bi-calendar"></i> من {{ offer[4] }} إلى {{ offer[5] }}
+                                {% if offer[5] < today_date %}
+                                <small class="text-danger">(منتهي الصلاحية)</small>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                {% if offer[7] %}
+                                <span class="offer-status status-featured">⭐ مميز</span>
+                                {% elif offer[4] > today_date %}
+                                <span class="offer-status" style="background: #17a2b8; color: white;">🚀 قريباً</span>
+                                {% else %}
+                                <span class="offer-status status-approved">✅ نشط</span>
+                                {% endif %}
+                                <a href="{{ url_for('offer_details', offer_id=offer[0]) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye"></i> التفاصيل
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif featured_offers and featured_offers|length > 0 %}
+            <!-- إذا لم تكن هناك عروض عادية ولكن توجد عروض مميزة -->
+            <div class="text-center">
+                <p class="text-muted">لا توجد عروض عادية حالياً، لكن يمكنك مشاهدة العروض المميزة أعلاه</p>
+            </div>
+            {% else %}
+            <div class="no-offers">
+                <i class="bi bi-megaphone"></i>
+                <h4>لا توجد عروض متاحة حالياً</h4>
+                <p>كن أول من يضيف عرضاً!</p>
+                {% if session.user_id %}
+                    <a href="{{ url_for('add_offer_page') }}" class="btn-add-offer">
+                        <i class="bi bi-plus-circle"></i> إضافة عرض جديد
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+        <!-- أزرار التصفح -->
+        {% if total_pages > 1 %}
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mt-5 mb-4">
+                <div class="text-muted">
+                    عرض {{ start_item }} إلى {{ end_item }} من أصل {{ total_offers }} عرض
+                </div>
+                <nav aria-label="تصفح العروض">
+                    <ul class="pagination mb-0">
+                        {% if current_page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('offers', page=current_page-1) }}">
+                                    <i class="bi bi-chevron-right"></i> السابق
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in range(1, total_pages + 1) %}
+                            {% if page_num == current_page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% elif page_num <= 3 or page_num > total_pages - 3 or (page_num >= current_page - 1 and page_num <= current_page + 1) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('offers', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% elif page_num == 4 or page_num == total_pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if current_page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('offers', page=current_page+1) }}">
+                                    التالي <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- الفوتر -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+    <script>
+        // تهيئة سلايدر العروض المميزة
+        {% if featured_offers %}
+        const featuredSwiper = new Swiper('.featured-swiper', {
+            loop: true,
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                640: {
+                    slidesPerView: 1,
+                },
+                768: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                },
+                1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30,
+                },
+            },
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

@@ -73,7 +73,7 @@
     <div class="notification-container">
         <div class="notification-header">
             <h2><i class="bi bi-bell-fill"></i> {{ title }}</h2>
-            <p class="mb-0">{{ message }}</p>
+            <p class="mb-0">{{ message|safe }}</p>
         </div>
 
         <div class="notification-body">
